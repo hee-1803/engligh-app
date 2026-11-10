@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { sendPush, type Sub } from "@/lib/push";
+import { sendPush, reminderFor, type Sub } from "@/lib/push";
 
 async function getUser() {
   const supabase = await createClient();
@@ -24,8 +24,10 @@ export async function POST(req: Request) {
   if (body.test) {
     const { data } = await supabase.from("push_subscriptions").select("endpoint, keys").eq("user_id", user.id);
     if (!data?.length) return NextResponse.json({ error: "Thiết bị này chưa bật thông báo" }, { status: 400 });
-    const results = await Promise.all(data.map((s) => sendPush({ endpoint: s.endpoint, keys: s.keys } as Sub,
-      { title: "Thông báo thử", body: "Thông báo nhắc học đã hoạt động trên thiết bị này.", url: "/" })));
+    // Gửi thử đúng một lời nhắc thật (theo giọng nhắc đang chọn)
+    const { data: st } = await supabase.from("app_state").select("data").eq("user_id", user.id).maybeSingle();
+    const msg = reminderFor(st?.data);
+    const results = await Promise.all(data.map((s) => sendPush({ endpoint: s.endpoint, keys: s.keys } as Sub, msg)));
     return NextResponse.json({ sent: results.filter((r) => r === "ok").length });
   }
 

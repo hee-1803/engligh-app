@@ -1238,6 +1238,7 @@ function vSettings() {
     <div class="row timerow"><div class="tfield"><label for="remindSet">Bắt đầu nhắc lúc</label><input id="remindSet" type="time" value="${remindCfg().start}" data-change="setRemind"></div>
      <div class="tfield"><label for="remindEnd">Nhắc đến</label><input id="remindEnd" type="time" value="${remindCfg().end}" data-change="setRemindEnd"></div></div>
     <div class="row"><span>Nhắc mỗi</span>${[[30, "30 phút"], [60, "1 tiếng"], [120, "2 tiếng"], [180, "3 tiếng"]].map(([k, t]) => `<button class="seg ${remindCfg().every === k ? "sel" : ""}" data-a="remEvery" data-v="${k}">${t}</button>`).join("")}</div>
+    <div class="row"><span>Giọng nhắc</span>${[["spicy", "😈 Lầy lội"], ["soft", "🙂 Nhẹ nhàng"]].map(([k, t]) => `<button class="seg ${(S.profile.remindTone || "spicy") === k ? "sel" : ""}" data-a="remTone" data-v="${k}">${t}</button>`).join("")}</div>
     <p class="fb small">${remindCfg().on ? `Các lần nhắc mỗi ngày (${remindSlots().length} lần): <b>${remindSlots().join(" · ")}</b>` : "Nhắc học đang tắt. Bạn sẽ không nhận thông báo nào."}</p>
     <div class="pushbox"><b>Nhận thông báo trên thiết bị này</b>
      <p class="muted small">Thông báo hiện trên điện thoại hoặc máy tính, kể cả khi đang đóng app. Mỗi thiết bị cần bật riêng một lần.</p>
@@ -1474,6 +1475,7 @@ const ACT = {
   skipWait: () => cancelWait?.(),
   pushOn: (v, btn) => enablePush(btn), pushOff: disablePush, pushTest: (v, btn) => testPush(btn),
   remEvery: v => { S.profile.remindEvery = Number(v); save(); render(); },
+  remTone: v => { S.profile.remindTone = v; save(); render(); toast(v === "soft" ? "Lời nhắc sẽ nhẹ nhàng" : "Lời nhắc sẽ lầy lội 😈"); },
   remToggle: () => { S.profile.remindOn = !remindCfg().on; save(); render(); toast(S.profile.remindOn ? "Đã bật nhắc học" : "Đã tắt nhắc học"); },
   closeCelebrate: () => { UI.celebrate = []; render(); },
   tr: v => doTranslate(v),
