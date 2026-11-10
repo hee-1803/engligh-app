@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ai, MODEL } from "@/lib/gemini";
 import { createClient } from "@/lib/supabase/server";
-import { askFallback, PROVIDERS } from "@/lib/fallback-ai";
+import { askFallback, probeFallbacks, PROVIDERS } from "@/lib/fallback-ai";
 
 // Model chính + model dự phòng (không bắt buộc), ví dụ trong .env.local:
 // GEMINI_FALLBACK_MODELS=ten-model-1,ten-model-2
@@ -72,8 +72,20 @@ async function generate(params: { contents: unknown; config?: Record<string, unk
 }
 
 // GET: kiểm tra key và tên model (không tốn lượt gọi sinh nội dung)
-export async function GET() {
+export async function GET(req: Request) {
   if (!(await requireUser())) return NextResponse.json({ ok: false, error: "Chưa đăng nhập" }, { status: 401 });
+  // ?probe=1: kiểm tra từng AI (Cài đặt → Trạng thái AI)
+  if (new URL(req.url).searchParams.get("probe")) {
+    let gem: { name: string; model: string; ok: boolean; error?: string; ms?: number } = { name: "Gemini", model: MODEL, ok: false, error: "Chưa có GEMINI_API_KEY" };
+    if (process.env.GEMINI_API_KEY) {
+      const t0 = Date.now();
+      try {
+        await withTimeout(ai.models.generateContent({ model: MODEL, contents: "Say OK", config: { maxOutputTokens: 5 } }), 15000);
+        gem = { name: "Gemini", model: MODEL, ok: true, ms: Date.now() - t0 };
+      } catch (e) { gem = { name: "Gemini", model: MODEL, ok: false, error: errMsg(e) }; }
+    }
+    return NextResponse.json({ list: [gem, ...(await probeFallbacks())] });
+  }
   if (!process.env.GEMINI_API_KEY) return NextResponse.json(PROVIDERS.length ? { ok: true, busy: true } : { ok: false, error: "Chưa có GEMINI_API_KEY trong .env.local" });
   try {
     await Promise.race([ai.models.get({ model: MODEL }), new Promise((_, rej) => setTimeout(() => rej(new Error("503 timeout UNAVAILABLE")), 8000))]);

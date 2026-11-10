@@ -448,3 +448,4 @@ button.primary.big { border-radius: 14px }
 .tr-out .tr-ipa { display: block; margin-top: 4px; font-size: .88rem }
 .msg .trbox { margin-top: 4px } .msg.ai .trbtn { background: var(--surface) }
 .pop-tr:empty { display: none }
+.ailist { display: grid; gap: 8px; margin-top: 6px } .ailist .tag { white-space: normal; text-align: right; max-width: 60% }

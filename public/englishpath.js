@@ -423,6 +423,12 @@ function pauseAI(reason) {
   AI.pauseUntil = Date.now() + 120e3;
   if (first) toast("Gemini đang bận (" + reason + "). Tạm chấm cơ bản, 2 phút sau app tự dùng lại AI.");
 }
+let LAST_ENGINE = "", LAST_ENGINE_AT = 0, PROBE = null;
+async function probeAI() {
+  PROBE = "…"; render();
+  try { const r = await timeoutFetch("/api/ai?probe=1", {}, 40000); PROBE = (await r.json()).list || []; } catch (e) { PROBE = [{name:"Kiểm tra", ok:false, error:"không kết nối được"}]; }
+  render();
+}
 async function gemini(system, prompt, json = true, history, ms = 30000) {
   const contents = history || [{role:"user", parts:[{text:prompt}]}];
   let r;
@@ -432,6 +438,8 @@ async function gemini(system, prompt, json = true, history, ms = 30000) {
   if (!r.ok && !d.quota && (d.busy || r.status >= 500)) pauseAI(d.error ? "quá tải" : "lỗi " + r.status);
   if (!r.ok) { if (d.quota) { AI = {on:false, quota:true, quotaAt:Date.now(), msg:d.error}; toast("Đã hết lượt Gemini miễn phí. Tạm dùng nội dung mẫu, app sẽ tự thử lại sau 5 phút."); }
     throw new Error(d.error || ("Gemini lỗi " + r.status)); }
+  if (d.engine && d.engine !== "Gemini" && LAST_ENGINE !== d.engine) toast(`Gemini đang bận/hết lượt → đang dùng ${d.engine} (dự phòng)`);
+  if (d.engine) { LAST_ENGINE = d.engine; LAST_ENGINE_AT = Date.now(); }
   if (!json) return d.text;
   return JSON.parse(String(d.text).replace(/^```(json)?|```$/g, "").trim());
 }
@@ -1247,6 +1255,10 @@ function vSettings() {
           ${isIOS() && !isStandalone() ? `<p class="small">Trên iPhone (iOS 16.4 trở lên): mở bằng Safari → nút Chia sẻ → <b>Thêm vào MH chính</b> → mở app từ biểu tượng mới, rồi bấm nút trên.</p>` : ""}`}</div>
     <p class="muted small">Hoặc thêm một lời nhắc cố định vào lịch điện thoại (lúc ${remindCfg().start} mỗi ngày):</p>
     <div class="row"><a class="btn mini" target="_blank" rel="noopener" href="${gcalLink()}">Google Calendar ↗</a><button class="mini" data-a="ics">Tải file lịch (.ics)</button></div></section>
+   <section class="panel"><div class="row between"><h3>Trạng thái AI</h3><button class="mini" data-a="probeAI" ${PROBE === "…" ? "disabled" : ""}>${PROBE === "…" ? `<span class="spin"></span> Đang kiểm tra` : "Kiểm tra AI"}</button></div>
+    <p class="muted small">Thứ tự dùng: Gemini → Groq → OpenRouter. AI dự phòng chỉ chạy khi Gemini hết lượt, quá tải hoặc quá chậm.${LAST_ENGINE ? ` Lần gần nhất trả lời: <b>${esc(LAST_ENGINE)}</b> (${new Date(LAST_ENGINE_AT).toLocaleTimeString("vi-VN", {hour:"2-digit", minute:"2-digit"})}).` : ""}</p>
+    ${Array.isArray(PROBE) ? `<div class="ailist">${PROBE.map(p => `<div class="row between nowrap"><span><b>${esc(p.name)}</b> <span class="muted small">${esc(p.model || "")}</span></span>${p.ok ? `<span class="tag good">✓ Hoạt động · ${(p.ms / 1000).toFixed(1)}s</span>` : `<span class="tag bad" title="${esc(p.error || "")}">✗ ${esc(p.error || "Lỗi")}</span>`}</div>`).join("")}
+      ${PROBE.length < 3 ? `<p class="muted small">AI nào chưa hiện là chưa có key (GROQ_API_KEY / OPENROUTER_API_KEY) trên máy chủ.</p>` : ""}</div>` : ""}</section>
    <section class="panel"><h3>Giọng đọc & micro</h3>
     <label for="voiceSel">Giọng đọc tiếng Anh</label><select id="voiceSel" data-change="setVoice">${VOICES.length ? VOICES.map(v => `<option value="${esc(v.name)}" ${pickVoice()?.name === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("") : `<option>Giọng mặc định của trình duyệt</option>`}</select>
     <div class="row"><span>Tốc độ đọc</span>${[["0.6", "Rất chậm"], ["0.7", "Chậm"], ["0.8", "Vừa"], ["0.95", "Nhanh"]].map(([k, t]) => `<button class="seg ${Number(k) === ttsRate() ? "sel" : ""}" data-a="ttsRate" data-v="${k}">${t}</button>`).join("")}
@@ -1475,6 +1487,7 @@ const ACT = {
   skipWait: () => cancelWait?.(),
   pushOn: (v, btn) => enablePush(btn), pushOff: disablePush, pushTest: (v, btn) => testPush(btn),
   remEvery: v => { S.profile.remindEvery = Number(v); save(); render(); },
+  probeAI: () => probeAI(),
   remTone: v => { S.profile.remindTone = v; save(); render(); toast(v === "soft" ? "Lời nhắc sẽ nhẹ nhàng" : "Lời nhắc sẽ lầy lội 😈"); },
   remToggle: () => { S.profile.remindOn = !remindCfg().on; save(); render(); toast(S.profile.remindOn ? "Đã bật nhắc học" : "Đã tắt nhắc học"); },
   closeCelebrate: () => { UI.celebrate = []; render(); },

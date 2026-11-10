@@ -43,3 +43,19 @@ export async function askFallback(system: string | undefined, contents: Content,
   }
   throw last;
 }
+
+// Kiểm tra nhanh từng AI dự phòng (tốn 1 lượt gọi rất nhỏ)
+export async function probeFallbacks() {
+  return Promise.all(PROVIDERS.map(async (p) => {
+    const t0 = Date.now(), ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 15000);
+    try {
+      const r = await fetch(p.url, { method: "POST", signal: ctl.signal,
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${p.key}`, ...(p.headers || {}) },
+        body: JSON.stringify({ model: p.model, messages: [{ role: "user", content: "Say OK" }], max_tokens: 5 }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return { name: p.name, model: p.model, ok: false, error: `${r.status}: ${String(d?.error?.message || "lỗi").slice(0, 120)}` };
+      return { name: p.name, model: p.model, ok: true, ms: Date.now() - t0 };
+    } catch (e) { return { name: p.name, model: p.model, ok: false, error: (e as Error).name === "AbortError" ? "quá chậm" : String((e as Error).message).slice(0, 120) }; }
+    finally { clearTimeout(t); }
+  }));
+}
