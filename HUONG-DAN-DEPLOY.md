@@ -61,3 +61,14 @@ Kiểm tra: select * from cron.job_run_details order by start_time desc limit 5;
 
 ## Cập nhật app sau này
 Sửa code trên máy > git add . > git commit -m "cap nhat" > git push → Vercel tự deploy lại.
+
+## AI dự phòng khi Gemini hết lượt (không bắt buộc)
+Thêm một hoặc cả hai key vào `.env.local` và Vercel → Settings → Environment Variables:
+```
+GROQ_API_KEY=gsk_...          # console.groq.com/keys
+OPENROUTER_API_KEY=sk-or-...  # openrouter.ai/keys
+# Tùy chọn đổi model:
+# GROQ_MODEL=llama-3.3-70b-versatile
+# OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct:free
+```
+Thứ tự: Gemini → Groq → OpenRouter.

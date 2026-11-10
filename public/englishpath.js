@@ -296,14 +296,37 @@ const TRC = {};
 const trKey = (t, sl, tl) => sl + "|" + tl + "|" + t;
 function trBtn(text, sl = "en", tl = "vi", label = "Dịch") {
   const k = trKey(text, sl, tl), r = TRC[k];
-  return `<span class="trbox"><button class="mini trbtn" data-a="tr" data-v="${esc(k)}" ${r === "…" ? "disabled" : ""}>${r === "…" ? `<span class="spin"></span> Đang dịch` : r ? "Ẩn bản dịch" : "🌐 " + label}</button>${r && r !== "…" ? `<span class="tr-out">${esc(r.text)}<em>${esc(r.engine)}</em></span>` : ""}</span>`;
+  return `<span class="trbox"><button class="mini trbtn" data-a="tr" data-v="${esc(k)}" ${r === "…" ? "disabled" : ""}>${r === "…" ? `<span class="spin"></span> Đang dịch` : r ? "Ẩn bản dịch" : "🌐 " + label}</button>${r && r !== "…" ? `<span class="tr-out">${esc(r.text)}${r.ipa ? `<span class="ipa tr-ipa">${esc(r.ipa)}</span>` : ""}<em>${esc(r.engine)}</em></span>` : ""}</span>`;
+}
+// IPA cả câu: ghép IPA từng từ (từ điển + từ đã học), từ không tra được giữ nguyên chữ
+const IPAC = {};
+function knownIPA() {
+  const m = {}, add = w => { if (w && w.w && /^\/.+\/$/.test((w.ipa || "").trim()) && !/\s/.test(w.w.trim())) m[w.w.toLowerCase().trim()] = w.ipa.trim().slice(1, -1); };
+  try { (window.LESSON_BANK ? Object.values(window.LESSON_BANK).flat() : []).forEach(l => (l.words || []).forEach(x => add(normWord(x)))); } catch (e) {}
+  try { Object.values(S.lessons || {}).forEach(l => (l?.words || []).forEach(add)); (S.cards || []).forEach(c => add(c.w)); } catch (e) {}
+  return m;
+}
+async function sentIPA(text) {
+  if (/[à-ỹđ]/i.test(String(text).normalize("NFC").replace(/[a-z]/gi, ""))) return "";
+  const toks = String(text).match(/[A-Za-z]+(?:['’][A-Za-z]+)*|\d+/g); if (!toks) return "";
+  const known = knownIPA(), list = toks.slice(0, 40).map(t => t.toLowerCase().replace(/’/g, "'"));
+  const ipas = await Promise.all(list.map(t => /^\d+$/.test(t) ? t : dictIPA(t, known)));
+  return ipas.some((x, i) => x && x !== list[i]) ? "/" + ipas.map((x, i) => x || toks[i]).join(" ") + "/" : "";
+}
+async function dictIPA(t, known) {
+  if (known[t]) return known[t];
+  if (t in IPAC) return IPAC[t];
+  let v = "";
+  try { const r = await timeoutFetch("/api/dict?w=" + encodeURIComponent(t), {}, 8000);
+    if (r.ok) { const j = (await r.json())[0]; v = (j?.phonetic || j?.phonetics?.find(p => p.text)?.text || "").replace(/^\/|\/$/g, "").replace(/^\[|\]$/g, ""); } } catch (e) {}
+  return IPAC[t] = v;
 }
 async function doTranslate(k) {
   if (TRC[k] && TRC[k] !== "…") { delete TRC[k]; return render(); }
   const [sl, tl, ...rest] = k.split("|"), text = rest.join("|");
   TRC[k] = "…"; render();
   try { const r = await timeoutFetch(`/api/translate?sl=${sl}&tl=${tl}&q=${encodeURIComponent(text)}`, {}, 15000); const d = await r.json();
-    if (!r.ok) throw new Error(d.error || "lỗi " + r.status); TRC[k] = {text:d.text, engine:d.engine}; }
+    if (!r.ok) throw new Error(d.error || "lỗi " + r.status); const en = sl === "en" ? text : tl === "en" ? d.text : ""; TRC[k] = {text:d.text, engine:d.engine, ipa: en ? await sentIPA(en) : ""}; }
   catch (e) { delete TRC[k]; toast("Chưa dịch được: " + (e.name === "AbortError" ? "quá chậm" : e.message)); }
   render();
 }
@@ -1457,7 +1480,7 @@ const ACT = {
   popTr: async (v, btn) => { const sl = btn.dataset.sl || "vi", tl = sl === "vi" ? "en" : "vi", out = POP?.querySelector(".pop-tr"); if (!out) return;
     btn.disabled = true; out.innerHTML = `<span class="spin"></span> Đang dịch...`;
     try { const r = await timeoutFetch(`/api/translate?sl=${sl}&tl=${tl}&q=${encodeURIComponent(v)}`, {}, 15000); const d = await r.json(); if (!r.ok) throw new Error(d.error);
-      out.innerHTML = `<div class="tr-out">${esc(d.text)}<em>${esc(d.engine)}</em></div>`; } catch (e) { out.innerHTML = `<p class="muted small">Chưa dịch được: ${esc(e.message || "lỗi")}</p>`; }
+      const ipa = await sentIPA(sl === "en" ? v : d.text); out.innerHTML = `<div class="tr-out">${esc(d.text)}${ipa ? `<span class="ipa tr-ipa">${esc(ipa)}</span>` : ""}<em>${esc(d.engine)}</em></div>`; } catch (e) { out.innerHTML = `<p class="muted small">Chưa dịch được: ${esc(e.message || "lỗi")}</p>`; }
     btn.disabled = false; },
   ics: downloadIcs,
   notify: async () => { try { await Notification.requestPermission(); } catch (e) {} render(); },
