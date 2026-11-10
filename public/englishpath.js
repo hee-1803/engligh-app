@@ -294,7 +294,7 @@ const badgeCard = (b, on = true, date) => `<div class="badge-item ${on ? "" : "l
 const gtLink = (t, sl, tl) => `https://translate.google.com/?sl=${sl}&tl=${tl}&op=translate&text=${encodeURIComponent(t)}`;
 function say(t, rate) { return new Promise(res => { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(String(t).replace(/_+/g, " blank "));
   const v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-US";
-  u.rate = rate || Number(pref("ep_rate") || 0.95); u.onend = res; u.onerror = res; speechSynthesis.speak(u); } catch (e) { res(); } }); }
+  u.rate = rate || Number(pref("ep_rate") || 0.75); u.onend = res; u.onerror = res; speechSynthesis.speak(u); } catch (e) { res(); } }); }
 // Nhận giọng nói (Chrome, Edge)
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let REC = null;
@@ -1165,7 +1165,7 @@ function vSettings() {
     <div class="row"><a class="btn mini" target="_blank" rel="noopener" href="${gcalLink()}">Google Calendar ↗</a><button class="mini" data-a="ics">Tải file lịch (.ics)</button></div></section>
    <section class="panel"><h3>Giọng đọc & micro</h3>
     <label for="voiceSel">Giọng đọc tiếng Anh</label><select id="voiceSel" data-change="setVoice">${VOICES.length ? VOICES.map(v => `<option value="${esc(v.name)}" ${pickVoice()?.name === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("") : `<option>Giọng mặc định của trình duyệt</option>`}</select>
-    <div class="row"><span>Tốc độ đọc</span>${[["0.75", "Chậm"], ["0.95", "Vừa"], ["1.1", "Nhanh"]].map(([k, t]) => `<button class="seg ${(pref("ep_rate") || "0.95") === k ? "sel" : ""}" data-a="ttsRate" data-v="${k}">${t}</button>`).join("")}
+    <div class="row"><span>Tốc độ đọc</span>${[["0.5", "Chậm"], ["0.75", "Vừa"], ["1", "Nhanh"]].map(([k, t]) => `<button class="seg ${(pref("ep_rate") || "0.75") === k ? "sel" : ""}" data-a="ttsRate" data-v="${k}">${t}</button>`).join("")}
      <button data-a="speak" data-v="Hello! This is how I sound. Let's practise English together.">🔊 Nghe thử</button></div>
     <div class="row"><button class="mic ${UI.rec === "test" ? "on" : ""}" data-a="micTest" ${SR ? "" : "disabled"}>${UI.rec === "test" ? "● Đang nghe..." : "🎤 Thử micro"}</button>
      <span class="muted small">${SR ? "Nhận giọng nói chạy trên Chrome và Edge, cần có Internet." : "Trình duyệt này không hỗ trợ nhận giọng nói. Hãy dùng Chrome hoặc Edge."}</span></div>
@@ -1340,7 +1340,7 @@ async function testPush(btn) { btn.disabled = true; const r = await fetch("/api/
 const ACT = {
   go: v => { view = v; Q = null; FC = null; closePop(); UI.menu = false; render(); scrollTo(0, 0); },
   speak: v => say(v),
-  slow: v => say(v, 0.65),
+  slow: v => say(v, 0.5),
   pron: v => { const l = L(), [kind, i] = v.split(":"), w = l.les.words[Number(i)], target = kind === "w" ? w.w : w.ex;
     startRec(v, r => { l.pron[v] = pronScore(target, r.text, r.alts); l.scores.speaking = Math.round(avg(Object.values(l.pron).map(x => x.score))); save(); }); },
   qMic: () => startRec("q", r => answer(r)),
