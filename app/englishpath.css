@@ -431,3 +431,11 @@ button.primary.big { border-radius: 14px }
 .fbbtn { background: #1877f2; border-color: #1877f2; color: #fff }
 .fbbtn:hover:not(:disabled) { border-color: #0f5fd0; background: #166fe5 }
 .gbtn:disabled { opacity: .7 }
+
+.applebtn { background: #000; border-color: #000; color: #fff }
+.applebtn:hover:not(:disabled) { background: #222; border-color: #222 }
+.phonebox { padding: 14px; border-radius: 14px; background: var(--sunk); display: grid; gap: 10px }
+.otp { font: 700 1.5rem var(--f-mono); letter-spacing: .5em; text-align: center }
+.legal { max-width: 720px; margin: 0 auto; padding: 32px max(16px, env(safe-area-inset-right, 0px)) 64px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 14px; line-height: 1.7 }
+.legal h2 { font-size: 1.3rem; margin-top: 10px }
+.legal ul, .legal ol { margin: 0; padding-left: 22px; display: grid; gap: 6px }
