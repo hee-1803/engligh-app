@@ -27,9 +27,40 @@ const FEATS: [string, string][] = [
 
 export default function LoginPage() {
   const [msg, setMsg] = useState("");
-  const [loading, setLoading] = useState<"" | "google" | "facebook">("");
+  const [loading, setLoading] = useState<"" | "google" | "facebook" | "apple" | "phone">("");
+  const [phoneOpen, setPhoneOpen] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [sentTo, setSentTo] = useState("");
+  const [code, setCode] = useState("");
 
-  async function signIn(provider: "google" | "facebook") {
+  // 0912 345 678 → +84912345678 (số Việt Nam); số có sẵn +mã quốc gia thì giữ nguyên
+  const toE164 = (v: string) => {
+    const d = v.replace(/[^\d+]/g, "");
+    if (d.startsWith("+")) return d;
+    if (d.startsWith("84")) return "+" + d;
+    return "+84" + d.replace(/^0/, "");
+  };
+
+  async function sendCode(e: React.FormEvent) {
+    e.preventDefault();
+    const p = toE164(phone);
+    if (p.replace(/\D/g, "").length < 10) return setMsg("Số điện thoại chưa đúng. Ví dụ: 0912 345 678");
+    setLoading("phone"); setMsg("");
+    const { error } = await createClient().auth.signInWithOtp({ phone: p });
+    setLoading("");
+    if (error) return setMsg(`Không gửi được mã: ${error.message}`);
+    setSentTo(p); setMsg(`Đã gửi mã 6 số tới ${p}. Mã có hiệu lực vài phút.`);
+  }
+
+  async function verifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading("phone"); setMsg("");
+    const { error } = await createClient().auth.verifyOtp({ phone: sentTo, token: code.trim(), type: "sms" });
+    if (error) { setLoading(""); return setMsg(`Mã chưa đúng hoặc đã hết hạn: ${error.message}`); }
+    location.href = "/";
+  }
+
+  async function signIn(provider: "google" | "facebook" | "apple") {
     setLoading(provider);
     setMsg("");
     const supabase = createClient();
@@ -44,6 +75,7 @@ export default function LoginPage() {
     });
     if (error) { setMsg(`Không đăng nhập được: ${error.message}`); setLoading(""); }
   }
+  const busy = !!loading;
 
   return (
     <main className="login">
@@ -75,7 +107,7 @@ export default function LoginPage() {
               <p className="muted small">Đăng nhập để lưu tiến độ học trên mọi thiết bị.</p>
             </div>
           </div>
-          <button type="button" onClick={() => signIn("google")} className="gbtn" disabled={!!loading}>
+          <button type="button" onClick={() => signIn("google")} className="gbtn" disabled={busy}>
             <svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true">
               <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
               <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
@@ -84,13 +116,52 @@ export default function LoginPage() {
             </svg>
             {loading === "google" ? "Đang chuyển tới Google..." : "Tiếp tục với Google"}
           </button>
-          <button type="button" onClick={() => signIn("facebook")} className="gbtn fbbtn" disabled={!!loading}>
+          <button type="button" onClick={() => signIn("facebook")} className="gbtn fbbtn" disabled={busy}>
             <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="12" fill="#fff" />
               <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7.1V12h3V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9V12h3.4l-.5 3.5h-2.9v8.4A12 12 0 0 0 24 12z" />
             </svg>
             {loading === "facebook" ? "Đang chuyển tới Facebook..." : "Tiếp tục với Facebook"}
           </button>
+          <button type="button" onClick={() => signIn("apple")} className="gbtn applebtn" disabled={busy}>
+            <svg width="20" height="22" viewBox="0 0 17 20" aria-hidden="true">
+              <path fill="currentColor" d="M14.1 10.6c0-2.4 2-3.6 2.1-3.7-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.7.9-.8 0-2-.9-3.2-.8-1.7 0-3.2 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.4-1-2.4-3.8zM11.7 3.4c.7-.8 1.1-1.9 1-3-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.2-.6 2.9-1.4z" />
+            </svg>
+            {loading === "apple" ? "Đang chuyển tới Apple..." : "Tiếp tục với Apple"}
+          </button>
+
+          {!phoneOpen ? (
+            <button type="button" onClick={() => { setPhoneOpen(true); setMsg(""); }} className="gbtn" disabled={busy}>
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="6" y="2" width="12" height="20" rx="3" /><path d="M11 18h2" />
+              </svg>
+              Tiếp tục với số điện thoại
+            </button>
+          ) : (
+            <div className="phonebox">
+              {!sentTo ? (
+                <form onSubmit={sendCode} className="field">
+                  <label htmlFor="login-phone" className="small"><b>Số điện thoại</b></label>
+                  <input id="login-phone" type="tel" inputMode="tel" autoComplete="tel" required value={phone}
+                    onChange={(e) => setPhone(e.target.value)} placeholder="0912 345 678" />
+                  <div className="row">
+                    <button type="button" className="ghost" onClick={() => { setPhoneOpen(false); setMsg(""); }}>Hủy</button>
+                    <button className="primary grow" disabled={busy}>{loading === "phone" ? "Đang gửi mã..." : "Gửi mã qua SMS"}</button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={verifyCode} className="field">
+                  <label htmlFor="login-code" className="small"><b>Nhập mã 6 số</b> gửi tới {sentTo}</label>
+                  <input id="login-code" className="otp" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="••••••" />
+                  <div className="row">
+                    <button type="button" className="ghost" onClick={() => { setSentTo(""); setCode(""); setMsg(""); }}>Đổi số</button>
+                    <button className="primary grow" disabled={busy || code.length < 6}>{loading === "phone" ? "Đang kiểm tra..." : "Xác nhận"}</button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
           <p className="muted small center">Chỉ dùng để đăng nhập. App không đăng gì lên tài khoản của bạn.</p>
           {msg && <p className="fb small">{msg}</p>}
         </div>
