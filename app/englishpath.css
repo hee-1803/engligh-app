@@ -162,7 +162,7 @@ label h3 { margin-bottom: -4px }
 .stepper li.done span { background: var(--accent) } .stepper li.cur span { background: var(--mark) }
 .stepper li.cur { color: var(--ink); font-weight: 700 }
 .stepper em { font-style: normal }
-@media (max-width: 520px) { .stepper em { display: none } .stepper li.cur em { display: block; position: absolute; left: 16px; right: 16px; text-align: center } .stepper { position: relative; padding-bottom: 20px } }
+@media (max-width: 520px) { .stepper em { display: none } .stepper li.cur em { display: block; position: absolute; left: 16px; right: 16px; top:13px; text-align: center } .stepper { position: relative; padding-bottom: 20px } }
 .dots { display: flex; gap: 4px } .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line) } .dots i.on { background: var(--accent) }
 .vocab { display: grid; gap: 8px; padding: 8px 0 }
 .word { font-size: 2.2rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.15 }
