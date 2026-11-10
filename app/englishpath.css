@@ -427,3 +427,7 @@ button.primary.big { border-radius: 14px }
 
 .day > i { display: grid; place-items: center; font-style: normal }
 @media (max-width: 420px) { .steps-mini .stk { --s: 26px !important } }
+
+.fbbtn { background: #1877f2; border-color: #1877f2; color: #fff }
+.fbbtn:hover:not(:disabled) { border-color: #0f5fd0; background: #166fe5 }
+.gbtn:disabled { opacity: .7 }
