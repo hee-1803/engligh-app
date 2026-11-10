@@ -238,6 +238,59 @@ function pickVoice() { const name = pref("ep_voice");
   return VOICES.find(v => v.name === name) || VOICES.find(v => /natural|online/i.test(v.name) && /en-US/i.test(v.lang)) || VOICES.find(v => /Google US English/i.test(v.name)) || VOICES.find(v => /en-US/i.test(v.lang)) || VOICES[0]; }
 // Bọc từng âm tiết tiếng Việt để bấm vào xem từ tiếng Anh tương ứng
 const twv = t => esc(t).replace(/(&[a-z#0-9]+;)|([\p{L}]+)/gu, (m, ent, w) => ent ? ent : `<span class="wv" data-s="${w}">${w}</span>`);
+// ---- Nhãn dán & linh vật (SVG trong /stickers.js) ----
+const STK = () => window.STICKERS || {}, MAS = () => window.MASCOT || {};
+const stk = (name, size = 48, cls = "", rot) => `<span class="stk ${cls}" style="--s:${size}px;--r:${rot ?? ((String(name).length * 7) % 13 - 6)}deg">${STK()[name] || STK().star || ""}</span>`;
+const mascot = (mood = "happy", size = 120, cls = "") => `<span class="mascot ${cls}" style="--s:${size}px">${MAS()[mood] || ""}</span>`;
+const W_ = w => `(?<![\\p{L}])(?:${w})(?![\\p{L}])`; // khớp nguyên từ, kể cả tiếng Việt có dấu
+const TOPIC_RULES = [
+  ["chào hỏi|giới thiệu|làm quen|kết bạn|small talk|mạng xã hội|nhắn tin|gọi điện", "chat", "sun"],
+  ["sân bay|máy bay|chuyến bay|airport|flight|hành lý|visa", "plane", "sky"],
+  ["khách sạn|homestay|hotel|đặt phòng|ký túc xá", "suitcase", "mint"],
+  ["nhà hàng|quán ăn|gọi món|ăn uống|cà phê|restaurant|thực đơn", "coffee", "coral"],
+  ["phỏng vấn|xin việc|tuyển dụng|interview|ứng viên", "briefcase", "sun"],
+  ["họp|stand-up|code|bug|kỹ thuật|phần mềm|email|tài liệu|báo cáo|ticket|IT|dự án|khách hàng", "laptop", "lilac"],
+  ["hỏi đường|chỉ đường|bản đồ|taxi|tàu|phương tiện|tham quan|du lịch", "map", "mint"],
+  ["mua sắm|cửa hàng|giảm giá|trả giá|shopping|sales|bán hàng", "bag", "pink"],
+  ["hẹn hò|tình cảm|người yêu|gia đình|nuôi dạy", "heart", "pink"],
+  ["bệnh|khám|thuốc|y tế|bác sĩ|bệnh viện|dược", "pill", "coral"],
+  ["thuyết trình|phát biểu|dẫn chương trình|presentation|đám đông", "mic", "lilac"],
+  ["du học|trường học|lớp học|giảng dạy|giáo dục|IELTS|TOEIC|TOEFL|VSTEP|kỳ thi|Writing|Reading|Speaking|Listening", "cap", "sky"],
+  ["ôn tập|củng cố", "book", "mint"]
+].map(([w, s, h]) => [new RegExp(W_(w), "iu"), s, h]);
+const topicStk = t => (TOPIC_RULES.find(([re]) => re.test(t || "")) || [null, "globe", "sky"]).slice(1);
+const GOAL_STK = {communication:"chat", work:"briefcase", travel:"plane", exam:"cap"};
+const STEP_STK = ["book", "sparkle", "pencil", "globe", "chat", "trophy"];
+const WEEK_STK = ["star", "flame", "target", "sparkle", "trophy", "heart", "globe", "book"];
+const confetti = (n = 42) => `<div class="confetti" aria-hidden="true">${Array.from({length:n}, (_, i) => `<i style="left:${(Math.random() * 100).toFixed(1)}%;animation-delay:${(Math.random() * .9).toFixed(2)}s;animation-duration:${(2.4 + Math.random() * 1.8).toFixed(2)}s;background:${["#ffc94a","#ff7a59","#5bb8ff","#4fd1a5","#a78bfa","#ff9ec7"][i % 6]};--rot:${Math.round(Math.random() * 720)}deg"></i>`).join("")}</div>`;
+const BADGES = [
+  {id:"first", name:"Bước đầu tiên", desc:"Hoàn thành buổi học đầu tiên", stk:"star"},
+  {id:"streak3", name:"Lửa nhỏ", desc:"Học 3 ngày liên tiếp", stk:"flame"},
+  {id:"streak7", name:"Lửa bùng cháy", desc:"Học 7 ngày liên tiếp", stk:"sparkle"},
+  {id:"week", name:"Tròn một tuần", desc:"Hoàn thành 5 buổi học", stk:"calendar"},
+  {id:"perfect", name:"Điểm tuyệt đối", desc:"Đạt từ 90 điểm trong một buổi", stk:"trophy"},
+  {id:"speaker", name:"Giọng vàng", desc:"Phát âm đạt từ 80%", stk:"mic"},
+  {id:"listener", name:"Tai thính", desc:"Nghe chép đúng từ 80%", stk:"headphones"},
+  {id:"chatter", name:"Nói như gió", desc:"Role-play đạt từ 80 điểm", stk:"chat"},
+  {id:"words50", name:"Kho 50 từ", desc:"Có 50 từ trong flashcard", stk:"book"},
+  {id:"words100", name:"Kho 100 từ", desc:"Có 100 từ trong flashcard", stk:"globe"},
+  {id:"ace", name:"Thủ khoa Unit", desc:"Kiểm tra định kỳ đạt từ 85%", stk:"target"},
+  {id:"course", name:"Tốt nghiệp", desc:"Hoàn thành một khóa học", stk:"cap"}
+];
+const BADGE = Object.fromEntries(BADGES.map(b => [b.id, b]));
+function checkBadges() {
+  S.badges = S.badges || {}; const got = [];
+  const give = id => { if (!S.badges[id]) { S.badges[id] = today(); got.push(id); } };
+  const last = S.sessions[S.sessions.length - 1], st = streak(), nw = Object.keys(S.cards).length;
+  if (S.sessions.length) give("first"); if (st >= 3) give("streak3"); if (st >= 7) give("streak7");
+  if (doneN() >= 5) give("week"); if (last?.total >= 90) give("perfect");
+  if (last?.scores?.speaking >= 80) give("speaker"); if (last?.scores?.listening >= 80) give("listener"); if (last?.scores?.roleplay >= 80) give("chatter");
+  if (nw >= 50) give("words50"); if (nw >= 100) give("words100");
+  if (S.tests.some(t => t.score >= 85)) give("ace"); if (S.courses.length) give("course");
+  if (got.length) { save(); UI.celebrate = [...(UI.celebrate || []), ...got]; }
+  return got;
+}
+const badgeCard = (b, on = true, date) => `<div class="badge-item ${on ? "" : "locked"}">${stk(b.stk, 60)}<b>${b.name}</b><span>${b.desc}</span>${date ? `<em>${date}</em>` : ""}</div>`;
 const gtLink = (t, sl, tl) => `https://translate.google.com/?sl=${sl}&tl=${tl}&op=translate&text=${encodeURIComponent(t)}`;
 function say(t, rate) { return new Promise(res => { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(String(t).replace(/_+/g, " blank "));
   const v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-US";
@@ -602,7 +655,7 @@ async function startLesson() {
   if (testDue()) return startUnit();
   const idx = S.sessions.length;
   if (S.current && S.current.idx === idx) { view = "lesson"; restoreLessonQuiz(); return render(); }
-  if (!S.lessons[idx]) $("#app").innerHTML = `<div class="wrap"><section class="panel center"><p><span class="spin"></span> ${aiOn() ? `Gemini đang soạn bài học riêng cho bạn... <b class="timer" style="font-size:1rem" data-start="${Date.now()}">0:00</b>` : "Đang chuẩn bị buổi học..."}</p>
+  if (!S.lessons[idx]) $("#app").innerHTML = `<div class="wrap narrow"><section class="panel center loading-card">${mascot("think", 130, "bob")}<p><span class="spin"></span> ${aiOn() ? `Gemini đang soạn bài học riêng cho bạn... <b class="timer" style="font-size:1rem" data-start="${Date.now()}">0:00</b>` : "Đang chuẩn bị buổi học..."}</p>
     ${aiOn() ? `<p class="muted small" id="slowNote" hidden>Gemini đang chậm. Bạn có thể chờ thêm hoặc học bài mẫu ngay.</p><div class="row center"><button data-a="skipWait">Không chờ, dùng bài mẫu</button></div>` : ""}</section></div>`;
   setTimeout(() => { const n = $("#slowNote"); if (n) n.hidden = false; }, 15000);
   if (!S.lessons[idx]) view = "loading";
@@ -635,7 +688,8 @@ function setStep(n) { L().step = n; Q = null; restoreLessonQuiz(); save(); rende
 function vLesson() {
   const l = L(); if (!l) { view = "home"; return vHome(); }
   const head = `<header class="lhead"><div class="row between"><button class="ghost" data-a="exitLesson">← Lưu & thoát</button>
-     <span class="eyebrow">${l.les.remedial ? "Buổi ôn tập" : "Buổi " + (doneN() + 1)} · ${esc(l.les.topic)}</span><span class="muted small">${fmtTime(Date.now() - l.started)}</span></div>
+     <span class="muted small">${fmtTime(Date.now() - l.started)}</span></div>
+     <div class="lesson-title hue-${topicStk(l.les.topic)[1]}">${stk(topicStk(l.les.topic)[0], 64, "", -8)}<div class="grow"><p class="eyebrow">${l.les.remedial ? "Buổi ôn tập" : "Buổi " + (doneN() + 1)} · Bước ${l.step + 1}/6: ${STEPS[l.step]}</p><h2>${esc(l.les.topic)}</h2></div>${stk(STEP_STK[l.step], 46, "step-stk", 10)}</div>
      <ol class="stepper">${STEPS.map((s, k) => `<li class="${k < l.step ? "done" : k === l.step ? "cur" : ""}"><span>${k + 1}</span><em>${s}</em></li>`).join("")}</ol></header>`;
   return `<div class="wrap narrow">${head}${[step1, step2, step3, step4, step5, step6][l.step]()}</div>`;
 }
@@ -652,7 +706,7 @@ function step2() {
   if (l.vi < n) {
     const w = ws[l.vi];
     return `<section class="panel"><div class="row between"><span class="tag">Từ ${l.vi + 1}/${n}</span><div class="dots">${ws.map((_, k) => `<i class="${k <= l.vi ? "on" : ""}"></i>`).join("")}</div></div>
-      <div class="vocab"><div class="row"><h2 class="word">${esc(w.w)}</h2><button class="round" data-a="speak" data-v="${esc(w.w)}" aria-label="Nghe">🔊</button></div>
+      <div class="vocab">${stk(topicStk(l.les.topic)[0], 70, "corner", 12)}<div class="row"><h2 class="word">${esc(w.w)}</h2><button class="round" data-a="speak" data-v="${esc(w.w)}" aria-label="Nghe">🔊</button></div>
       <div class="ipa">${esc(w.ipa)}${w.pos ? ` · <span class="tag">${esc(w.pos)}</span>` : ""}</div>
       <p class="meaning">${esc(w.vi)}</p>
       <div class="example"><p>${tw(w.ex)} <button class="mini" data-a="speak" data-v="${esc(w.ex)}">🔊 Nghe câu</button></p>${w.ex_vi ? `<p class="muted">${twv(w.ex_vi)}</p>` : ""}</div></div>
@@ -819,7 +873,11 @@ function step6() {
   const parts = keys.map(([k]) => sc[k]).filter(x => x != null), total = Math.round(avg(parts));
   const ms = lessonMistakes(l), g = l.les.grammar;
   const nextTest = (doneN() + 1) % 5 === 0;
-  return `<section class="panel"><span class="eyebrow">Tổng kết buổi học</span><h2>${esc(l.les.topic)}</h2>
+  const stars = total >= 85 ? 3 : total >= 65 ? 2 : total >= 40 ? 1 : 0;
+  return `<section class="panel summary-hero">${total >= 75 ? confetti() : ""}<div class="row nowrap">${mascot(total >= 60 ? "cheer" : "think", 110, "bob")}
+     <div class="grow"><span class="eyebrow">Tổng kết buổi học</span><h2>${esc(l.les.topic)}</h2>
+     <div class="stars">${[0, 1, 2].map(i => stk("star", 46, i < stars ? "" : "dim", (i - 1) * 12)).join("")}</div>
+     <p class="muted">${stars === 3 ? "Xuất sắc! Bạn làm rất tốt." : stars === 2 ? "Tốt lắm! Thêm chút nữa là đạt 3 sao." : stars === 1 ? "Khá ổn. Ôn lại phần chưa vững nhé." : "Đừng nản, buổi sau sẽ tốt hơn!"}</p></div></div>
      <div class="scorebig"><b>${total}</b><span>điểm trung bình</span></div>
      <div class="bars">${keys.map(([k, n]) => `<div class="bar"><span>${n}</span><div><i style="width:${sc[k] ?? 0}%"></i></div><b>${sc[k] ?? "–"}</b></div>`).join("")}</div></section>
    <section class="panel"><h3>Từ vựng hôm nay (${l.les.words.length} từ, đã vào flashcard)</h3>
@@ -833,7 +891,7 @@ function finishLesson(total) {
   const l = L();
   S.sessions.push({idx:l.idx, course:l.course, date:today(), topic:l.les.topic, words:l.les.words.map(w => w.w), grammar:l.les.grammar?.name || "",
     scores:l.scores, total:Number(total), mistakes:lessonMistakes(l), dur:Math.round((Date.now() - l.started) / 60000), remedial:!!l.les.remedial, unit:Math.floor(Math.max(0, doneN() - (l.les.remedial ? 1 : 0)) / 5)});
-  S.current = null; Q = null; save(); view = "home"; render(); scrollTo(0, 0);
+  S.current = null; Q = null; checkBadges(); save(); view = "home"; render(); scrollTo(0, 0);
   toast("Đã lưu buổi học. Giỏi lắm!");
   prefetchNext();
 }
@@ -866,12 +924,12 @@ function finishUnit(q) {
   else if (p >= 60) { adj = "Bạn đang theo kịp lộ trình. Giữ nguyên nhịp độ."; }
   else { S.difficulty = Math.max(-1, S.difficulty - 1); S.remedial = wrongWords.map(w => S.cards[w.toLowerCase()]?.w).filter(Boolean); adj = "Hệ thống đã thêm 1 buổi ôn tập vào lộ trình để củng cố các từ còn sai."; }
   const t = {course:S.path.id, unit:q.unit, date:today(), score:p, skills:ss, wrong:wrongWords, dur:Math.round((Date.now() - q.start) / 60000), adj};
-  S.tests.push(t); save();
+  S.tests.push(t); checkBadges(); save();
   Q = null; view = "unitResult"; UI.lastTest = t; render();
 }
 function vUnitResult() {
   const t = UI.lastTest;
-  return `<div class="wrap narrow"><section class="panel"><span class="eyebrow">Kiểm tra định kỳ · Unit ${t.unit}</span><div class="scorebig"><b>${t.score}%</b><span>${t.score >= 85 ? "Xuất sắc" : t.score >= 60 ? "Đạt" : "Cần ôn thêm"}</span></div>
+  return `<div class="wrap narrow"><section class="panel summary-hero">${t.score >= 85 ? confetti(56) : ""}<div class="row nowrap">${mascot(t.score >= 60 ? "cheer" : "think", 110, "bob")}${stk(t.score >= 85 ? "trophy" : t.score >= 60 ? "star" : "book", 70, "", -8)}</div><span class="eyebrow">Kiểm tra định kỳ · Unit ${t.unit}</span><div class="scorebig"><b>${t.score}%</b><span>${t.score >= 85 ? "Xuất sắc" : t.score >= 60 ? "Đạt" : "Cần ôn thêm"}</span></div>
     <div class="bars">${Object.entries(t.skills).map(([k, v]) => `<div class="bar"><span>${SKILL_VI[k] || k}</span><div><i style="width:${v}%"></i></div><b>${v}</b></div>`).join("")}</div>
     <p class="fb">${esc(t.adj)}</p>
     ${t.wrong.length ? `<h3>Từ cần ôn lại</h3><p>${t.wrong.map(w => `<span class="chip">${esc(w)}</span>`).join(" ")}</p>` : ""}
@@ -884,10 +942,10 @@ function vUnitResult() {
 const newSv = (p) => p ? Object.assign({subs:[], job:""}, JSON.parse(JSON.stringify(p))) : {name:ME?.name || "", goal:"communication", fields:[], subs:[], job:"", minutes:30, interest:"", weak:[], remind:"20:00", deadline:""};
 function vSurvey() {
   const s = SV, g = s.goal, edit = !!S.level;
-  return `<div class="wrap narrow"><section class="panel hero"><span class="eyebrow">${edit ? "Cập nhật mục tiêu" : "Bước 1/2 · Khảo sát"}</span><h1>Bạn học tiếng Anh để làm gì?</h1>
+  return `<div class="wrap narrow"><section class="panel hero with-art"><div class="hero-art">${mascot("happy", 116, "bob")}</div><span class="eyebrow">${edit ? "Cập nhật mục tiêu" : "Bước 1/2 · Khảo sát"}</span><h1>Bạn học tiếng Anh để làm gì?</h1>
     <p class="muted">Câu trả lời quyết định chủ đề, từ vựng và tình huống role-play trong từng buổi học.</p></section>
    <section class="panel"><label for="sv-name"><h3>Bạn tên gì?</h3></label><input id="sv-name" data-sv="name" value="${esc(s.name)}" placeholder="Tên để app xưng hô">
-    <h3>Mục tiêu chính</h3><div class="choices">${GOALS.map(([k, t]) => `<button class="choice ${g === k ? "sel" : ""}" data-a="svGoal" data-v="${k}">${t}</button>`).join("")}</div>
+    <h3>Mục tiêu chính</h3><div class="choices">${GOALS.map(([k, t]) => `<button class="choice ${g === k ? "sel" : ""}" data-a="svGoal" data-v="${k}">${stk(GOAL_STK[k], 40, "", 0)}<span>${t}</span></button>`).join("")}</div>
     <h3>${g === "exam" ? "Kỳ thi bạn nhắm tới" : g === "work" ? "Lĩnh vực công việc" : g === "travel" ? "Hình thức đi nước ngoài" : "Bạn muốn giao tiếp trong tình huống nào"} <span class="muted normal">(chọn một hoặc nhiều)</span></h3>
     <div class="chips">${FIELDS[g].map(([f], k) => `<button class="chip-btn ${s.fields.includes(f) ? "sel" : ""}" data-a="svField" data-v="${k}">${f}</button>`).join("")}</div>
     ${s.fields.length ? `<div class="subs"><h3>${g === "exam" ? "Kỹ năng cần luyện nhiều nhất" : "Tình huống cụ thể bạn hay gặp"} <span class="muted normal">(chọn càng đúng, bài học càng sát)</span></h3>
@@ -904,7 +962,7 @@ function vSurvey() {
     <div class="row">${edit ? `<button data-a="go" data-v="settings">Hủy</button>` : ""}<button class="primary" data-a="svSubmit" ${s.fields.length ? "" : "disabled"}>${!s.fields.length ? "Chọn ít nhất một lĩnh vực" : edit ? "Lưu mục tiêu" : "Tiếp tục: kiểm tra trình độ"}</button></div></section></div>`;
 }
 function vPlaceIntro() {
-  return `<div class="wrap narrow"><section class="panel hero"><span class="eyebrow">Bước 2/2 · Kiểm tra trình độ</span><h1>Bài test đầu vào thích ứng</h1>
+  return `<div class="wrap narrow"><section class="panel hero with-art"><div class="hero-art">${mascot("think", 116, "bob")}</div><span class="eyebrow">Bước 2/2 · Kiểm tra trình độ</span><h1>Bài test đầu vào thích ứng</h1>
     <p>${PLACEMENT_LEN} câu, khoảng 5 phút. Trả lời đúng thì câu sau khó hơn, sai thì dễ hơn, để xác định chính xác level của bạn từ A0 đến C1.</p>
     <p class="muted">Không biết thì chọn "Tôi không biết", đừng đoán, kết quả sẽ chính xác hơn.</p>
     <button class="primary" data-a="startPlacement">Bắt đầu kiểm tra</button>
@@ -912,7 +970,7 @@ function vPlaceIntro() {
 }
 function vPlaceResult() {
   const p = S.placement, i = lvIdx(p.level), to = LEVELS[Math.min(5, i + 1)], weeks = courseWeeks(p.level, S.profile);
-  return `<div class="wrap narrow"><section class="panel hero"><span class="eyebrow">Kết quả kiểm tra</span>
+  return `<div class="wrap narrow"><section class="panel hero with-art">${confetti(30)}<div class="hero-art">${mascot("cheer", 116, "bob")}</div><span class="eyebrow">Kết quả kiểm tra</span>
     <div class="levelbadge">${p.level}</div><h1>${LEVEL_VI[p.level]}</h1>
     <p>Bạn trả lời đúng ${p.correct}/${p.total} câu.</p>
     <div class="ladder">${LEVELS.map((l, k) => `<span class="${k === i ? "cur" : k === i + 1 ? "next" : k < i ? "past" : ""}">${l}</span>`).join("")}</div>
@@ -924,7 +982,7 @@ function vQuiz() {
   if (!Q) { view = "home"; return vHome(); }
   if (Q.mode === "review" && Q.done) {
     const ok = Q.res.filter(r => r.ok).length;
-    return `<div class="wrap narrow"><section class="panel center"><h2>Xong phiên ôn tập</h2><div class="scorebig"><b>${ok}/${Q.res.length}</b><span>câu đúng</span></div>
+    return `<div class="wrap narrow"><section class="panel center">${confetti(30)}${mascot("cheer", 110, "bob")}<h2>Xong phiên ôn tập</h2><div class="scorebig"><b>${ok}/${Q.res.length}</b><span>câu đúng</span></div>
       <div class="row center"><button class="primary" data-a="go" data-v="review">Về trang Ôn tập</button></div></section></div>`;
   }
   const title = Q.mode === "placement" ? "Kiểm tra trình độ" : Q.mode === "unit" ? `Kiểm tra định kỳ · Unit ${Q.unit}` : "Ôn tập flashcard";
@@ -932,44 +990,66 @@ function vQuiz() {
    ${Q.mode === "placement" && !Q.pick ? `<div class="center"><button class="ghost" data-a="pick" data-v="-1">Tôi không biết</button></div>` : ""}</div>`;
 }
 
+function greetLine() {
+  const h = new Date().getHours();
+  if (doneToday()) return "Hôm nay bạn đã học rồi, tuyệt vời! Ôn thêm vài thẻ flashcard cho nhớ lâu nhé.";
+  if (h < 11) return "Chào buổi sáng! Một buổi học ngắn giúp cả ngày nói tiếng Anh tự tin hơn.";
+  if (h < 14) return "Nghỉ trưa học một chút nhé, chỉ cần " + (S.profile?.minutes || 30) + " phút thôi.";
+  if (h < 18) return "Buổi chiều vui vẻ! Bài học hôm nay đang chờ bạn.";
+  return "Buổi tối thư thả là lúc học hiệu quả nhất. Bắt đầu thôi!";
+}
 function vHome() {
   if (courseDone()) return vCourseDone();
   const n = doneN(), p = S.path, td = testDue(), cur = S.current && S.current.idx === S.sessions.length ? S.current : null;
   const nextLes = S.lessons[S.sessions.length];
+  const topic = cur ? cur.les.topic : nextLes?.topic || "";
+  const [ts, hue] = td ? ["target", "coral"] : topicStk(topic + " " + (nextSituation() || "") + " " + fieldName());
   const days = ["T2","T3","T4","T5","T6","T7","CN"], d0 = new Date(); d0.setDate(d0.getDate() - ((d0.getDay() + 6) % 7));
   const week = days.map((k, i) => { const d = new Date(d0); d.setDate(d0.getDate() + i); const ds = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-    return `<div class="day ${S.sessions.some(s => s.date === ds) ? "on" : ""} ${ds === today() ? "today" : ""}"><span>${k}</span><i></i></div>`; }).join("");
-  const due = dueCards().length, avgScore = Math.round(avg(courseSessions().slice(-5).map(s => s.total)));
+    const on = S.sessions.some(s => s.date === ds); return `<div class="day ${on ? "on" : ""} ${ds === today() ? "today" : ""}"><span>${k}</span><i>${on ? stk("flame", 22, "", 0) : ""}</i></div>`; }).join("");
+  const due = dueCards().length, avgScore = Math.round(avg(courseSessions().slice(-5).map(s => s.total))), st = streak();
+  const units = Math.ceil(p.total / 5), prog = pct(n, p.total);
+  const celebrate = UI.celebrate?.length ? `<section class="panel celebrate">${confetti()}<div class="row nowrap">${mascot("cheer", 100, "bob")}<div class="grow"><p class="eyebrow">Nhãn dán mới</p><h2>Bạn vừa mở khóa ${UI.celebrate.length} nhãn dán!</h2></div></div>
+     <div class="badge-row">${UI.celebrate.map(id => BADGE[id] ? badgeCard(BADGE[id]) : "").join("")}</div><div class="row"><button class="primary" data-a="closeCelebrate">Tuyệt quá!</button><a href="#" class="link" data-a="go" data-v="history">Xem bộ sưu tập →</a></div></section>` : "";
   return `<div class="wrap">
-   <section class="hello"><div><p class="eyebrow">${esc(focusName())}</p><h1>Chào ${esc(displayName() || "bạn")}!</h1>
-     <p class="muted">Khóa ${p.from} → ${p.to} · Buổi ${Math.min(n + 1, p.total)}/${p.total} · Tuần ${Math.min(p.weeks, Math.floor(n / 5) + 1)}/${p.weeks}</p></div>
-     <div class="week">${week}</div></section>
-   ${remindDue() ? `<section class="panel notice"><b>Đã đến giờ học (${remindTime()})</b> <span class="muted">Bạn chưa học hôm nay. Chỉ cần ${S.profile.minutes} phút để giữ chuỗi ngày học.</span></section>` : ""}
+   ${celebrate}
+   <section class="hero-home">
+     <div class="hh-text"><p class="eyebrow">${esc(focusName())}</p><h1>Chào ${esc(displayName() || "bạn")}!</h1><p class="hh-line">${greetLine()}</p>
+       <div class="hh-chips"><span>${stk("flame", 22, "", 0)} ${st} ngày liên tiếp</span><span>${stk("cap", 22, "", 0)} Khóa ${p.from} → ${p.to}</span><span>${stk("calendar", 22, "", 0)} Tuần ${Math.min(p.weeks, Math.floor(n / 5) + 1)}/${p.weeks}</span></div>
+       <div class="week">${week}</div></div>
+     <div class="hh-art">${mascot(doneToday() ? "cheer" : "happy", 168, "bob")}${stk("star", 40, "float f1", -12)}${stk("sparkle", 34, "float f2", 8)}${stk("book", 44, "float f3", -6)}</div>
+   </section>
+   ${remindDue() ? `<section class="panel notice row nowrap">${stk("calendar", 40, "", -6)}<div><b>Đã đến giờ học (${remindTime()})</b><br><span class="muted">Bạn chưa học hôm nay. Chỉ cần ${S.profile.minutes} phút để giữ chuỗi ngày học.</span></div></section>` : ""}
    <div class="grid-main">
-    <section class="panel today">
+    <section class="panel todaycard hue-${hue}">
+     <div class="cover">${stk(ts, 104, "big")}<span class="cover-tag">${td ? "Kiểm tra định kỳ" : cur ? `Đang ở bước ${cur.step + 1}/6` : `Buổi ${n + 1}/${p.total}`}</span></div>
+     <div class="today-body">
      ${td ? `<span class="eyebrow">Đến hạn</span><h2>Kiểm tra định kỳ Unit ${n / 5}</h2>
-        <p class="muted">Bạn đã xong 5 buổi học. Bài kiểm tra gồm từ vựng, ngữ pháp, chính tả, dịch, nghe và nói, khoảng 15 phút. Kết quả dùng để điều chỉnh lộ trình.</p>
+        <p class="muted">Bạn đã xong 5 buổi học. Bài kiểm tra gồm từ vựng, ngữ pháp, chính tả, dịch, nghe và nói, khoảng 15 phút.</p>
         <button class="primary big" data-a="startUnit">Làm bài kiểm tra</button>`
      : `<span class="eyebrow">${doneToday() && !cur ? "Bạn đã học hôm nay" : "Buổi học hôm nay"}</span>
         <h2>${cur ? esc(cur.les.topic) : nextLes ? esc(nextLes.topic) : `Buổi ${n + 1}`}</h2>
-        ${cur ? `<p class="muted">Đang ở bước ${cur.step + 1}/6: ${STEPS[cur.step]}</p>` : `<p class="muted">${STEPS.join(" → ")}</p>`}
         ${!cur && nextLes ? `<p class="small"><span class="tag good">Đã soạn xong</span> ${nextLes.ai ? "Bài do Gemini soạn riêng cho bạn" : "Bài mẫu"}</p>` : !cur && INFLIGHT[S.sessions.length] ? `<p class="small muted"><span class="spin"></span> Gemini đang soạn sẵn buổi này...</p>` : ""}
-        <div class="progress"><i style="width:${cur ? (cur.step / 6 * 100) : 0}%"></i></div>
+        <ol class="steps-mini">${STEPS.map((t, k) => `<li class="${cur && k < cur.step ? "done" : cur && k === cur.step ? "cur" : ""}">${stk(STEP_STK[k], 30, "", 0)}<span>${t}</span></li>`).join("")}</ol>
         <button class="primary big" data-a="startLesson">${cur ? "Học tiếp" : doneToday() ? "Học thêm buổi tiếp theo" : "Bắt đầu buổi học"}</button>`}
      ${AI.on ? "" : `<p class="fb small">Gemini chưa hoạt động (${esc(AI.msg)}). App dùng bài học mẫu và chấm điểm cơ bản.</p>`}
+     </div></section>
+    <section class="tiles">
+      <div class="tile hue-coral">${stk("flame", 44)}<b>${st}</b><span>ngày học liên tiếp</span></div>
+      <div class="tile hue-mint">${stk("book", 44)}<b>${Object.keys(S.cards).length}</b><span>từ đã học</span></div>
+      <div class="tile hue-sun">${stk("star", 44)}<b>${avgScore || "–"}</b><span>điểm TB 5 buổi</span></div>
+      <button class="tile hue-sky" data-a="${due ? "startFlip" : "go"}" data-v="${due ? "due" : "review"}">${stk("headphones", 44)}<b>${due}</b><span>${due ? "thẻ cần ôn · bấm để ôn" : "thẻ cần ôn"}</span></button>
     </section>
-    <section class="panel"><div class="stats col">
-      <div class="stat"><b>${streak()}</b><span>ngày học liên tiếp</span></div>
-      <div class="stat"><b>${Object.keys(S.cards).length}</b><span>từ trong flashcard</span></div>
-      <div class="stat"><b>${avgScore || "–"}</b><span>điểm TB 5 buổi gần nhất</span></div></div>
-      ${due ? `<button data-a="startFlip" data-v="due">Ôn ${due} thẻ đến hạn</button>` : `<p class="muted small">Không có thẻ nào đến hạn ôn.</p>`}</section>
    </div>
-   <section class="panel"><div class="row between"><h3>Tiến độ khóa học</h3><a href="#" class="link" data-a="go" data-v="path">Xem lộ trình →</a></div>
-    <div class="progress"><i style="width:${pct(n, p.total)}%"></i></div><p class="muted small">${n}/${p.total} buổi · ${courseTests().length}/${Math.ceil(p.total / 5)} bài kiểm tra</p></section></div>`;
+   <section class="panel"><div class="row between"><h3 class="row">${stk("map", 32, "", -4)} Hành trình khóa học</h3><a href="#" class="link" data-a="go" data-v="path">Xem lộ trình →</a></div>
+    <div class="track"><div class="track-fill" style="width:${prog}%"></div>
+     ${Array.from({length:units}, (_, u) => { const left = Math.min(100, (u + 1) * 5 / p.total * 100), done = courseTests()[u]; return `<span class="mile ${done ? "done" : ""}" style="left:${left}%" title="Kiểm tra Unit ${u + 1}">${stk(done ? "trophy" : "target", 26, "", 0)}</span>`; }).join("")}
+     <span class="track-me" style="left:${prog}%">${mascot("happy", 44)}</span></div>
+    <p class="muted small">${n}/${p.total} buổi · ${courseTests().length}/${units} bài kiểm tra · cờ là các bài kiểm tra định kỳ</p></section></div>`;
 }
 function vCourseDone() {
   const p = S.path, ts = courseTests(), ss = courseSessions(), i = lvIdx(p.to);
-  return `<div class="wrap narrow"><section class="panel hero center"><span class="eyebrow">Hoàn thành khóa học</span><div class="levelbadge">${p.to}</div>
+  return `<div class="wrap narrow"><section class="panel hero center">${confetti(60)}${mascot("cheer", 140, "bob")}<span class="eyebrow">Hoàn thành khóa học</span><div class="levelbadge">${p.to}</div>
     <h1>Chúc mừng ${esc(displayName() || "bạn")}!</h1><p>Bạn đã hoàn thành ${ss.length} buổi học và ${ts.length} bài kiểm tra của khóa ${p.from} → ${p.to}.</p>
     <div class="stats"><div class="stat"><b>${Math.round(avg(ss.map(s => s.total)))}</b><span>điểm TB buổi học</span></div><div class="stat"><b>${Math.round(avg(ts.map(t => t.score)))}%</b><span>điểm TB kiểm tra</span></div><div class="stat"><b>${Object.keys(S.cards).length}</b><span>từ đã học</span></div></div>
     ${i < 5 ? `<button class="primary big" data-a="nextCourse">Bắt đầu khóa ${p.to} → ${LEVELS[i + 1]}</button>` : `<button class="primary big" data-a="nextCourse">Tiếp tục nâng cao trình độ C1</button>`}</section></div>`;
@@ -983,14 +1063,14 @@ function vPath() {
       const no = u * 5 + k; if (no >= p.total) break;
       const s = regSessions()[no], les = s ? S.lessons[s.idx] : (no === n ? S.lessons[S.sessions.length] : null);
       const st = s ? "done" : no === n && !testDue() ? "now" : "locked";
-      cells.push(`<li class="${st}"><span class="num">${no + 1}</span><div><b>${esc(s?.topic || les?.topic || (st === "locked" ? "Chưa mở" : "Buổi tiếp theo"))}</b>${s ? `<span class="muted small">${s.date} · ${s.total} điểm${s.remedial ? " · ôn tập" : ""}</span>` : ""}</div>${s ? `<em>${s.total}</em>` : st === "now" ? `<button class="mini primary" data-a="startLesson">Học</button>` : ""}</li>`);
+      cells.push(`<li class="${st}"><span class="num">${no + 1}</span>${s || les ? stk(topicStk(s?.topic || les?.topic)[0], 32, "", 0) : ""}<div><b>${esc(s?.topic || les?.topic || (st === "locked" ? "Chưa mở" : "Buổi tiếp theo"))}</b>${s ? `<span class="muted small">${s.date} · ${s.total} điểm${s.remedial ? " · ôn tập" : ""}</span>` : ""}</div>${s ? `<em>${s.total}</em>` : st === "now" ? `<button class="mini primary" data-a="startLesson">Học</button>` : ""}</li>`);
     }
     courseSessions().filter(s => s.remedial && s.unit === u).forEach(s => cells.push(`<li class="done"><span class="num">+</span><div><b>${esc(s.topic)}</b><span class="muted small">${s.date} · ${s.total} điểm</span></div><em>${s.total}</em></li>`));
     const t = tests[u], tst = t ? "done" : (n >= (u + 1) * 5 ? "now" : "locked");
-    html += `<section class="panel unit ${n >= u * 5 && n < (u + 1) * 5 + 1 ? "active" : ""}"><div class="row between"><h3>Tuần ${u + 1}</h3><span class="muted small">${Math.min(5, Math.max(0, n - u * 5))}/5 buổi</span></div>
+    html += `<section class="panel unit ${n >= u * 5 && n < (u + 1) * 5 + 1 ? "active" : ""}"><div class="row between"><h3 class="row">${stk(WEEK_STK[u % WEEK_STK.length], 34, "", 0)} Tuần ${u + 1}</h3><span class="muted small">${Math.min(5, Math.max(0, n - u * 5))}/5 buổi</span></div>
       <ol class="sessions">${cells.join("")}<li class="test ${tst}"><span class="num">✓</span><div><b>Kiểm tra định kỳ Unit ${u + 1}</b>${t ? `<span class="muted small">${t.date}</span>` : ""}</div>${t ? `<em>${t.score}%</em>` : tst === "now" ? `<button class="mini primary" data-a="startUnit">Làm bài</button>` : ""}</li></ol></section>`;
   }
-  return `<div class="wrap"><section class="hello"><div><p class="eyebrow">Lộ trình của bạn</p><h1>${p.from} → ${p.to}</h1><p class="muted">${p.weeks} tuần · ${p.total} buổi · bắt đầu ${p.start} · ${esc(focusName())}</p></div>
+  return `<div class="wrap"><section class="hello">${stk("map", 72, "", -6)}<div><p class="eyebrow">Lộ trình của bạn</p><h1>${p.from} → ${p.to}</h1><p class="muted">${p.weeks} tuần · ${p.total} buổi · bắt đầu ${p.start} · ${esc(focusName())}</p></div>
     <div class="ladder">${LEVELS.map((l, k) => `<span class="${l === p.from ? "cur" : l === p.to ? "next" : k < lvIdx(p.from) ? "past" : ""}">${l}</span>`).join("")}</div></section>
     <div class="progress"><i style="width:${pct(n, p.total)}%"></i></div>${html}</div>`;
 }
@@ -998,7 +1078,7 @@ function vReview() {
   const all = cardList(), due = dueCards(), hard = hardCards();
   const tab = UI.rtab;
   const tabs = `<div class="tabs">${[["due", `Đến hạn (${due.length})`], ["hard", `Từ khó (${hard.length})`], ["all", `Tất cả (${all.length})`]].map(([k, t]) => `<button class="${tab === k ? "sel" : ""}" data-a="rtab" data-v="${k}">${t}</button>`).join("")}</div>`;
-  if (!all.length) return `<div class="wrap narrow"><section class="panel center"><h2>Chưa có flashcard</h2><p class="muted">Từ vựng trong mỗi buổi học và từ bạn tra sẽ tự động được thêm vào đây.</p></section></div>`;
+  if (!all.length) return `<div class="wrap narrow"><section class="panel center">${mascot("think", 120, "bob")}<h2>Chưa có flashcard</h2><p class="muted">Từ vựng trong mỗi buổi học và từ bạn tra sẽ tự động được thêm vào đây.</p></section></div>`;
   const counts = {"Mới":0, "Đang học":0, "Đang nhớ":0, "Đã thuộc":0}; all.forEach(c => counts[cardState(c)]++);
   let body;
   if (tab === "all") {
@@ -1019,7 +1099,7 @@ function vReview() {
       : `<p class="muted">${tab === "due" ? "Bạn đã ôn hết thẻ đến hạn. Quay lại sau nhé." : "Chưa có từ nào bị quên nhiều lần."}</p>
          ${tab === "due" ? `<button data-a="startFlip" data-v="all">Ôn tự do 20 thẻ bất kỳ</button>` : ""}`;
   }
-  return `<div class="wrap"><section class="hello"><div><p class="eyebrow">Ôn tập</p><h1>Flashcard của bạn</h1><p class="muted">Lặp lại ngắt quãng: từ bạn nhớ tốt sẽ xuất hiện thưa dần (1, 3, 7, 16... ngày), từ hay quên sẽ quay lại sớm.</p></div></section>
+  return `<div class="wrap"><section class="hello">${stk("headphones", 72, "", -8)}<div><p class="eyebrow">Ôn tập</p><h1>Flashcard của bạn</h1><p class="muted">Lặp lại ngắt quãng: từ bạn nhớ tốt sẽ xuất hiện thưa dần (1, 3, 7, 16... ngày), từ hay quên sẽ quay lại sớm.</p></div></section>
    <section class="panel"><div class="stats">${Object.entries(counts).map(([k, v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join("")}</div></section>
    <section class="panel">${tabs}${body}</section></div>`;
 }
@@ -1041,8 +1121,10 @@ function vFlip() {
 function vHistory() {
   const ss = S.sessions.slice().reverse(), ts = S.tests.slice().reverse();
   const chart = S.sessions.slice(-20);
-  return `<div class="wrap"><section class="hello"><div><p class="eyebrow">Lịch sử</p><h1>Kết quả học tập</h1>
+  return `<div class="wrap"><section class="hello">${stk("trophy", 72, "", 8)}<div><p class="eyebrow">Lịch sử</p><h1>Kết quả học tập</h1>
     <p class="muted">${S.sessions.length} buổi học · ${S.tests.length} bài kiểm tra · tổng ${S.sessions.reduce((a, s) => a + (s.dur || 0), 0)} phút</p></div></section>
+   <section class="panel"><div class="row between"><h3>Bộ sưu tập nhãn dán</h3><span class="tag">${Object.keys(S.badges || {}).length}/${BADGES.length}</span></div>
+     <div class="badge-grid">${BADGES.map(b => badgeCard(b, !!S.badges?.[b.id], S.badges?.[b.id])).join("")}</div></section>
    ${chart.length > 1 ? `<section class="panel"><h3>Điểm 20 buổi gần nhất</h3><div class="spark">${chart.map(s => `<i style="height:${Math.max(4, s.total)}%" title="${esc(s.topic)}: ${s.total}"></i>`).join("")}</div></section>` : ""}
    <section class="panel"><h3>Hành trình level</h3><ul class="timeline">
      ${S.placement ? `<li><b>${S.placement.level}</b> Test đầu vào · ${S.placement.date}</li>` : ""}
@@ -1059,7 +1141,7 @@ function vHistory() {
 }
 function vSettings() {
   const fs = pref("ep_fs") || "m", th = pref("ep_theme") || "auto";
-  return `<div class="wrap narrow"><section class="hello"><div><p class="eyebrow">Cài đặt</p><h1>Tài khoản & tùy chỉnh</h1></div></section>
+  return `<div class="wrap narrow"><section class="hello">${mascot("happy", 80)}<div><p class="eyebrow">Cài đặt</p><h1>Tài khoản & tùy chỉnh</h1></div></section>
    <section class="panel account"><div class="row nowrap">
      <div class="bigavatar">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc((displayName() || ME?.email || "?")[0].toUpperCase())}</div>
      <div class="who"><b>${esc(displayName() || "Chưa đặt tên")}</b><span>${esc(ME?.email || "Không lấy được email")}</span>
@@ -1288,7 +1370,7 @@ const ACT = {
   vprev: () => { const l = L(); l.vi = Math.max(0, l.vi - 1); render(); },
   grade3, grade4, rpSend, rpHint, rpEnd, rpAgain: () => { L().rpEval = null; render(); },
   finishLesson: v => finishLesson(v),
-  nextCourse: () => { S.courses.push({...S.path, end:today()}); S.level = S.path.to; S.difficulty = 0; buildPath(); view = "home"; render(); toast("Bắt đầu khóa mới!"); },
+  nextCourse: () => { S.courses.push({...S.path, end:today()}); checkBadges(); S.level = S.path.to; S.difficulty = 0; buildPath(); view = "home"; render(); toast("Bắt đầu khóa mới!"); },
   rtab: v => { UI.rtab = v; render(); },
   startFlip: v => { const set = v === "hard" ? hardCards() : v === "all" ? shuffle(cardList()).slice(0, 20) : dueCards();
     FC = {keys:set.slice(0, 30).map(c => c.w.w.toLowerCase()), i:0, flip:false}; view = "flip"; render(); },
@@ -1310,6 +1392,7 @@ const ACT = {
   pushOn: (v, btn) => enablePush(btn), pushOff: disablePush, pushTest: (v, btn) => testPush(btn),
   remEvery: v => { S.profile.remindEvery = Number(v); save(); render(); },
   remToggle: () => { S.profile.remindOn = !remindCfg().on; save(); render(); toast(S.profile.remindOn ? "Đã bật nhắc học" : "Đã tắt nhắc học"); },
+  closeCelebrate: () => { UI.celebrate = []; render(); },
   ics: downloadIcs,
   notify: async () => { try { await Notification.requestPermission(); } catch (e) {} render(); },
   checkAI: async (v, btn) => { btn.innerHTML = `<span class="spin"></span>`; await checkAI(); render(); toast(AI.on ? "Key và model hợp lệ" : "Gemini chưa dùng được: " + AI.msg); },
@@ -1369,7 +1452,7 @@ function renderHeader() {
   const tabs = [["home", "Trang chủ"], ["path", "Lộ trình"], ["review", "Ôn tập"], ["history", "Lịch sử"]];
   const due = dueCards().length, name = displayName() || ME?.email || "Bạn";
   const active = view === "settings" ? "" : view;
-  h.innerHTML = `<div class="hin"><a href="#" class="brand" data-a="go" data-v="home"><span class="logo">LT</span><span><b>Lộ Trình</b><small>Tiếng Anh cá nhân hóa</small></span></a>
+  h.innerHTML = `<div class="hin"><a href="#" class="brand" data-a="go" data-v="home"><span class="logo">${mascot("happy", 40)}</span><span><b>Lộ Trình</b><small>Tiếng Anh cá nhân hóa</small></span></a>
     ${focus ? "" : `<nav class="tabs-top" aria-label="Điều hướng">${tabs.map(([k, t]) => `<a href="#" class="${active === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : ""}</a>`).join("")}</nav>`}
     <div class="tools">${S.level ? `<span class="lvl" title="Trình độ hiện tại">${S.level}</span>` : ""}
      <div class="usermenu"><button class="avatar" data-a="menu" aria-label="Tài khoản ${esc(ME?.email || "")}">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc(name[0].toUpperCase())}</button>
@@ -1404,6 +1487,7 @@ function render() {
    ===================================================================== */
 (async () => {
   applyPrefs();
+  if (!window.STICKERS) await new Promise(r => { const sc = document.createElement("script"); sc.src = "/stickers.js?v=1"; sc.onload = r; sc.onerror = r; document.head.appendChild(sc); });
   if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
   swReg().then(checkPush).then(() => { if (view === "settings") render(); });
   const app = $("#app");
