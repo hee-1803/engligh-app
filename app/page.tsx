@@ -8,7 +8,7 @@ export default function Home() {
       <header id="hdr" />
       <main id="app" />
       <nav id="bnav" hidden aria-label="Điều hướng" />
-      <Script src="/englishpath.js?v=13" strategy="afterInteractive" />
+      <Script src="/englishpath.js?v=14" strategy="afterInteractive" />
     </>
   );
 }

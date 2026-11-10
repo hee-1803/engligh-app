@@ -289,6 +289,8 @@ const pref = (k, v) => { try { if (v === undefined) return localStorage.getItem(
 const blank = () => ({v:4, profile:null, level:null, target:null, placement:null, path:null, sessions:[], cards:{}, tests:[], lessons:{}, dict:{}, current:null, remedial:[], difficulty:0, courses:[]});
 let S = blank();
 let AI = {on:false, msg:"Đang kiểm tra..."};
+let ME = null; // tài khoản đang đăng nhập: {email, name, avatar, provider}
+const displayName = () => S.profile?.name || ME?.name || "";
 let view = "home", UI = {rtab:"due", q:"", hx:null, menu:false};
 let Q = null;      // bài quiz đang làm (test đầu vào, kiểm tra định kỳ, ôn tập)
 let FC = null;     // phiên lật thẻ
@@ -879,7 +881,7 @@ function vUnitResult() {
 /* =====================================================================
    CÁC MÀN HÌNH
    ===================================================================== */
-const newSv = (p) => p ? Object.assign({subs:[], job:""}, JSON.parse(JSON.stringify(p))) : {name:"", goal:"communication", fields:[], subs:[], job:"", minutes:30, interest:"", weak:[], remind:"20:00", deadline:""};
+const newSv = (p) => p ? Object.assign({subs:[], job:""}, JSON.parse(JSON.stringify(p))) : {name:ME?.name || "", goal:"communication", fields:[], subs:[], job:"", minutes:30, interest:"", weak:[], remind:"20:00", deadline:""};
 function vSurvey() {
   const s = SV, g = s.goal, edit = !!S.level;
   return `<div class="wrap narrow"><section class="panel hero"><span class="eyebrow">${edit ? "Cập nhật mục tiêu" : "Bước 1/2 · Khảo sát"}</span><h1>Bạn học tiếng Anh để làm gì?</h1>
@@ -938,7 +940,7 @@ function vHome() {
     return `<div class="day ${S.sessions.some(s => s.date === ds) ? "on" : ""} ${ds === today() ? "today" : ""}"><span>${k}</span><i></i></div>`; }).join("");
   const due = dueCards().length, avgScore = Math.round(avg(courseSessions().slice(-5).map(s => s.total)));
   return `<div class="wrap">
-   <section class="hello"><div><p class="eyebrow">${esc(focusName())}</p><h1>Chào ${esc(S.profile.name || "bạn")}!</h1>
+   <section class="hello"><div><p class="eyebrow">${esc(focusName())}</p><h1>Chào ${esc(displayName() || "bạn")}!</h1>
      <p class="muted">Khóa ${p.from} → ${p.to} · Buổi ${Math.min(n + 1, p.total)}/${p.total} · Tuần ${Math.min(p.weeks, Math.floor(n / 5) + 1)}/${p.weeks}</p></div>
      <div class="week">${week}</div></section>
    ${remindDue() ? `<section class="panel notice"><b>Đã đến giờ học (${remindTime()})</b> <span class="muted">Bạn chưa học hôm nay. Chỉ cần ${S.profile.minutes} phút để giữ chuỗi ngày học.</span></section>` : ""}
@@ -967,7 +969,7 @@ function vHome() {
 function vCourseDone() {
   const p = S.path, ts = courseTests(), ss = courseSessions(), i = lvIdx(p.to);
   return `<div class="wrap narrow"><section class="panel hero center"><span class="eyebrow">Hoàn thành khóa học</span><div class="levelbadge">${p.to}</div>
-    <h1>Chúc mừng ${esc(S.profile.name || "bạn")}!</h1><p>Bạn đã hoàn thành ${ss.length} buổi học và ${ts.length} bài kiểm tra của khóa ${p.from} → ${p.to}.</p>
+    <h1>Chúc mừng ${esc(displayName() || "bạn")}!</h1><p>Bạn đã hoàn thành ${ss.length} buổi học và ${ts.length} bài kiểm tra của khóa ${p.from} → ${p.to}.</p>
     <div class="stats"><div class="stat"><b>${Math.round(avg(ss.map(s => s.total)))}</b><span>điểm TB buổi học</span></div><div class="stat"><b>${Math.round(avg(ts.map(t => t.score)))}%</b><span>điểm TB kiểm tra</span></div><div class="stat"><b>${Object.keys(S.cards).length}</b><span>từ đã học</span></div></div>
     ${i < 5 ? `<button class="primary big" data-a="nextCourse">Bắt đầu khóa ${p.to} → ${LEVELS[i + 1]}</button>` : `<button class="primary big" data-a="nextCourse">Tiếp tục nâng cao trình độ C1</button>`}</section></div>`;
 }
@@ -1057,6 +1059,11 @@ function vHistory() {
 function vSettings() {
   const fs = pref("ep_fs") || "m", th = pref("ep_theme") || "auto";
   return `<div class="wrap narrow"><section class="hello"><div><p class="eyebrow">Cài đặt</p><h1>Tài khoản & tùy chỉnh</h1></div></section>
+   <section class="panel account"><div class="row nowrap">
+     <div class="bigavatar">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc((displayName() || ME?.email || "?")[0].toUpperCase())}</div>
+     <div class="who"><b>${esc(displayName() || "Chưa đặt tên")}</b><span>${esc(ME?.email || "Không lấy được email")}</span>
+      <span class="muted small">Đăng nhập bằng ${ME?.provider === "google" ? "Google" : "email"}${ME?.since ? ` · tham gia ${new Date(ME.since).toLocaleDateString("vi-VN")}` : ""}</span></div></div>
+     <div class="row"><a class="btn" href="/auth/signout">Đăng xuất</a><span class="muted small">Muốn dùng tài khoản khác: đăng xuất rồi chọn tài khoản khi đăng nhập lại.</span></div></section>
    <section class="panel"><h3>Mục tiêu học</h3><p>${esc(focusName())}${S.profile.job ? ` · ${esc(S.profile.job)}` : ""}${subList().length ? `<br><span class="small">${subList().map(esc).join(" · ")}</span>` : ""}${S.profile.interest ? `<br><span class="muted">${esc(S.profile.interest)}</span>` : ""}</p>
     <p class="muted small">${S.profile.minutes} phút/ngày · Trình độ ${S.level} · Khóa ${S.path?.from} → ${S.path?.to}</p>
     <button data-a="editGoal">Sửa mục tiêu và lĩnh vực</button></section>
@@ -1082,7 +1089,7 @@ function vSettings() {
     <div class="row"><span>Giao diện</span>${[["auto", "Theo máy"], ["light", "Sáng"], ["dark", "Tối"]].map(([k, t]) => `<button class="seg ${th === k ? "sel" : ""}" data-a="theme" data-v="${k}">${t}</button>`).join("")}</div></section>
    <section class="panel"><h3>Gemini AI</h3><p>${AI.quota ? `<span class="tag bad">Hết lượt miễn phí</span> Gemini giới hạn số lần gọi mỗi phút và mỗi ngày. App đang dùng nội dung mẫu và sẽ tự thử lại sau 5 phút. Nếu hết lượt theo ngày, lượt mới có lại vào khoảng 14–15 giờ chiều (giờ Việt Nam).` : AI.on && AI.busy ? `<span class="tag">Đang quá tải</span> ${esc(AI.msg)}. App vẫn dùng AI và tự thử lại; nếu vẫn lỗi sẽ tạm dùng nội dung mẫu.` : AI.on ? `<span class="tag good">Đang hoạt động</span> Bài học, chấm câu, role-play và tra từ dùng AI.` : `<span class="tag bad">Chưa hoạt động</span> ${esc(AI.msg)}`}</p>
     <p class="muted small">Key nằm trong file .env.local (GEMINI_API_KEY, GEMINI_MODEL). Sửa file rồi khởi động lại app.</p><button data-a="checkAI">Kiểm tra lại kết nối</button></section>
-   <section class="panel"><h3>Dữ liệu</h3><div class="row"><a class="btn" href="/auth/signout">Đăng xuất</a>
+   <section class="panel"><h3>Dữ liệu</h3><div class="row">
     <button class="danger" data-a="reset" id="resetBtn">Xóa toàn bộ tiến độ và làm lại</button></div></section></div>`;
 }
 
@@ -1235,7 +1242,7 @@ async function disablePush() {
   PUSH.on = false; toast("Đã tắt nhắc học trên thiết bị này"); render();
 }
 async function testPush(btn) { btn.disabled = true; const r = await fetch("/api/push", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({test:true})}); const d = await r.json().catch(() => ({}));
-  toast(r.ok ? (d.sent ? `Đã gửi tới ${d.sent} thiết bị, kiểm tra thanh thông báo` : "Server gửi thất bại, xem lỗi trong terminal") : (d.error || "Gửi thử thất bại")); btn.disabled = false; }
+  toast(r.ok ? "Đã gửi thông báo thử, kiểm tra thanh thông báo" : (d.error || "Gửi thử thất bại")); btn.disabled = false; }
 
 /* =====================================================================
    HÀNH ĐỘNG (data-a)
@@ -1349,13 +1356,13 @@ function renderHeader() {
   const h = $("#hdr"); if (!h) return;
   const focus = ["lesson", "quiz", "flip"].includes(view) || !S.path;
   const tabs = [["home", "Trang chủ"], ["path", "Lộ trình"], ["review", "Ôn tập"], ["history", "Lịch sử"]];
-  const due = dueCards().length, name = S.profile?.name || "Bạn";
+  const due = dueCards().length, name = displayName() || ME?.email || "Bạn";
   const active = view === "settings" ? "" : view;
   h.innerHTML = `<div class="hin"><a href="#" class="brand" data-a="go" data-v="home"><span class="logo">LT</span><span><b>Lộ Trình</b><small>Tiếng Anh cá nhân hóa</small></span></a>
     ${focus ? "" : `<nav class="tabs-top" aria-label="Điều hướng">${tabs.map(([k, t]) => `<a href="#" class="${active === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : ""}</a>`).join("")}</nav>`}
     <div class="tools">${S.level ? `<span class="lvl" title="Trình độ hiện tại">${S.level}</span>` : ""}
-     <div class="usermenu"><button class="avatar" data-a="menu" aria-label="Tài khoản">${esc(name[0].toUpperCase())}</button>
-     ${UI.menu ? `<div class="menu">${S.path ? `<a href="#" data-a="go" data-v="settings">Cài đặt</a>` : ""}<a href="/auth/signout">Đăng xuất</a></div>` : ""}</div></div></div>`;
+     <div class="usermenu"><button class="avatar" data-a="menu" aria-label="Tài khoản ${esc(ME?.email || "")}">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc(name[0].toUpperCase())}</button>
+     ${UI.menu ? `<div class="menu"><div class="who"><b>${esc(displayName() || "Tài khoản")}</b><span>${esc(ME?.email || "")}</span></div>${S.path ? `<a href="#" data-a="go" data-v="settings">Cài đặt</a>` : ""}<a href="/auth/signout">Đăng xuất</a></div>` : ""}</div></div></div>`;
   const bn = $("#bnav");
   if (bn) { bn.hidden = focus; bn.innerHTML = focus ? "" : [...tabs, ["settings", "Cài đặt"]].map(([k, t]) => `<a href="#" class="${view === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : ""}</a>`).join(""); }
 }
@@ -1391,7 +1398,8 @@ function render() {
   const app = $("#app");
   app.innerHTML = `<div class="wrap"><section class="panel center"><p><span class="spin"></span> Đang tải tiến độ của bạn...</p></section></div>`;
   AI = {on:false, msg:"đang kiểm tra kết nối..."};
-  S = await loadState(); render(); remindLoop(); setInterval(remindLoop, 60e3);
+  const meP = fetch("/api/me").then(r => r.ok ? r.json() : null).catch(() => null);
+  S = await loadState(); ME = await meP; render(); remindLoop(); setInterval(remindLoop, 60e3);
   // Kiểm tra Gemini chạy ngầm, không chặn giao diện
   checkAI().then(() => { if (!["lesson", "quiz", "flip"].includes(view)) render(); setTimeout(prefetchNext, 1500); });
   setInterval(async () => { if (AI.quota && Date.now() - (AI.quotaAt || 0) < 300e3) return; if (!AI.on || AI.busy) { const was = AI.on && !AI.busy; await checkAI(); if (AI.on && !AI.busy && !was && !["lesson", "quiz"].includes(view)) render(); } }, 180e3);
