@@ -899,7 +899,8 @@ function vSurvey() {
     ${g === "exam" ? `<label for="sv-dl"><h3>Ngày thi <span class="muted normal">(để tính độ dài khóa học)</span></h3></label><input id="sv-dl" type="date" data-sv="deadline" value="${esc(s.deadline)}" class="short">` : ""}
     <h3>Thời gian học mỗi ngày</h3><div class="choices">${[15, 30, 45].map(m => `<button class="choice ${s.minutes === m ? "sel" : ""}" data-a="svMin" data-v="${m}">${m} phút</button>`).join("")}</div>
     <h3>Kỹ năng muốn cải thiện</h3><div class="chips">${["Nghe","Nói","Đọc","Viết"].map(k => `<button class="chip-btn ${s.weak.includes(k) ? "sel" : ""}" data-a="svWeak" data-v="${k}">${k}</button>`).join("")}</div>
-    <label for="sv-rm"><h3>Nhắc tôi học lúc</h3></label><input id="sv-rm" type="time" data-sv="remind" value="${esc(s.remind)}" class="short">
+    <label for="sv-rm"><h3>Nhắc tôi học từ lúc</h3></label><input id="sv-rm" type="time" data-sv="remind" value="${esc(s.remind)}" class="short">
+    <p class="muted small">Nếu chưa học, app nhắc mỗi tiếng từ giờ này đến 23:00. Đổi giờ và khoảng cách nhắc trong Cài đặt.</p>
     <div class="row">${edit ? `<button data-a="go" data-v="settings">Hủy</button>` : ""}<button class="primary" data-a="svSubmit" ${s.fields.length ? "" : "disabled"}>${!s.fields.length ? "Chọn ít nhất một lĩnh vực" : edit ? "Lưu mục tiêu" : "Tiếp tục: kiểm tra trình độ"}</button></div></section></div>`;
 }
 function vPlaceIntro() {
@@ -1067,16 +1068,19 @@ function vSettings() {
    <section class="panel"><h3>Mục tiêu học</h3><p>${esc(focusName())}${S.profile.job ? ` · ${esc(S.profile.job)}` : ""}${subList().length ? `<br><span class="small">${subList().map(esc).join(" · ")}</span>` : ""}${S.profile.interest ? `<br><span class="muted">${esc(S.profile.interest)}</span>` : ""}</p>
     <p class="muted small">${S.profile.minutes} phút/ngày · Trình độ ${S.level} · Khóa ${S.path?.from} → ${S.path?.to}</p>
     <button data-a="editGoal">Sửa mục tiêu và lĩnh vực</button></section>
-   <section class="panel"><h3>Nhắc học</h3>
-    <label for="remindSet">Giờ học mỗi ngày</label><input id="remindSet" type="time" value="${remindTime()}" data-change="setRemind" class="short">
-    <p class="muted small">Cách chắc chắn nhất là thêm vào lịch điện thoại. Lịch sẽ báo đúng giờ kể cả khi bạn không mở app.</p>
-    <div class="row"><a class="btn" target="_blank" rel="noopener" href="${gcalLink()}">Thêm vào Google Calendar ↗</a><button data-a="ics">Tải file lịch (.ics)</button></div>
-    <div class="pushbox"><b>Thông báo nhắc học mỗi 2 tiếng</b>
-     <p class="muted small">Từ 8h đến 22h, nếu hôm nay bạn chưa học, điện thoại sẽ nhận thông báo, kể cả khi đang đóng app. Học xong buổi trong ngày thì app ngừng nhắc.</p>
-     ${PUSH.on ? `<div class="row"><span class="tag good">Đang bật trên thiết bị này</span><button class="mini" data-a="pushTest">Gửi thử</button><button class="mini" data-a="pushOff">Tắt</button></div>`
-       : `<button class="primary" data-a="pushOn">Bật nhắc học trên thiết bị này</button>
-          ${isIOS() && !isStandalone() ? `<p class="small">Trên iPhone (iOS 16.4 trở lên): mở bằng Safari → nút Chia sẻ → <b>Thêm vào MH chính</b> → mở app từ biểu tượng mới, rồi bấm nút trên.</p>` : ""}`}
-     <p class="muted small">Mỗi điện thoại và máy tính cần bật riêng một lần.</p></div></section>
+   <section class="panel"><div class="row between"><h3>Nhắc học</h3><button class="mini seg ${remindCfg().on ? "sel" : ""}" data-a="remToggle">${remindCfg().on ? "● Đang bật" : "○ Đang tắt"}</button></div>
+    <p class="muted small">Nếu hôm nay bạn chưa học, app gửi thông báo theo lịch dưới đây. Học xong buổi trong ngày thì app ngừng nhắc.</p>
+    <div class="row timerow"><div class="tfield"><label for="remindSet">Bắt đầu nhắc lúc</label><input id="remindSet" type="time" value="${remindCfg().start}" data-change="setRemind"></div>
+     <div class="tfield"><label for="remindEnd">Nhắc đến</label><input id="remindEnd" type="time" value="${remindCfg().end}" data-change="setRemindEnd"></div></div>
+    <div class="row"><span>Nhắc mỗi</span>${[[30, "30 phút"], [60, "1 tiếng"], [120, "2 tiếng"], [180, "3 tiếng"]].map(([k, t]) => `<button class="seg ${remindCfg().every === k ? "sel" : ""}" data-a="remEvery" data-v="${k}">${t}</button>`).join("")}</div>
+    <p class="fb small">${remindCfg().on ? `Các lần nhắc mỗi ngày (${remindSlots().length} lần): <b>${remindSlots().join(" · ")}</b>` : "Nhắc học đang tắt. Bạn sẽ không nhận thông báo nào."}</p>
+    <div class="pushbox"><b>Nhận thông báo trên thiết bị này</b>
+     <p class="muted small">Thông báo hiện trên điện thoại hoặc máy tính, kể cả khi đang đóng app. Mỗi thiết bị cần bật riêng một lần.</p>
+     ${PUSH.on ? `<div class="row"><span class="tag good">Đang bật trên thiết bị này</span><button class="mini" data-a="pushTest">Gửi thử</button><button class="mini" data-a="pushOff">Tắt trên thiết bị này</button></div>`
+       : `<button class="primary" data-a="pushOn">Bật thông báo trên thiết bị này</button>
+          ${isIOS() && !isStandalone() ? `<p class="small">Trên iPhone (iOS 16.4 trở lên): mở bằng Safari → nút Chia sẻ → <b>Thêm vào MH chính</b> → mở app từ biểu tượng mới, rồi bấm nút trên.</p>` : ""}`}</div>
+    <p class="muted small">Hoặc thêm một lời nhắc cố định vào lịch điện thoại (lúc ${remindCfg().start} mỗi ngày):</p>
+    <div class="row"><a class="btn mini" target="_blank" rel="noopener" href="${gcalLink()}">Google Calendar ↗</a><button class="mini" data-a="ics">Tải file lịch (.ics)</button></div></section>
    <section class="panel"><h3>Giọng đọc & micro</h3>
     <label for="voiceSel">Giọng đọc tiếng Anh</label><select id="voiceSel" data-change="setVoice">${VOICES.length ? VOICES.map(v => `<option value="${esc(v.name)}" ${pickVoice()?.name === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("") : `<option>Giọng mặc định của trình duyệt</option>`}</select>
     <div class="row"><span>Tốc độ đọc</span>${[["0.75", "Chậm"], ["0.95", "Vừa"], ["1.1", "Nhanh"]].map(([k, t]) => `<button class="seg ${(pref("ep_rate") || "0.95") === k ? "sel" : ""}" data-a="ttsRate" data-v="${k}">${t}</button>`).join("")}
@@ -1193,7 +1197,11 @@ function drawViPop(syl, sent, d, loading) {
    NHẮC HỌC
    ===================================================================== */
 const remindTime = () => S.profile?.remind || "20:00";
-function remindDue() { if (!S.profile || !S.path) return false; const [h, m] = remindTime().split(":").map(Number), n = new Date(); return !doneToday() && n.getHours() * 60 + n.getMinutes() >= h * 60 + m; }
+const toMin = t => { const [h, m] = String(t || "").split(":").map(Number); return (h || 0) * 60 + (m || 0); };
+const fromMin = m => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+const remindCfg = () => ({start:remindTime(), end:S.profile?.remindEnd || "23:00", every:Number(S.profile?.remindEvery || 60), on:S.profile?.remindOn !== false});
+function remindSlots() { const c = remindCfg(), a = [], st = toMin(c.start), en = Math.max(toMin(c.end), st); for (let t = st; t <= en && a.length < 48; t += c.every) a.push(fromMin(t)); return a; }
+function remindDue() { if (!S.profile || !S.path || !remindCfg().on) return false; const n = new Date(), now = n.getHours() * 60 + n.getMinutes(); return !doneToday() && now >= toMin(remindCfg().start) && now <= toMin(remindCfg().end) + 30; }
 function remindLoop() {
   if (PUSH.on || !remindDue() || pref("ep_notified") === today()) return;
   if ("Notification" in window && Notification.permission === "granted") {
@@ -1300,6 +1308,8 @@ const ACT = {
     btn.textContent = "Đã thêm vào flashcard"; btn.disabled = true; btn.classList.remove("primary"); renderHeader(); },
   skipWait: () => cancelWait?.(),
   pushOn: (v, btn) => enablePush(btn), pushOff: disablePush, pushTest: (v, btn) => testPush(btn),
+  remEvery: v => { S.profile.remindEvery = Number(v); save(); render(); },
+  remToggle: () => { S.profile.remindOn = !remindCfg().on; save(); render(); toast(S.profile.remindOn ? "Đã bật nhắc học" : "Đã tắt nhắc học"); },
   ics: downloadIcs,
   notify: async () => { try { await Notification.requestPermission(); } catch (e) {} render(); },
   checkAI: async (v, btn) => { btn.innerHTML = `<span class="spin"></span>`; await checkAI(); render(); toast(AI.on ? "Key và model hợp lệ" : "Gemini chưa dùng được: " + AI.msg); },
@@ -1309,7 +1319,8 @@ const ACT = {
   reset: (v, btn) => { if (!btn.dataset.c) { btn.dataset.c = 1; btn.textContent = "Bấm lần nữa để xác nhận xóa"; return; }
     S = blank(); Q = null; FC = null; SV = null; pushState(); view = "home"; render(); toast("Đã xóa tiến độ"); },
 };
-const CHANGE = { setRemind: v => { S.profile.remind = v; save(); render(); }, setVoice: v => { pref("ep_voice", v); say("Hello! Nice to meet you."); } };
+const CHANGE = { setRemind: v => { S.profile.remind = v; if (toMin(S.profile.remindEnd || "23:00") < toMin(v)) S.profile.remindEnd = v; save(); render(); toast("Đã lưu giờ nhắc"); },
+  setRemindEnd: v => { S.profile.remindEnd = toMin(v) < toMin(remindTime()) ? remindTime() : v; save(); render(); toast("Đã lưu giờ nhắc"); }, setVoice: v => { pref("ep_voice", v); say("Hello! Nice to meet you."); } };
 
 document.addEventListener("click", e => {
   const w = e.target.closest(".w");

@@ -283,3 +283,5 @@ table.cards td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertic
 .account .who b { font-size: 1.15rem }
 .menu .who { padding: 8px 12px 10px; border-bottom: 1px solid var(--line); margin-bottom: 4px; font-size: .9rem }
 .menu .who span { color: var(--muted); font-size: .8rem }
+
+.timerow { gap: 16px } .tfield { display: grid; gap: 4px; font-size: .88rem; color: var(--muted) } .tfield input { width: 150px }

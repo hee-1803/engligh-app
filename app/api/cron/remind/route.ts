@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendPush, todayVN, hourVN, reminderFor, type Sub } from "@/lib/push";
+import { sendPush, todayVN, minutesVN, dueNow, reminderFor, type Sub } from "@/lib/push";
 
-// Được Supabase (pg_cron) gọi mỗi 2 tiếng. Gửi nhắc cho ai hôm nay chưa học.
+// Supabase (pg_cron) gọi route này mỗi 15 phút.
+// Mỗi người dùng có lịch nhắc riêng trong Cài đặt (bắt đầu, kết thúc, nhắc mỗi bao lâu).
+// Gửi cho ai đến giờ nhắc mà hôm nay chưa học.
+const WINDOW = Number(process.env.CRON_EVERY_MINUTES ?? 15);
+
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Không có quyền" }, { status: 401 });
   }
-  const start = Number(process.env.REMIND_START_HOUR ?? 8), end = Number(process.env.REMIND_END_HOUR ?? 22), h = hourVN();
-  if (h < start || h > end) return NextResponse.json({ skipped: "ngoài giờ nhắc", hour: h });
-
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.VAPID_PRIVATE_KEY) {
     return NextResponse.json({ error: "Thiếu SUPABASE_SERVICE_ROLE_KEY hoặc VAPID_PRIVATE_KEY trong biến môi trường" }, { status: 500 });
   }
+  const test = new URL(req.url).searchParams.get("force") === "1"; // ?force=1: bỏ qua giờ nhắc để thử
   const db = createAdminClient();
   const { data: subs, error } = await db.from("push_subscriptions").select("user_id, endpoint, keys");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -22,18 +24,18 @@ export async function GET(req: Request) {
   const userIds = [...new Set(subs.map((s) => s.user_id))];
   const { data: states } = await db.from("app_state").select("user_id, data").in("user_id", userIds);
   const byUser = new Map((states || []).map((s) => [s.user_id, s.data]));
-  const today = todayVN();
+  const today = todayVN(), now = minutesVN();
 
   let sent = 0, skipped = 0;
   const gone: string[] = [];
   for (const s of subs) {
     const data = byUser.get(s.user_id);
     const studied = (data?.sessions || []).some((x: { date: string }) => x.date === today);
-    if (studied || !data?.path) { skipped++; continue; }
+    if (!data?.path || studied || (!test && !dueNow(data.profile, now, WINDOW))) { skipped++; continue; }
     const r = await sendPush({ endpoint: s.endpoint, keys: s.keys } as Sub, reminderFor(data));
     if (r === "ok") sent++;
     if (r === "gone") gone.push(s.endpoint);
   }
   if (gone.length) await db.from("push_subscriptions").delete().in("endpoint", gone);
-  return NextResponse.json({ sent, skipped, removed: gone.length, today, hour: h });
+  return NextResponse.json({ sent, skipped, removed: gone.length, today, time: `${Math.floor(now / 60)}:${String(now % 60).padStart(2, "0")}` });
 }

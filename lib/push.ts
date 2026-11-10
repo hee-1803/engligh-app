@@ -31,6 +31,21 @@ export async function sendPush(sub: Sub, payload: { title: string; body: string;
 export function todayVN() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }).format(new Date());
 }
+// Số phút tính từ 0h theo giờ Việt Nam
+export function minutesVN() {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date());
+  const h = Number(parts.find((p) => p.type === "hour")?.value) % 24, m = Number(parts.find((p) => p.type === "minute")?.value);
+  return h * 60 + m;
+}
+const toMin = (t: string) => { const [h, m] = String(t || "").split(":").map(Number); return (h || 0) * 60 + (m || 0); };
+// Người dùng có lần nhắc rơi vào khoảng [now - window, now] không? (cron chạy mỗi `window` phút)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function dueNow(profile: any, now: number, window: number) {
+  if (!profile || profile.remindOn === false) return false;
+  const start = toMin(profile.remind || "20:00"), end = Math.max(toMin(profile.remindEnd || "23:00"), start), every = Math.max(15, Number(profile.remindEvery || 60));
+  for (let t = start; t <= end; t += every) if (now >= t && now < t + window) return true;
+  return false;
+}
 export function hourVN() {
   return Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", hour12: false }).format(new Date()));
 }
