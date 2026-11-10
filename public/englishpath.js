@@ -291,6 +291,22 @@ function checkBadges() {
   return got;
 }
 const badgeCard = (b, on = true, date) => `<div class="badge-item ${on ? "" : "locked"}">${stk(b.stk, 60)}<b>${b.name}</b><span>${b.desc}</span>${date ? `<em>${date}</em>` : ""}</div>`;
+// ---- Dịch ngay trong trang (/api/translate) ----
+const TRC = {};
+const trKey = (t, sl, tl) => sl + "|" + tl + "|" + t;
+function trBtn(text, sl = "en", tl = "vi", label = "Dịch") {
+  const k = trKey(text, sl, tl), r = TRC[k];
+  return `<span class="trbox"><button class="mini trbtn" data-a="tr" data-v="${esc(k)}" ${r === "…" ? "disabled" : ""}>${r === "…" ? `<span class="spin"></span> Đang dịch` : r ? "Ẩn bản dịch" : "🌐 " + label}</button>${r && r !== "…" ? `<span class="tr-out">${esc(r.text)}<em>${esc(r.engine)}</em></span>` : ""}</span>`;
+}
+async function doTranslate(k) {
+  if (TRC[k] && TRC[k] !== "…") { delete TRC[k]; return render(); }
+  const [sl, tl, ...rest] = k.split("|"), text = rest.join("|");
+  TRC[k] = "…"; render();
+  try { const r = await timeoutFetch(`/api/translate?sl=${sl}&tl=${tl}&q=${encodeURIComponent(text)}`, {}, 15000); const d = await r.json();
+    if (!r.ok) throw new Error(d.error || "lỗi " + r.status); TRC[k] = {text:d.text, engine:d.engine}; }
+  catch (e) { delete TRC[k]; toast("Chưa dịch được: " + (e.name === "AbortError" ? "quá chậm" : e.message)); }
+  render();
+}
 const gtLink = (t, sl, tl) => `https://translate.google.com/?sl=${sl}&tl=${tl}&op=translate&text=${encodeURIComponent(t)}`;
 // Tốc độ đọc: mặc định 0.8 (chậm hơn tốc độ máy). Đổi giá trị cũ sang thang mới.
 function ttsRate() { const v = pref("ep_rate"), old = {"0.95":"0.8", "1.1":"0.95", "0.75":"0.7"}; return Number(old[v] || v || 0.8); }
@@ -751,7 +767,7 @@ function step2() {
       <div class="vocab">${stk(topicStk(l.les.topic)[0], 70, "corner", 12)}<div class="row"><h2 class="word">${esc(w.w)}</h2><button class="round" data-a="speak" data-v="${esc(w.w)}" aria-label="Nghe">🔊</button></div>
       <div class="ipa">${esc(w.ipa)}${w.pos ? ` · <span class="tag">${esc(w.pos)}</span>` : ""}</div>
       <p class="meaning">${esc(w.vi)}</p>
-      <div class="example"><p>${tw(w.ex)} <button class="mini" data-a="speak" data-v="${esc(w.ex)}">🔊 Nghe câu</button> <a class="mini btn gt" target="_blank" rel="noopener" href="${gtLink(w.ex, "en", "vi")}">Google Dịch ↗</a></p>${w.ex_vi ? `<p class="muted">${twv(w.ex_vi)}</p>` : ""}</div></div>
+      <div class="example"><p>${tw(w.ex)} <button class="mini" data-a="speak" data-v="${esc(w.ex)}">🔊 Nghe câu</button> </p><div>${trBtn(w.ex, "en", "vi", "Dịch câu")}</div>${w.ex_vi ? `<p class="muted">${twv(w.ex_vi)}</p>` : ""}</div></div>
       ${speakBox(w, l.vi)}
       <div class="row">${l.vi > 0 ? `<button data-a="vprev">Từ trước</button>` : ""}<button class="primary" data-a="vnext">${l.vi < n - 1 ? "Từ tiếp theo" : "Xem điểm ngữ pháp"}</button></div></section>`;
   }
@@ -801,10 +817,10 @@ async function grade3() {
 // Bước 4: Dịch câu
 function step4() {
   const l = L(), tr = l.les.translations, graded = Object.keys(l.trans).length;
-  return `<section class="panel"><h2>Dịch câu</h2><p class="muted">Dịch theo ý, không cần khớp từng chữ. Bấm vào từng từ để xem nghĩa và phiên âm; nút "Xem Google Dịch" mở bản dịch cả câu (nên tự dịch trước rồi mới so).</p></section>
+  return `<section class="panel"><h2>Dịch câu</h2><p class="muted">Dịch theo ý, không cần khớp từng chữ. Bấm vào từng từ để xem nghĩa và phiên âm; nút "Xem bản dịch máy" dịch cả câu ngay tại đây (nên tự dịch trước rồi mới so).</p></section>
    ${tr.map((t, i) => { const r = l.trans[i]; return `<section class="panel"><span class="tag">${t.dir === "vi-en" ? "Việt → Anh" : "Anh → Việt"}</span>
      <h3 class="src">${t.dir === "en-vi" ? tw(t.src) : twv(t.src)}</h3>
-     <div class="row"><a class="mini btn gt" target="_blank" rel="noopener" href="${gtLink(t.src, t.dir === "vi-en" ? "vi" : "en", t.dir === "vi-en" ? "en" : "vi")}">Xem Google Dịch ↗</a>${t.dir === "en-vi" ? `<button class="mini" data-a="speak" data-v="${esc(t.src)}">🔊 Nghe câu</button>` : ""}</div>
+     <div class="row">${trBtn(t.src, t.dir === "vi-en" ? "vi" : "en", t.dir === "vi-en" ? "en" : "vi", "Xem bản dịch máy")}${t.dir === "en-vi" ? `<button class="mini" data-a="speak" data-v="${esc(t.src)}">🔊 Nghe câu</button>` : ""}</div>
      <label class="sr" for="tr${i}">Bản dịch</label><textarea id="tr${i}" rows="2" placeholder="Bản dịch của bạn">${esc(r?.text || "")}</textarea>
      ${r ? `<div class="fb ${r.score >= 7 ? "good" : "bad"}"><b>${r.score}/10</b> · ${esc(r.note || "")}<br>Tham khảo: <i>${t.dir === "vi-en" ? tw(t.ref) : esc(t.ref)}</i>${r.better && clean(r.better) !== clean(t.ref) ? `<br>Gợi ý từ câu của bạn: <i>${esc(r.better)}</i>` : ""}</div>` : ""}</section>`; }).join("")}
    <section class="panel"><h2>Nghe và chép</h2><p class="muted">Nghe câu tiếng Anh rồi gõ lại. Có thể nghe nhiều lần, nghe chậm nếu cần.</p></section>
@@ -842,7 +858,7 @@ function step5() {
     <p class="muted">${esc(rp.setting || "")}</p>
     <ul class="tasks">${(rp.tasks || []).map((t, k) => `<li class="${l.tasksDone.includes(k) ? "done" : ""}">${esc(t)}</li>`).join("")}</ul>
     <p class="small">Từ đã dùng: ${l.les.words.map(w => `<span class="chip ${used.includes(w.w) ? "on" : ""}">${esc(w.w)}</span>`).join(" ")}</p></section>
-   <section class="panel"><div class="chat" id="chat">${l.chat.map((m, mi) => `<div class="msg ${m.role}">${m.role === "ai" ? (hideText() && !(l.reveal || []).includes(mi) ? `<span class="muted">(Chữ đã ẩn, hãy nghe)</span> <button class="mini" data-a="reveal" data-v="${mi}">Hiện chữ</button>` : tw(m.text)) : (m.voice ? "🎤 " : "") + esc(m.text)}${m.fix ? `<span class="fix">Nên nói: ${esc(m.fix)}</span>` : ""}${m.role === "ai" ? ` <button class="mini" data-a="speak" data-v="${esc(m.text)}" aria-label="Nghe">🔊</button>` : ""}</div>`).join("")}
+   <section class="panel"><div class="chat" id="chat">${l.chat.map((m, mi) => `<div class="msg ${m.role}">${m.role === "ai" ? (hideText() && !(l.reveal || []).includes(mi) ? `<span class="muted">(Chữ đã ẩn, hãy nghe)</span> <button class="mini" data-a="reveal" data-v="${mi}">Hiện chữ</button>` : tw(m.text)) : (m.voice ? "🎤 " : "") + esc(m.text)}${m.fix ? `<span class="fix">Nên nói: ${esc(m.fix)}</span>` : ""}${m.role === "ai" ? ` <button class="mini" data-a="speak" data-v="${esc(m.text)}" aria-label="Nghe">🔊</button>${trBtn(m.text, "en", "vi")}` : ""}</div>`).join("")}
      ${l.rpBusy ? `<div class="msg ai"><span class="spin"></span></div>` : ""}</div>
     ${l.hint ? `<div class="fb">Gợi ý: <b>${tw(l.hint.en)}</b>${l.hint.vi ? `<br><span class="muted">${twv(l.hint.vi)}</span>` : ""}</div>` : ""}
     <div class="row nowrap"><label class="sr" for="rpIn">Câu trả lời</label><input id="rpIn" data-enter="rpSend" placeholder="Trả lời bằng tiếng Anh..." autocomplete="off" ${l.rpBusy ? "disabled" : ""}>
@@ -1264,11 +1280,11 @@ function drawPop(word, d, loading) {
    ${d ? `<p class="meaning sm">${esc(d.meaning)}${d.meaningEn ? ' <span class="muted small">(định nghĩa tiếng Anh)</span>' : ""}</p>` : ""}
    ${(d?.examples || []).filter(x => x.en).map(x => `<div class="ex">${esc(x.en)}${x.vi ? `<br><span class="muted">${esc(x.vi)}</span>` : ""}</div>`).join("")}
    ${d?.collocations?.length ? `<p class="muted small">Hay đi với: ${d.collocations.map(esc).join(" · ")}</p>` : ""}
-   ${loading ? `<p class="muted small"><span class="spin"></span> Đang tra...</p>` : ""}${!d && !loading ? `<p class="muted">Chưa tra được từ này${AI.on ? (POPERR ? ` (${esc(POPERR)})` : "") : " vì Gemini chưa hoạt động"}. Thử Google Dịch hoặc Cambridge bên dưới.</p>` : ""}
+   ${loading ? `<p class="muted small"><span class="spin"></span> Đang tra...</p>` : ""}${!d && !loading ? `<p class="muted">Chưa tra được từ này${AI.on ? (POPERR ? ` (${esc(POPERR)})` : "") : " vì Gemini chưa hoạt động"}. Thử nút Dịch hoặc Cambridge bên dưới.</p>` : ""}
    <div class="row"><button class="mini" data-a="speak" data-v="${esc(hw)}">🔊 Nghe</button>
     ${d ? `<button class="mini ${inCards ? "" : "primary"}" data-a="addLooked" data-v="${esc(word.toLowerCase())}" ${inCards ? "disabled" : ""}>${inCards ? "Đã có trong flashcard" : "+ Thêm vào flashcard"}</button>` : ""}
     <a class="mini btn" target="_blank" rel="noopener" href="https://dictionary.cambridge.org/dictionary/english-vietnamese/${encodeURIComponent(hw.toLowerCase())}">Cambridge ↗</a>
-    <a class="mini btn" target="_blank" rel="noopener" href="${gtLink(hw, "en", "vi")}">Google Dịch ↗</a></div>`;
+    <button class="mini" data-a="popTr" data-v="${esc(hw)}" data-sl="en">🌐 Dịch</button></div><div class="pop-tr"></div>`;
 }
 
 // Bấm vào chữ tiếng Việt: tìm từ (có thể nhiều âm tiết) và từ tiếng Anh tương ứng
@@ -1313,10 +1329,10 @@ function drawViPop(syl, sent, d, loading) {
      ${d.alts?.length ? `<p class="small">Cách nói khác: ${d.alts.map(esc).join(" · ")}</p>` : ""}${d.note ? `<p class="small muted">${esc(d.note)}</p>` : ""}
      ${(d.examples || []).filter(x => x.en).map(x => `<div class="ex">${esc(x.en)}${x.vi ? `<br><span class="muted">${esc(x.vi)}</span>` : ""}</div>`).join("")}` : ""}
    ${loading ? `<p class="muted small"><span class="spin"></span> Đang tra theo ngữ cảnh câu...</p>` : ""}
-   ${!d && !loading ? `<p class="muted">${AI.on ? `Chưa tra được${POPERR ? ` (${esc(POPERR)})` : ""}.` : "Tra tiếng Việt cần Gemini đang hoạt động."} Thử Google Dịch bên dưới.</p>` : ""}
+   ${!d && !loading ? `<p class="muted">${AI.on ? `Chưa tra được${POPERR ? ` (${esc(POPERR)})` : ""}.` : "Tra từng từ tiếng Việt cần Gemini đang hoạt động."} Bạn vẫn có thể dịch cả câu bên dưới.</p>` : ""}
    <div class="row">${d?.en ? `<button class="mini ${inCards ? "" : "primary"}" data-a="addVi" ${inCards ? "disabled" : ""}>${inCards ? "Đã có trong flashcard" : "+ Thêm vào flashcard"}</button>` : ""}
-    <a class="mini btn" target="_blank" rel="noopener" href="${gtLink(d?.word_vi || syl, "vi", "en")}">Google Dịch từ ↗</a>
-    <a class="mini btn" target="_blank" rel="noopener" href="${gtLink(sent, "vi", "en")}">Dịch cả câu ↗</a></div>`;
+    <button class="mini" data-a="popTr" data-v="${esc(sent)}">🌐 Dịch cả câu</button></div>
+   <div class="pop-tr"></div>`;
 }
 
 /* =====================================================================
@@ -1437,6 +1453,12 @@ const ACT = {
   remEvery: v => { S.profile.remindEvery = Number(v); save(); render(); },
   remToggle: () => { S.profile.remindOn = !remindCfg().on; save(); render(); toast(S.profile.remindOn ? "Đã bật nhắc học" : "Đã tắt nhắc học"); },
   closeCelebrate: () => { UI.celebrate = []; render(); },
+  tr: v => doTranslate(v),
+  popTr: async (v, btn) => { const sl = btn.dataset.sl || "vi", tl = sl === "vi" ? "en" : "vi", out = POP?.querySelector(".pop-tr"); if (!out) return;
+    btn.disabled = true; out.innerHTML = `<span class="spin"></span> Đang dịch...`;
+    try { const r = await timeoutFetch(`/api/translate?sl=${sl}&tl=${tl}&q=${encodeURIComponent(v)}`, {}, 15000); const d = await r.json(); if (!r.ok) throw new Error(d.error);
+      out.innerHTML = `<div class="tr-out">${esc(d.text)}<em>${esc(d.engine)}</em></div>`; } catch (e) { out.innerHTML = `<p class="muted small">Chưa dịch được: ${esc(e.message || "lỗi")}</p>`; }
+    btn.disabled = false; },
   ics: downloadIcs,
   notify: async () => { try { await Notification.requestPermission(); } catch (e) {} render(); },
   checkAI: async (v, btn) => { btn.innerHTML = `<span class="spin"></span>`; await checkAI(); render(); toast(AI.on ? "Key và model hợp lệ" : "Gemini chưa dùng được: " + AI.msg); },
@@ -1520,7 +1542,10 @@ function render() {
   else if (view === "history") html = vHistory();
   else if (view === "settings") html = vSettings();
   else { view = "home"; html = vHome(); }
+  // Giữ nội dung đang gõ dở (câu tự đặt, bản dịch...) khi giao diện vẽ lại
+  const keep = {}; a.querySelectorAll("textarea[id], input[id]").forEach(el => { if (el.value && !["qin", "rpIn", "rq"].includes(el.id) && !/^(sv-|remind)/.test(el.id)) keep[el.id] = el.value; });
   a.innerHTML = html;
+  for (const id in keep) { const el = document.getElementById(id); if (el && !el.value && !el.disabled) el.value = keep[id]; }
   renderHeader();
   if (view === "lesson" && L()?.step === 4) scrollChat();
   if (Q && (view === "quiz" || view === "lesson") && !Q.pick) { const it = Q.items[Q.i]; if (it?.autoplay && Q.played !== Q.i) { Q.played = Q.i; setTimeout(() => say(it.speak), 350); } }
