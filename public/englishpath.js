@@ -292,9 +292,11 @@ function checkBadges() {
 }
 const badgeCard = (b, on = true, date) => `<div class="badge-item ${on ? "" : "locked"}">${stk(b.stk, 60)}<b>${b.name}</b><span>${b.desc}</span>${date ? `<em>${date}</em>` : ""}</div>`;
 const gtLink = (t, sl, tl) => `https://translate.google.com/?sl=${sl}&tl=${tl}&op=translate&text=${encodeURIComponent(t)}`;
+// Tốc độ đọc: mặc định 0.8 (chậm hơn tốc độ máy). Đổi giá trị cũ sang thang mới.
+function ttsRate() { const v = pref("ep_rate"), old = {"0.95":"0.8", "1.1":"0.95", "0.75":"0.7"}; return Number(old[v] || v || 0.8); }
 function say(t, rate) { return new Promise(res => { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(String(t).replace(/_+/g, " blank "));
   const v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-US";
-  u.rate = rate || Number(pref("ep_rate") || 0.75); u.onend = res; u.onerror = res; speechSynthesis.speak(u); } catch (e) { res(); } }); }
+  u.rate = rate || ttsRate(); u.onend = res; u.onerror = res; speechSynthesis.speak(u); } catch (e) { res(); } }); }
 // Nhận giọng nói (Chrome, Edge)
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let REC = null;
@@ -376,10 +378,19 @@ async function loadState() {
 /* =====================================================================
    GEMINI
    ===================================================================== */
-async function gemini(system, prompt, json = true, history, ms = 60000) {
+// Gemini lỗi/quá tải/hết lượt: tạm nghỉ dùng AI 2 phút để app luôn phản hồi nhanh (chấm cơ bản)
+function pauseAI(reason) {
+  const first = !AI.pauseUntil || Date.now() > AI.pauseUntil;
+  AI.pauseUntil = Date.now() + 120e3;
+  if (first) toast("Gemini đang bận (" + reason + "). Tạm chấm cơ bản, 2 phút sau app tự dùng lại AI.");
+}
+async function gemini(system, prompt, json = true, history, ms = 30000) {
   const contents = history || [{role:"user", parts:[{text:prompt}]}];
-  const r = await timeoutFetch("/api/ai", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({system, contents, json, heavy:ms > 60000})}, ms);
+  let r;
+  try { r = await timeoutFetch("/api/ai", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({system, contents, json, heavy:ms > 60000})}, ms); }
+  catch (e) { pauseAI(e.name === "AbortError" ? "phản hồi quá chậm" : "mất kết nối"); throw e; }
   const d = await r.json().catch(() => ({}));
+  if (!r.ok && !d.quota && (d.busy || r.status >= 500)) pauseAI(d.error ? "quá tải" : "lỗi " + r.status);
   if (!r.ok) { if (d.quota) { AI = {on:false, quota:true, quotaAt:Date.now(), msg:d.error}; toast("Đã hết lượt Gemini miễn phí. Tạm dùng nội dung mẫu, app sẽ tự thử lại sau 5 phút."); }
     throw new Error(d.error || ("Gemini lỗi " + r.status)); }
   if (!json) return d.text;
@@ -390,7 +401,7 @@ async function checkAI() {
   try { const r = await timeoutFetch("/api/ai", {}, 12000); const d = await r.json(); AI = {on:!!d.ok, busy:!!d.busy, msg:d.ok ? (d.busy ? d.error : "") : (d.error || "không rõ lỗi")}; }
   catch (e) { AI = {on:false, msg:e.name === "AbortError" ? "Gemini phản hồi quá chậm, sẽ tự thử lại sau" : "không gọi được server"}; }
 }
-const aiOn = () => AI.on;
+const aiOn = () => AI.on && !(AI.pauseUntil && Date.now() < AI.pauseUntil);
 const goalName = () => (GOALS.find(g => g[0] === S.profile?.goal) || [, ""])[1];
 const fieldName = () => (S.profile?.fields || []).join(", ");
 const focusName = () => goalName() + (fieldName() ? " · " + fieldName() : "");
@@ -456,6 +467,36 @@ function streak() {
    SINH BÀI HỌC
    ===================================================================== */
 function validLesson(l) { return l && l.topic && Array.isArray(l.words) && l.words.length >= 4 && l.grammar && Array.isArray(l.translations) && l.roleplay; }
+// ---- Kho bài mẫu theo trình độ (public/lessonbank.js) ----
+// Khóa A2 → B1: học hết bài A2 rồi tới bài B1; hết kho thì vòng lại dạng "Ôn lại"
+function levelLessons(lv) {
+  const LB = window.LESSON_BANK || {}, b = i => ({...BANK[i], level: i === 1 || i === 3 ? "A2" : "A1"});
+  if (lv === "A1") { const a = LB.A1 || []; return [b(0), a[0], a[1], b(5), b(2), b(4), ...a.slice(2)].filter(Boolean); }
+  if (lv === "A2") return [b(1), ...(LB.A2 || []), b(3)];
+  return LB[lv] || [];
+}
+function bankSequence() {
+  const from = S.path?.from || S.level || "A1", to = S.path?.to || from;
+  let seq = from === to ? [...levelLessons(from), ...levelLessons(LEVELS[Math.max(0, lvIdx(from) - 1)])] : [...levelLessons(from), ...levelLessons(to)];
+  if (!seq.length) seq = BANK.map((l, i) => ({...l, level: "A1"}));
+  return seq;
+}
+function pickBankLesson() {
+  const seq = bankSequence(), pos = doneN();
+  const les = JSON.parse(JSON.stringify(seq[pos % seq.length]));
+  if (pos >= seq.length) { les.topic = "Ôn lại: " + les.topic; les.review = true; }
+  les.bank = true;
+  return les;
+}
+// Bài do AI soạn: bổ sung IPA còn thiếu bằng từ điển
+async function fillIPA(words) {
+  await Promise.all(words.filter(w => !/^\/.+\/$/.test((w.ipa || "").trim())).map(async w => {
+    const parts = await Promise.all(String(w.w).toLowerCase().split(/\s+/).map(async t => {
+      try { const r = await timeoutFetch("/api/dict?w=" + encodeURIComponent(t.replace(/[^a-z'-]/g, "")), {}, 8000); if (!r.ok) return ""; const j = (await r.json())[0];
+        return (j?.phonetic || j?.phonetics?.find(p => p.text)?.text || "").replace(/^\/|\/$/g, ""); } catch (e) { return ""; } }));
+    if (parts.every(Boolean)) w.ipa = "/" + parts.join(" ") + "/";
+  }));
+}
 const INFLIGHT = {};
 function getLesson(idx) {
   if (S.lessons[idx]) return Promise.resolve(S.lessons[idx]);
@@ -476,7 +517,7 @@ async function buildLesson(idx) {
   if (S.remedial?.length) {
     const ws = S.remedial.slice(0, 8).map(normWord);
     const g = Object.values(S.lessons).reverse().find(l => l.grammar?.quiz?.length)?.grammar || BANK[0].grammar;
-    les = {topic:"Buổi ôn tập: củng cố phần chưa vững", scenario:"Ôn lại các từ bạn trả lời sai trong bài kiểm tra", remedial:true, words:ws, grammar:g,
+    les = {level:S.level, topic:"Buổi ôn tập: củng cố phần chưa vững", scenario:"Ôn lại các từ bạn trả lời sai trong bài kiểm tra", remedial:true, words:ws, grammar:g,
       translations:ws.slice(0, 4).map(w => ({src:w.ex, ref:w.ex_vi || w.vi, dir:"en-vi"})),
       roleplay:{ai_role:"a friendly English tutor", user_role:"Người học", setting:"Trò chuyện tự do với gia sư để dùng lại các từ vừa ôn.",
         tasks:["Dùng ít nhất 3 từ vừa ôn", "Kể về một việc bạn làm tuần này", "Đặt một câu hỏi cho gia sư"], opening:"Hi! Let's practise the words from your review today. How was your week?"}};
@@ -497,12 +538,13 @@ Trả JSON đúng cấu trúc:
 "grammar":{"name":"tên điểm ngữ pháp","pattern":"công thức","note":"giải thích 2-3 câu tiếng Việt","quiz":[{"q":"câu có chỗ trống ___","opts":["4 lựa chọn"],"ans":0,"explain":"giải thích ngắn"}] (đúng 3 câu, đáp án ở vị trí ngẫu nhiên)},
 "translations":[{"src":"câu gốc","ref":"bản dịch mẫu","dir":"vi-en hoặc en-vi"}] (4 câu: 2 vi-en, 2 en-vi, có dùng từ và ngữ pháp của bài),
 "roleplay":{"ai_role":"vai của AI, tiếng Anh","user_role":"vai người học, tiếng Việt","setting":"bối cảnh tiếng Việt","tasks":["3 nhiệm vụ tiếng Việt"],"opening":"câu mở đầu của AI, tiếng Anh"}}`, true, null, 150000)]);
-      if (validLesson(j)) { les = j; les.ai = true; }
+      if (validLesson(j)) { les = j; les.ai = true; les.level = S.level; await fillIPA(les.words.map(normWord)).catch(() => {}); }
     } catch (e) { console.warn("Không sinh được bài:", e.message); if (e.name === "AbortError") e.message = "chờ quá lâu"; if (e.message !== "skip") toast("Gemini chưa soạn được bài (" + e.message + "). Dùng bài mẫu."); }
     cancelWait = null;
   }
-  if (!les) les = JSON.parse(JSON.stringify(BANK[idx % BANK.length]));
+  if (!les) les = pickBankLesson();
   les.words = les.words.map(normWord);
+  if (les.ai) await fillIPA(les.words).catch(() => {});
   S.lessons[idx] = les; save();
   return les;
 }
@@ -515,7 +557,7 @@ function meaningQ(card, pool, skill = "vocab") {
   const w = normWord(card); const others = shuffle(pool.map(normWord).filter(x => x.vi && x.w !== w.w && x.vi !== w.vi)).slice(0, 3).map(x => x.vi);
   while (others.length < 3) others.push(["thời tiết","cái bàn","nhanh chóng","bữa sáng","gia đình"][others.length]);
   const opts = shuffle([w.vi, ...others]);
-  return {type:"mcq", q:`"${w.w}" nghĩa là gì?`, opts, ans:opts.indexOf(w.vi), skill, word:w.w, speak:w.w};
+  return {type:"mcq", q:`"${w.w}"${w.ipa ? " " + w.ipa : ""} nghĩa là gì?`, opts, ans:opts.indexOf(w.vi), skill, word:w.w, speak:w.w};
 }
 function wordQ(card, pool) {
   const w = normWord(card); const others = shuffle(pool.map(normWord).filter(x => x.w !== w.w)).slice(0, 3).map(x => x.w);
@@ -524,7 +566,7 @@ function wordQ(card, pool) {
   return {type:"mcq", q:`Từ nào có nghĩa là "${w.vi}"?`, opts, ans:opts.indexOf(w.w), skill:"vocab", word:w.w};
 }
 const gramQ = g => { const right = g.opts[g.ans], opts = shuffle(g.opts.slice()); return {type:"mcq", q:g.q, opts, ans:opts.indexOf(right), skill:"grammar", explain:g.explain, speak:g.q}; };
-const spellQ = w => ({type:"type", q:`Viết từ tiếng Anh có nghĩa: "${w.vi}"`, ans:w.w, skill:"spelling", word:w.w, hint:w.w[0] + "…" + " (" + w.w.length + " ký tự)"});
+const spellQ = w => ({type:"type", q:`Viết từ tiếng Anh có nghĩa: "${w.vi}"`, ans:w.w, skill:"spelling", word:w.w, hint:w.w[0] + "… (" + w.w.length + " ký tự)" + (w.ipa ? " · phát âm " + w.ipa : "")});
 const transQ = t => ({type:"trans", q:t.src, ans:t.ref, skill:"translation", dir:t.dir});
 
 function quizPickPlacement(q) {
@@ -689,7 +731,7 @@ function vLesson() {
   const l = L(); if (!l) { view = "home"; return vHome(); }
   const head = `<header class="lhead"><div class="row between"><button class="ghost" data-a="exitLesson">← Lưu & thoát</button>
      <span class="muted small">${fmtTime(Date.now() - l.started)}</span></div>
-     <div class="lesson-title hue-${topicStk(l.les.topic)[1]}">${stk(topicStk(l.les.topic)[0], 64, "", -8)}<div class="grow"><p class="eyebrow">${l.les.remedial ? "Buổi ôn tập" : "Buổi " + (doneN() + 1)} · Bước ${l.step + 1}/6: ${STEPS[l.step]}</p><h2>${esc(l.les.topic)}</h2></div>${stk(STEP_STK[l.step], 46, "step-stk", 10)}</div>
+     <div class="lesson-title hue-${topicStk(l.les.topic)[1]}">${stk(topicStk(l.les.topic)[0], 64, "", -8)}<div class="grow"><p class="eyebrow">${l.les.remedial ? "Buổi ôn tập" : "Buổi " + (doneN() + 1)}${l.les.level ? " · " + l.les.level : ""} · Bước ${l.step + 1}/6: ${STEPS[l.step]}</p><h2>${esc(l.les.topic)}</h2></div>${stk(STEP_STK[l.step], 46, "step-stk", 10)}</div>
      <ol class="stepper">${STEPS.map((s, k) => `<li class="${k < l.step ? "done" : k === l.step ? "cur" : ""}"><span>${k + 1}</span><em>${s}</em></li>`).join("")}</ol></header>`;
   return `<div class="wrap narrow">${head}${[step1, step2, step3, step4, step5, step6][l.step]()}</div>`;
 }
@@ -709,7 +751,7 @@ function step2() {
       <div class="vocab">${stk(topicStk(l.les.topic)[0], 70, "corner", 12)}<div class="row"><h2 class="word">${esc(w.w)}</h2><button class="round" data-a="speak" data-v="${esc(w.w)}" aria-label="Nghe">🔊</button></div>
       <div class="ipa">${esc(w.ipa)}${w.pos ? ` · <span class="tag">${esc(w.pos)}</span>` : ""}</div>
       <p class="meaning">${esc(w.vi)}</p>
-      <div class="example"><p>${tw(w.ex)} <button class="mini" data-a="speak" data-v="${esc(w.ex)}">🔊 Nghe câu</button></p>${w.ex_vi ? `<p class="muted">${twv(w.ex_vi)}</p>` : ""}</div></div>
+      <div class="example"><p>${tw(w.ex)} <button class="mini" data-a="speak" data-v="${esc(w.ex)}">🔊 Nghe câu</button> <a class="mini btn gt" target="_blank" rel="noopener" href="${gtLink(w.ex, "en", "vi")}">Google Dịch ↗</a></p>${w.ex_vi ? `<p class="muted">${twv(w.ex_vi)}</p>` : ""}</div></div>
       ${speakBox(w, l.vi)}
       <div class="row">${l.vi > 0 ? `<button data-a="vprev">Từ trước</button>` : ""}<button class="primary" data-a="vnext">${l.vi < n - 1 ? "Từ tiếp theo" : "Xem điểm ngữ pháp"}</button></div></section>`;
   }
@@ -759,9 +801,10 @@ async function grade3() {
 // Bước 4: Dịch câu
 function step4() {
   const l = L(), tr = l.les.translations, graded = Object.keys(l.trans).length;
-  return `<section class="panel"><h2>Dịch câu</h2><p class="muted">Dịch theo ý, không cần khớp từng chữ. Bấm vào từ tiếng Anh nếu chưa biết nghĩa.</p></section>
+  return `<section class="panel"><h2>Dịch câu</h2><p class="muted">Dịch theo ý, không cần khớp từng chữ. Bấm vào từng từ để xem nghĩa và phiên âm; nút "Xem Google Dịch" mở bản dịch cả câu (nên tự dịch trước rồi mới so).</p></section>
    ${tr.map((t, i) => { const r = l.trans[i]; return `<section class="panel"><span class="tag">${t.dir === "vi-en" ? "Việt → Anh" : "Anh → Việt"}</span>
      <h3 class="src">${t.dir === "en-vi" ? tw(t.src) : twv(t.src)}</h3>
+     <div class="row"><a class="mini btn gt" target="_blank" rel="noopener" href="${gtLink(t.src, t.dir === "vi-en" ? "vi" : "en", t.dir === "vi-en" ? "en" : "vi")}">Xem Google Dịch ↗</a>${t.dir === "en-vi" ? `<button class="mini" data-a="speak" data-v="${esc(t.src)}">🔊 Nghe câu</button>` : ""}</div>
      <label class="sr" for="tr${i}">Bản dịch</label><textarea id="tr${i}" rows="2" placeholder="Bản dịch của bạn">${esc(r?.text || "")}</textarea>
      ${r ? `<div class="fb ${r.score >= 7 ? "good" : "bad"}"><b>${r.score}/10</b> · ${esc(r.note || "")}<br>Tham khảo: <i>${t.dir === "vi-en" ? tw(t.ref) : esc(t.ref)}</i>${r.better && clean(r.better) !== clean(t.ref) ? `<br>Gợi ý từ câu của bạn: <i>${esc(r.better)}</i>` : ""}</div>` : ""}</section>`; }).join("")}
    <section class="panel"><h2>Nghe và chép</h2><p class="muted">Nghe câu tiếng Anh rồi gõ lại. Có thể nghe nhiều lần, nghe chậm nếu cần.</p></section>
@@ -881,7 +924,7 @@ function step6() {
      <div class="scorebig"><b>${total}</b><span>điểm trung bình</span></div>
      <div class="bars">${keys.map(([k, n]) => `<div class="bar"><span>${n}</span><div><i style="width:${sc[k] ?? 0}%"></i></div><b>${sc[k] ?? "–"}</b></div>`).join("")}</div></section>
    <section class="panel"><h3>Từ vựng hôm nay (${l.les.words.length} từ, đã vào flashcard)</h3>
-     <div class="wordgrid">${l.les.words.map(w => `<div><b>${esc(w.w)}</b><span class="muted">${esc(w.vi)}</span></div>`).join("")}</div></section>
+     <div class="wordgrid">${l.les.words.map(w => `<div><b>${esc(w.w)}</b><span class="ipa">${esc(w.ipa || "")}</span><span class="muted">${esc(w.vi)}</span></div>`).join("")}</div></section>
    <section class="panel"><h3>Ngữ pháp: ${esc(g.name)}</h3>${g.pattern ? `<div class="pattern">${esc(g.pattern)}</div>` : ""}<p class="muted">${twv(g.note || "")}</p></section>
    ${ms.length ? `<section class="panel"><h3>Lỗi cần nhớ</h3>${ms.map(m => `<div class="fb bad"><s>${esc(m.text)}</s><br><b>${esc(m.fix)}</b></div>`).join("")}</section>` : ""}
    <section class="panel"><p>${nextTest ? "<b>Buổi tới là bài kiểm tra định kỳ</b> sau 5 buổi học." : `Còn ${5 - (doneN() + 1) % 5} buổi nữa đến bài kiểm tra định kỳ.`} Bạn có ${dueCards().length} thẻ flashcard cần ôn.</p>
@@ -1029,7 +1072,7 @@ function vHome() {
         <button class="primary big" data-a="startUnit">Làm bài kiểm tra</button>`
      : `<span class="eyebrow">${doneToday() && !cur ? "Bạn đã học hôm nay" : "Buổi học hôm nay"}</span>
         <h2>${cur ? esc(cur.les.topic) : nextLes ? esc(nextLes.topic) : `Buổi ${n + 1}`}</h2>
-        ${!cur && nextLes ? `<p class="small"><span class="tag good">Đã soạn xong</span> ${nextLes.ai ? "Bài do Gemini soạn riêng cho bạn" : "Bài mẫu"}</p>` : !cur && INFLIGHT[S.sessions.length] ? `<p class="small muted"><span class="spin"></span> Gemini đang soạn sẵn buổi này...</p>` : ""}
+        ${!cur && nextLes ? `<p class="small"><span class="tag good">Đã soạn xong</span> ${nextLes.ai ? "Bài do Gemini soạn riêng cho bạn" : `Bài mẫu trình độ ${nextLes.level || S.level}${nextLes.review ? " · ôn lại" : ""}`}</p>` : !cur && INFLIGHT[S.sessions.length] ? `<p class="small muted"><span class="spin"></span> Gemini đang soạn sẵn buổi này...</p>` : ""}
         <ol class="steps-mini">${STEPS.map((t, k) => `<li class="${cur && k < cur.step ? "done" : cur && k === cur.step ? "cur" : ""}">${stk(STEP_STK[k], 30, "", 0)}<span>${t}</span></li>`).join("")}</ol>
         <button class="primary big" data-a="startLesson">${cur ? "Học tiếp" : doneToday() ? "Học thêm buổi tiếp theo" : "Bắt đầu buổi học"}</button>`}
      ${AI.on ? "" : `<p class="fb small">Gemini chưa hoạt động (${esc(AI.msg)}). App dùng bài học mẫu và chấm điểm cơ bản.</p>`}
@@ -1062,15 +1105,16 @@ function vPath() {
     for (let k = 0; k < 5; k++) {
       const no = u * 5 + k; if (no >= p.total) break;
       const s = regSessions()[no], les = s ? S.lessons[s.idx] : (no === n ? S.lessons[S.sessions.length] : null);
+      const seq = bankSequence(), plan = !s && !les && seq.length ? seq[no % seq.length] : null;
       const st = s ? "done" : no === n && !testDue() ? "now" : "locked";
-      cells.push(`<li class="${st}"><span class="num">${no + 1}</span>${s || les ? stk(topicStk(s?.topic || les?.topic)[0], 32, "", 0) : ""}<div><b>${esc(s?.topic || les?.topic || (st === "locked" ? "Chưa mở" : "Buổi tiếp theo"))}</b>${s ? `<span class="muted small">${s.date} · ${s.total} điểm${s.remedial ? " · ôn tập" : ""}</span>` : ""}</div>${s ? `<em>${s.total}</em>` : st === "now" ? `<button class="mini primary" data-a="startLesson">Học</button>` : ""}</li>`);
+      cells.push(`<li class="${st}"><span class="num">${no + 1}</span>${s || les || plan ? stk(topicStk(s?.topic || les?.topic || plan?.topic)[0], 32, "", 0) : ""}<div><b>${esc(s?.topic || les?.topic || plan?.topic || (st === "locked" ? "Chưa mở" : "Buổi tiếp theo"))}</b>${plan ? `<span class="muted small">Dự kiến · ${plan.level} · ${esc(plan.grammar?.name || "")}</span>` : ""}${s ? `<span class="muted small">${s.date} · ${s.total} điểm${s.remedial ? " · ôn tập" : ""}</span>` : ""}</div>${s ? `<em>${s.total}</em>` : st === "now" ? `<button class="mini primary" data-a="startLesson">Học</button>` : ""}</li>`);
     }
     courseSessions().filter(s => s.remedial && s.unit === u).forEach(s => cells.push(`<li class="done"><span class="num">+</span><div><b>${esc(s.topic)}</b><span class="muted small">${s.date} · ${s.total} điểm</span></div><em>${s.total}</em></li>`));
     const t = tests[u], tst = t ? "done" : (n >= (u + 1) * 5 ? "now" : "locked");
     html += `<section class="panel unit ${n >= u * 5 && n < (u + 1) * 5 + 1 ? "active" : ""}"><div class="row between"><h3 class="row">${stk(WEEK_STK[u % WEEK_STK.length], 34, "", 0)} Tuần ${u + 1}</h3><span class="muted small">${Math.min(5, Math.max(0, n - u * 5))}/5 buổi</span></div>
       <ol class="sessions">${cells.join("")}<li class="test ${tst}"><span class="num">✓</span><div><b>Kiểm tra định kỳ Unit ${u + 1}</b>${t ? `<span class="muted small">${t.date}</span>` : ""}</div>${t ? `<em>${t.score}%</em>` : tst === "now" ? `<button class="mini primary" data-a="startUnit">Làm bài</button>` : ""}</li></ol></section>`;
   }
-  return `<div class="wrap"><section class="hello">${stk("map", 72, "", -6)}<div><p class="eyebrow">Lộ trình của bạn</p><h1>${p.from} → ${p.to}</h1><p class="muted">${p.weeks} tuần · ${p.total} buổi · bắt đầu ${p.start} · ${esc(focusName())}</p></div>
+  return `<div class="wrap"><section class="hello">${stk("map", 72, "", -6)}<div><p class="eyebrow">Lộ trình của bạn</p><h1>${p.from} → ${p.to}</h1><p class="muted">${p.weeks} tuần · ${p.total} buổi · bắt đầu ${p.start} · ${esc(focusName())}</p><p class="muted small">Các buổi chưa học hiện bài dự kiến trong kho bài mẫu ${p.from}${p.to !== p.from ? " → " + p.to : ""}. Khi Gemini hoạt động, bài sẽ được soạn riêng theo lĩnh vực của bạn ở cùng trình độ.</p></div>
     <div class="ladder">${LEVELS.map((l, k) => `<span class="${l === p.from ? "cur" : l === p.to ? "next" : k < lvIdx(p.from) ? "past" : ""}">${l}</span>`).join("")}</div></section>
     <div class="progress"><i style="width:${pct(n, p.total)}%"></i></div>${html}</div>`;
 }
@@ -1165,7 +1209,7 @@ function vSettings() {
     <div class="row"><a class="btn mini" target="_blank" rel="noopener" href="${gcalLink()}">Google Calendar ↗</a><button class="mini" data-a="ics">Tải file lịch (.ics)</button></div></section>
    <section class="panel"><h3>Giọng đọc & micro</h3>
     <label for="voiceSel">Giọng đọc tiếng Anh</label><select id="voiceSel" data-change="setVoice">${VOICES.length ? VOICES.map(v => `<option value="${esc(v.name)}" ${pickVoice()?.name === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("") : `<option>Giọng mặc định của trình duyệt</option>`}</select>
-    <div class="row"><span>Tốc độ đọc</span>${[["0.5", "Chậm"], ["0.75", "Vừa"], ["1", "Nhanh"]].map(([k, t]) => `<button class="seg ${(pref("ep_rate") || "0.75") === k ? "sel" : ""}" data-a="ttsRate" data-v="${k}">${t}</button>`).join("")}
+    <div class="row"><span>Tốc độ đọc</span>${[["0.6", "Rất chậm"], ["0.7", "Chậm"], ["0.8", "Vừa"], ["0.95", "Nhanh"]].map(([k, t]) => `<button class="seg ${Number(k) === ttsRate() ? "sel" : ""}" data-a="ttsRate" data-v="${k}">${t}</button>`).join("")}
      <button data-a="speak" data-v="Hello! This is how I sound. Let's practise English together.">🔊 Nghe thử</button></div>
     <div class="row"><button class="mic ${UI.rec === "test" ? "on" : ""}" data-a="micTest" ${SR ? "" : "disabled"}>${UI.rec === "test" ? "● Đang nghe..." : "🎤 Thử micro"}</button>
      <span class="muted small">${SR ? "Nhận giọng nói chạy trên Chrome và Edge, cần có Internet." : "Trình duyệt này không hỗ trợ nhận giọng nói. Hãy dùng Chrome hoặc Edge."}</span></div>
@@ -1340,7 +1384,7 @@ async function testPush(btn) { btn.disabled = true; const r = await fetch("/api/
 const ACT = {
   go: v => { view = v; Q = null; FC = null; closePop(); UI.menu = false; render(); scrollTo(0, 0); },
   speak: v => say(v),
-  slow: v => say(v, 0.5),
+  slow: v => say(v, Math.max(0.45, ttsRate() - 0.25)),
   pron: v => { const l = L(), [kind, i] = v.split(":"), w = l.les.words[Number(i)], target = kind === "w" ? w.w : w.ex;
     startRec(v, r => { l.pron[v] = pronScore(target, r.text, r.alts); l.scores.speaking = Math.round(avg(Object.values(l.pron).map(x => x.score))); save(); }); },
   qMic: () => startRec("q", r => answer(r)),
@@ -1487,7 +1531,8 @@ function render() {
    ===================================================================== */
 (async () => {
   applyPrefs();
-  if (!window.STICKERS) await new Promise(r => { const sc = document.createElement("script"); sc.src = "/stickers.js?v=1"; sc.onload = r; sc.onerror = r; document.head.appendChild(sc); });
+  const loadJs = (src, ok) => ok ? Promise.resolve() : new Promise(r => { const sc = document.createElement("script"); sc.src = src; sc.onload = r; sc.onerror = r; document.head.appendChild(sc); });
+  await Promise.all([loadJs("/stickers.js?v=1", window.STICKERS), loadJs("/lessonbank.js?v=1", window.LESSON_BANK)]);
   if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
   swReg().then(checkPush).then(() => { if (view === "settings") render(); });
   const app = $("#app");
