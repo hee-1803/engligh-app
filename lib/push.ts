@@ -83,6 +83,12 @@ export function reminderFor(data: any) {
   const due = Object.values(data?.cards || {}).filter((c) => (c as { due: number }).due <= Date.now()).length;
   const name = data?.profile?.name ? `${data.profile.name} ơi, ` : "";
   const testDue = done > 0 && done % 5 === 0 && (data?.tests || []).filter((t: { course?: string }) => t.course === courseId).length < done / 5;
+  // Đúng ngày sinh nhật: lời nhắc chúc mừng thay vì "chê"
+  const bd = String(data?.profile?.birthday || "").slice(-5);
+  if (bd && bd === todayVN().slice(5)) {
+    return { title: `🎂 Chúc mừng sinh nhật${data?.profile?.name ? " " + data.profile.name : ""}!`,
+      body: "Hôm nay là ngày của bạn. Mở app xem món quà nhỏ, rồi học một bài thật nhẹ nhàng nhé. Happy birthday! 🎉", url: "/" };
+  }
   if (data?.profile?.remindTone !== "soft") {
     const unfinished = !!(data?.current && data.current.step > 0);
     // Ưu tiên lời nhắc đúng tình trạng (khoảng 60%), còn lại lấy câu chung cho đỡ nhàm

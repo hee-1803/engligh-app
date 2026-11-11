@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800;900&family=JetBrains+Mono:wght@500;600&display=swap");
 
 /* Bố cục: thanh trên cố định với 4 tab, nội dung một cột rộng 960px; khi học/kiểm tra thì vào "chế độ tập trung" 720px.
    Màu: nền giấy ấm, mực xanh rêu đậm, điểm nhấn xanh mòng két, vàng hổ phách để đánh dấu. */
@@ -453,3 +453,142 @@ button.primary.big { border-radius: 14px }
 .backbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; background: var(--mark-soft, #fff4d6); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin: 10px 0 }
 .revlist { display: grid; gap: 10px; padding-left: 0; list-style-position: inside } .revlist li { line-height: 1.6 }
 .revword { border-bottom: 1px dashed var(--line); padding-bottom: 8px; display: grid; gap: 2px } .revword .row { gap: 8px; align-items: center }
+
+
+/* =====================================================================
+   GIAO DIỆN "BUBBLE": chữ tròn (Nunito + Baloo 2, đều có đủ dấu tiếng Việt),
+   bo góc lớn, nút phồng có bóng đáy và vệt sáng, nền pastel có bong bóng mờ.
+   ===================================================================== */
+:root {
+  --bg: #f3f0ff; --surface: #ffffff; --sunk: #f1ecff; --ink: #2b2350; --muted: #6f6895; --line: #e6e0fb;
+  --accent: #7c5cff; --accent-2: #ff6fb5; --accent-ink: #ffffff; --accent-soft: #eee8ff; --mark: #ffc93c; --mark-soft: #fff5d6;
+  --good: #19b37a; --good-soft: #dcf8ec; --bad: #ff5a6e; --bad-soft: #ffe6ea;
+  --f-body: "Nunito", "Baloo 2", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-display: "Baloo 2", "Nunito", system-ui, sans-serif;
+  --f-mono: "Nunito", system-ui, sans-serif;
+  --hero-bg: #7c5cff; --hero-fg: #ffffff; --hero-soft: rgba(255,255,255,.2);
+  --r: 26px;
+  --bub: 0 10px 30px -12px rgba(92, 64, 220, .28), 0 2px 0 rgba(92, 64, 220, .06);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #17142b; --surface: #221d3d; --sunk: #2a2449; --ink: #f0ecff; --muted: #a9a2cf; --line: #352e5c;
+  --accent: #9d85ff; --accent-2: #ff86c3; --accent-ink: #160f33; --accent-soft: #2f2860; --mark: #ffd45c; --mark-soft: #3b3220;
+  --good: #3fd69a; --good-soft: #173a2e; --bad: #ff7a8b; --bad-soft: #42222b; --hero-bg: #6b4fe8;
+  --bub: 0 10px 30px -12px rgba(0,0,0,.6) } }
+:root[data-theme="dark"] {
+  --bg: #17142b; --surface: #221d3d; --sunk: #2a2449; --ink: #f0ecff; --muted: #a9a2cf; --line: #352e5c;
+  --accent: #9d85ff; --accent-2: #ff86c3; --accent-ink: #160f33; --accent-soft: #2f2860; --mark: #ffd45c; --mark-soft: #3b3220;
+  --good: #3fd69a; --good-soft: #173a2e; --bad: #ff7a8b; --bad-soft: #42222b; --hero-bg: #6b4fe8;
+  --bub: 0 10px 30px -12px rgba(0,0,0,.6) }
+
+body { font-weight: 600; letter-spacing: .005em;
+  background:
+    radial-gradient(420px 420px at 8% 12%, color-mix(in srgb, var(--accent-2) 22%, transparent), transparent 70%),
+    radial-gradient(520px 520px at 92% 8%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    radial-gradient(480px 480px at 80% 92%, color-mix(in srgb, var(--mark) 22%, transparent), transparent 70%),
+    radial-gradient(380px 380px at 10% 88%, color-mix(in srgb, #4fd1ff 20%, transparent), transparent 70%),
+    var(--bg);
+  background-attachment: fixed }
+h1, h2, h3, .word, .brand b, .todaycard h2 { font-family: var(--f-display); letter-spacing: 0; font-weight: 800 }
+h1 { font-size: 2.2rem } h2 { font-size: 1.55rem }
+.eyebrow, .tag, .badge, .lvl, .brand small { font-family: var(--f-body); font-weight: 800; letter-spacing: .04em }
+
+#hdr { background: color-mix(in srgb, var(--surface) 75%, transparent); border-bottom: 0; box-shadow: 0 6px 24px -16px rgba(92,64,220,.4) }
+.logo { border-radius: 14px; background: linear-gradient(135deg, var(--accent), var(--accent-2)) }
+.tabs-top a { border-radius: 99px; font-weight: 800 }
+.tabs-top a.sel { background: var(--accent-soft); color: var(--accent) } .tabs-top a.sel::after { display: none }
+.lvl { border-radius: 99px; border-width: 2px; padding: 2px 10px }
+.avatar { background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 4px 12px -4px var(--accent) }
+.menu { border-radius: 20px; border: 0; box-shadow: var(--bub), 0 20px 40px -20px rgba(0,0,0,.25) }
+.menu a { border-radius: 14px; font-weight: 700 }
+
+.panel { border: 0; border-radius: var(--r); box-shadow: var(--bub); padding: 24px }
+.panel.hero { background: linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 55%, var(--accent-2)) 100%) }
+.panel.notice { border: 2px dashed var(--mark) }
+
+/* Nút phồng: bo tròn hẳn, bóng đáy "3D", vệt sáng trên đỉnh */
+button, .btn { font-family: var(--f-body); font-weight: 800; border-radius: 99px; border: 2px solid var(--line); padding: 10px 20px;
+  box-shadow: 0 3px 0 var(--line); transition: transform .12s, box-shadow .12s, filter .12s, background .12s }
+button:hover:not(:disabled), .btn:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)) }
+button:active:not(:disabled), .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line) }
+button.primary, .btn.primary { border: 0; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.12);
+  background: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0) 55%), linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, var(--accent-2)));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 65%, #000), 0 10px 22px -8px var(--accent) }
+:root[data-theme="dark"] button.primary { color: #fff }
+button.primary:active:not(:disabled) { box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 65%, #000) }
+button.ghost { box-shadow: none; border-color: transparent }
+button.danger { box-shadow: 0 3px 0 var(--bad-soft) }
+.mini { padding: 5px 14px; border-radius: 99px; box-shadow: 0 2px 0 var(--line) }
+.round { border-width: 2px; box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 35%, var(--line)); background: var(--surface) }
+.seg.sel, .choice.sel, .chip-btn.sel { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 40%, transparent) }
+
+.tag { border-radius: 99px; padding: 3px 11px }
+input, textarea, select { border-radius: 20px; border: 2px solid var(--line); background: var(--surface); font-weight: 600; box-shadow: inset 0 2px 0 rgba(92,64,220,.04) }
+input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft) }
+input[type="time"] { border-radius: 16px }
+
+.opt { border-radius: 22px; box-shadow: 0 4px 0 var(--line) }
+.opt .key { border-radius: 50%; background: linear-gradient(135deg, var(--accent-soft), color-mix(in srgb, var(--accent-2) 18%, var(--surface))); color: var(--accent); font-family: var(--f-display) }
+.opt.right { box-shadow: 0 4px 0 color-mix(in srgb, var(--good) 45%, transparent) } .opt.wrong { box-shadow: 0 4px 0 color-mix(in srgb, var(--bad) 45%, transparent) }
+
+.stepper li span { height: 10px; border-radius: 99px }
+.stepper li.done span { background: linear-gradient(90deg, var(--accent), var(--accent-2)) }
+.stepper li.cur span { background: var(--mark); box-shadow: 0 0 0 3px var(--mark-soft) }
+.backbar, .trbox .tr-out, .tr-out { border-radius: 20px }
+.tr-out { border-left: 0; background: var(--accent-soft); box-shadow: inset 4px 0 0 var(--accent) }
+.ipa { font-family: "JetBrains Mono", ui-monospace, monospace; font-weight: 500 }
+#bnav { border-radius: 26px 26px 0 0; box-shadow: 0 -8px 26px -14px rgba(92,64,220,.45) }
+html, body { min-height: 100% } html { background: var(--bg) }
+
+/* ---------- Chủ đề theo mùa / ngày lễ (data-fest do applyFestive() đặt) ---------- */
+:root[data-fest="tet"] { --accent: #e0262f; --accent-2: #ffb300; --mark: #ffcc33; --hero-bg: #e0262f }
+@media (prefers-color-scheme: light) { :root[data-fest="tet"]:not([data-theme="dark"]) { --bg: #fff4ec; --accent-soft: #ffe4dc; --sunk: #ffe4dc; --line: #f6d9cc } }
+:root[data-fest="tet"][data-theme="light"] { --bg: #fff4ec; --accent-soft: #ffe4dc; --sunk: #ffe4dc; --line: #f6d9cc }
+:root[data-fest="valentine"] { --accent: #ff3d7f; --accent-2: #ff8fb8; --mark: #ffc2d6; --hero-bg: #ff3d7f }
+@media (prefers-color-scheme: light) { :root[data-fest="valentine"]:not([data-theme="dark"]) { --bg: #fff1f6; --accent-soft: #ffe1ec; --sunk: #ffe1ec; --line: #f8d3e1 } }
+:root[data-fest="valentine"][data-theme="light"] { --bg: #fff1f6; --accent-soft: #ffe1ec; --sunk: #ffe1ec; --line: #f8d3e1 }
+:root[data-fest="women83"] { --accent: #e0479e; --accent-2: #a66cff; --mark: #ffd1ea; --hero-bg: #e0479e }
+@media (prefers-color-scheme: light) { :root[data-fest="women83"]:not([data-theme="dark"]) { --bg: #fdf2fb; --accent-soft: #f9e0f2; --sunk: #f9e0f2; --line: #f0d3e9 } }
+:root[data-fest="women83"][data-theme="light"] { --bg: #fdf2fb; --accent-soft: #f9e0f2; --sunk: #f9e0f2; --line: #f0d3e9 }
+:root[data-fest="founder"] { --accent: #2f7bff; --accent-2: #00c2a8; --mark: #ffc93c; --hero-bg: #2f7bff }
+@media (prefers-color-scheme: light) { :root[data-fest="founder"]:not([data-theme="dark"]) { --bg: #eef6ff; --accent-soft: #dde9ff; --sunk: #dde9ff; --line: #d3e2fb } }
+:root[data-fest="founder"][data-theme="light"] { --bg: #eef6ff; --accent-soft: #dde9ff; --sunk: #dde9ff; --line: #d3e2fb }
+:root[data-fest="kids"] { --accent: #ff7a1a; --accent-2: #14c3e8; --mark: #ffd23c; --hero-bg: #ff7a1a }
+@media (prefers-color-scheme: light) { :root[data-fest="kids"]:not([data-theme="dark"]) { --bg: #fff7e8; --accent-soft: #ffe9d2; --sunk: #ffe9d2; --line: #f6e0c3 } }
+:root[data-fest="kids"][data-theme="light"] { --bg: #fff7e8; --accent-soft: #ffe9d2; --sunk: #ffe9d2; --line: #f6e0c3 }
+:root[data-fest="midautumn"] { --accent: #ea6a00; --accent-2: #7a3dc8; --mark: #ffcf4a; --hero-bg: #ea6a00 }
+@media (prefers-color-scheme: light) { :root[data-fest="midautumn"]:not([data-theme="dark"]) { --bg: #fff6e6; --accent-soft: #ffe8c9; --sunk: #ffe8c9; --line: #f5dfbd } }
+:root[data-fest="midautumn"][data-theme="light"] { --bg: #fff6e6; --accent-soft: #ffe8c9; --sunk: #ffe8c9; --line: #f5dfbd }
+:root[data-fest="special1410"] { --accent: #d63384; --accent-2: #ff7eb6; --mark: #ffc8a8; --hero-bg: #d63384 }
+@media (prefers-color-scheme: light) { :root[data-fest="special1410"]:not([data-theme="dark"]) { --bg: #fff0f5; --accent-soft: #ffdfeb; --sunk: #ffdfeb; --line: #f6d0df } }
+:root[data-fest="special1410"][data-theme="light"] { --bg: #fff0f5; --accent-soft: #ffdfeb; --sunk: #ffdfeb; --line: #f6d0df }
+:root[data-fest="teacher"] { --accent: #1f8a5b; --accent-2: #4c8dff; --mark: #ffc93c; --hero-bg: #1f8a5b }
+@media (prefers-color-scheme: light) { :root[data-fest="teacher"]:not([data-theme="dark"]) { --bg: #f0faf4; --accent-soft: #dcf2e6; --sunk: #dcf2e6; --line: #cfe8da } }
+:root[data-fest="teacher"][data-theme="light"] { --bg: #f0faf4; --accent-soft: #dcf2e6; --sunk: #dcf2e6; --line: #cfe8da }
+:root[data-fest="xmas"] { --accent: #c8102e; --accent-2: #178a4c; --mark: #ffd166; --hero-bg: #c8102e }
+@media (prefers-color-scheme: light) { :root[data-fest="xmas"]:not([data-theme="dark"]) { --bg: #f6fbf6; --accent-soft: #e3f2e8; --sunk: #e3f2e8; --line: #d6e8db } }
+:root[data-fest="xmas"][data-theme="light"] { --bg: #f6fbf6; --accent-soft: #e3f2e8; --sunk: #e3f2e8; --line: #d6e8db }
+:root[data-fest="birthday"] { --accent: #ff4fa3; --accent-2: #7c5cff; --mark: #ffd23c; --hero-bg: #ff4fa3 }
+@media (prefers-color-scheme: light) { :root[data-fest="birthday"]:not([data-theme="dark"]) { --bg: #fff3fa; --accent-soft: #ffe0f0; --sunk: #ffe0f0; --line: #f4d3e6 } }
+:root[data-fest="birthday"][data-theme="light"] { --bg: #fff3fa; --accent-soft: #ffe0f0; --sunk: #ffe0f0; --line: #f4d3e6 }
+:root[data-fest="spring"] { --accent: #ec5f9a; --accent-2: #35b97a; --mark: #ffd166; --hero-bg: #ec5f9a }
+@media (prefers-color-scheme: light) { :root[data-fest="spring"]:not([data-theme="dark"]) { --bg: #fff4f8; --accent-soft: #ffe3ee; --sunk: #ffe3ee; --line: #f6d6e3 } }
+:root[data-fest="spring"][data-theme="light"] { --bg: #fff4f8; --accent-soft: #ffe3ee; --sunk: #ffe3ee; --line: #f6d6e3 }
+:root[data-fest="summer"] { --accent: #0aa5d8; --accent-2: #ff9f1c; --mark: #ffd23c; --hero-bg: #0aa5d8 }
+@media (prefers-color-scheme: light) { :root[data-fest="summer"]:not([data-theme="dark"]) { --bg: #effaff; --accent-soft: #d9f2fc; --sunk: #d9f2fc; --line: #cde8f3 } }
+:root[data-fest="summer"][data-theme="light"] { --bg: #effaff; --accent-soft: #d9f2fc; --sunk: #d9f2fc; --line: #cde8f3 }
+:root[data-fest="autumn"] { --accent: #d9662b; --accent-2: #b5452e; --mark: #f2b134; --hero-bg: #d9662b }
+@media (prefers-color-scheme: light) { :root[data-fest="autumn"]:not([data-theme="dark"]) { --bg: #fff6ee; --accent-soft: #fbe5d3; --sunk: #fbe5d3; --line: #f1d9c4 } }
+:root[data-fest="autumn"][data-theme="light"] { --bg: #fff6ee; --accent-soft: #fbe5d3; --sunk: #fbe5d3; --line: #f1d9c4 }
+:root[data-fest="winter"] { --accent: #3b7ddd; --accent-2: #7c5cff; --mark: #9fd8ff; --hero-bg: #3b7ddd }
+@media (prefers-color-scheme: light) { :root[data-fest="winter"]:not([data-theme="dark"]) { --bg: #f1f6ff; --accent-soft: #e0eaff; --sunk: #e0eaff; --line: #d5e0f5 } }
+:root[data-fest="winter"][data-theme="light"] { --bg: #f1f6ff; --accent-soft: #e0eaff; --sunk: #e0eaff; --line: #d5e0f5 }
+#festfx { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden }
+#festfx i { position: absolute; top: -40px; font-style: normal; opacity: .75; animation: festfall linear infinite }
+@keyframes festfall { 0% { transform: translate(0, -40px) rotate(0) } 50% { transform: translate(24px, 50vh) rotate(160deg) } 100% { transform: translate(-12px, 105vh) rotate(320deg) } }
+.festbanner { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, var(--surface)), color-mix(in srgb, var(--accent-2) 16%, var(--surface))); border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent) }
+.festemo { font-size: 3rem; line-height: 1; animation: bob 2.4s ease-in-out infinite; display: inline-block }
+.festmsg { font: 800 1.15rem/1.45 var(--f-display); color: var(--ink) }
+#app { position: relative; z-index: 6 }
+#festfx.calm i { opacity: .38; filter: saturate(.85) }
+#app { position: relative; z-index: 1 } #festfx.calm { z-index: 0 }
