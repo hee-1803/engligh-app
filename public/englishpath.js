@@ -1498,6 +1498,7 @@ async function testPush(btn) { btn.disabled = true; const r = await fetch("/api/
    HÀNH ĐỘNG (data-a)
    ===================================================================== */
 const ACT = {
+  festFx: v => { S.profile.festFx = v === "true"; save(); applyFestive(); render(); toast(v === "true" ? "Đã bật hiệu ứng rơi" : "Đã tắt hiệu ứng rơi"); },
   go: v => { view = v; Q = null; FC = null; closePop(); UI.menu = false; render(); scrollTo(0, 0); },
   speak: v => say(v),
   slow: v => say(v, Math.max(0.45, ttsRate() - 0.25)),
@@ -1571,7 +1572,6 @@ const ACT = {
     S = blank(); Q = null; FC = null; SV = null; pushState(); view = "home"; render(); toast("Đã xóa tiến độ"); },
 };
 const CHANGE = {
-  festFx: v => { S.profile.festFx = v === "true"; save(); applyFestive(); render(); },
   setBday: v => { S.profile.birthday = v || ""; save(); applyFestive(); render(); toast(v ? "Đã lưu ngày sinh 🎂" : "Đã xoá ngày sinh"); },
   setFest: v => { S.profile.festive = v; save(); applyFestive(); render(); },
   setRemind: v => { S.profile.remind = v; if (toMin(S.profile.remindEnd || "23:00") < toMin(v)) S.profile.remindEnd = v; save(); render(); toast("Đã lưu giờ nhắc"); },
