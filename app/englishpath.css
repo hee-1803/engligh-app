@@ -592,3 +592,8 @@ html, body { min-height: 100% } html { background: var(--bg) }
 #app { position: relative; z-index: 6 }
 #festfx.calm i { opacity: .38; filter: saturate(.85) }
 #app { position: relative; z-index: 1 } #festfx.calm { z-index: 0 }
+:root[data-fest="newyear"] { --accent: #5b3df5; --accent-2: #ffb703; --mark: #ffd166; --hero-bg: #2b1d7a }
+@media (prefers-color-scheme: light) { :root[data-fest="newyear"]:not([data-theme="dark"]) { --bg: #f4f1ff; --accent-soft: #e6e0ff; --sunk: #e6e0ff; --line: #dcd5fb } }
+:root[data-fest="newyear"][data-theme="light"] { --bg: #f4f1ff; --accent-soft: #e6e0ff; --sunk: #e6e0ff; --line: #dcd5fb }
+#festfx.calm i { opacity: .55 }
+.festbanner.season { padding: 14px 20px } .festbanner.season .festemo { font-size: 1.8rem }
