@@ -1693,7 +1693,7 @@ function renderHeader() {
     ${focus ? "" : `<nav class="tabs-top" aria-label="Điều hướng">${tabs.map(([k, t]) => `<a href="#" class="${active === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : ""}</a>`).join("")}</nav>`}
     <div class="tools">${S.level ? `<span class="lvl" title="Trình độ hiện tại">${S.level}</span>` : ""}
      <div class="usermenu"><button class="avatar" data-a="menu" aria-label="Tài khoản ${esc(ME?.email || "")}">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc(name[0].toUpperCase())}</button>
-     ${UI.menu ? `<div class="menu"><div class="who"><b>${esc(displayName() || "Tài khoản")}</b><span>${esc(ME?.email || "")}</span></div>${S.path ? `<a href="#" data-a="go" data-v="settings">Cài đặt</a>` : ""}<a href="/auth/signout">Đăng xuất</a></div>` : ""}</div></div></div>`;
+     ${UI.menu ? `<div class="menu"><div class="who"><b>${esc(displayName() || "Tài khoản")}</b><span>${esc(ME?.email || "")}</span></div>${ME?.admin ? `<a href="/admin">🛠️ Quản trị</a>` : ""}${S.path ? `<a href="#" data-a="go" data-v="settings">Cài đặt</a>` : ""}<a href="/auth/signout">Đăng xuất</a></div>` : ""}</div></div></div>`;
   const bn = $("#bnav");
   if (bn) { bn.hidden = focus; bn.innerHTML = focus ? "" : [...tabs, ["settings", "Cài đặt"]].map(([k, t]) => `<a href="#" class="${view === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : ""}</a>`).join(""); }
 }

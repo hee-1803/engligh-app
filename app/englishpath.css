@@ -597,3 +597,10 @@ html, body { min-height: 100% } html { background: var(--bg) }
 :root[data-fest="newyear"][data-theme="light"] { --bg: #f4f1ff; --accent-soft: #e6e0ff; --sunk: #e6e0ff; --line: #dcd5fb }
 #festfx.calm i { opacity: .55 }
 .festbanner.season { padding: 14px 20px } .festbanner.season .festemo { font-size: 1.8rem }
+/* ---------- Trang quản trị /admin ---------- */
+.adm { max-width: 1100px; margin: 0 auto; padding: 24px 16px 60px; display: grid; gap: 18px }
+.adm-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px }
+.adm-stats .panel { gap: 4px; padding: 18px } .adm-stats b { font: 800 2rem var(--f-display); color: var(--accent) }
+.adm-table { overflow-x: auto } .adm-table table { width: 100%; border-collapse: collapse; min-width: 720px }
+.adm-table th { text-align: left; font-size: .8rem; color: var(--muted); padding: 8px; border-bottom: 2px solid var(--line) }
+.adm-table td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: .92rem }

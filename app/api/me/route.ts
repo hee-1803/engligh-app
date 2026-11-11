@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { adminEmails } from "@/lib/admin-auth";
 
 // Thông tin tài khoản đang đăng nhập
 export async function GET() {
@@ -13,5 +14,6 @@ export async function GET() {
     avatar: m.avatar_url || m.picture || "",
     provider: user.app_metadata?.provider || "email",
     since: user.created_at,
+    admin: !!user.email && adminEmails().includes(user.email.toLowerCase()),
   });
 }

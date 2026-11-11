@@ -72,3 +72,6 @@ OPENROUTER_API_KEY=sk-or-...  # openrouter.ai/keys
 # OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct:free
 ```
 Thứ tự: Gemini → Groq → OpenRouter.
+
+## Trang quản trị /admin
+Thêm biến trên Vercel: `ADMIN_EMAILS=email-cua-ban@gmail.com` (nhiều email cách nhau bởi dấu phẩy). Cần sẵn `SUPABASE_SERVICE_ROLE_KEY` và `VAPID_PRIVATE_KEY`.
