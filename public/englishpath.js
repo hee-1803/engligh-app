@@ -1506,6 +1506,10 @@ const ACT = {
   chMatch: async () => { CH.lastMatch = Date.now(); try { const d = await chApi({action:"match", level:S.level || "A1"}); if (d.room) { toast("Đã ghép! Bạn ấy có thể chưa online, cứ chào trước nhé 👋"); chOpen(d.room.id); } else { CH.waiting = true; render(); } } catch (e) { toast(e.message); } },
   chCancel: async () => { try { await chApi({action:"cancel"}); } catch (e) {} CH.waiting = false; render(); },
   chOpen: v => chOpen(v),
+  chMute: async v => { try { await chApi({action:"mute", room:CH.pair.id, on:v === "1"}); if (CH.pairInfo) CH.pairInfo.muted = v === "1"; toast(v === "1" ? "🔕 Đã tắt thông báo của cuộc trò chuyện này. Tin nhắn vẫn hiện trong hộp thư." : "🔔 Đã bật lại thông báo"); render(); } catch (e) { toast(e.message); } },
+  chBlockRoom: async (v, btn) => { if (!btn.dataset.c) { btn.dataset.c = 1; btn.textContent = "Bấm lần nữa để chặn"; btn.classList.add("danger"); return; }
+    try { await chApi({action:"blockRoom", room:v}); toast("Đã chặn. Bạn sẽ không bao giờ thấy tin, bị ghép hay nhận thông báo từ người này nữa."); } catch (e) { return toast(e.message); }
+    CH.inbox = (CH.inbox || []).filter(r => r.id !== v); CH.pair = null; CH.msgs = []; CH.last = 0; render(); chPoll(true); },
   chBack: () => { CH.pair = null; CH.msgs = []; CH.last = 0; render(); chPoll(true); },
   chKeep: async v => { try { const d = await chApi({action:"keep", room:CH.pair.id, on:v === "1"}); toast(d.saved ? "⭐ Hai bạn đã là bạn chat!" : v === "1" ? "Đã bấm giữ. Chờ bạn ấy đồng ý nhé." : "Đã bỏ giữ"); chPoll(false); if (CH.pairInfo) { CH.pairInfo.mineKeep = v === "1"; CH.pairInfo.saved = !!d.saved; } render(); } catch (e) { toast(e.message); } },
   chLeave: async (v, btn) => { if (!btn.dataset.c) { btn.dataset.c = 1; btn.textContent = "Bấm lần nữa để xác nhận"; return; }
@@ -1728,22 +1732,24 @@ function vChat() {
   if (CH.tab === "room") head = `<div class="row">${[...CH_LEVELS, "ALL"].map(k => `<button class="mini seg ${(CH.room || "lv-" + (CH_LEVELS.includes(S.level) ? S.level : "A1")) === "lv-" + k ? "sel" : ""}" data-a="chRoom" data-v="lv-${k}">${k === "ALL" ? "Mọi trình độ" : k}</button>`).join("")}</div>
      <p class="muted small">Phòng ${lv === "ALL" ? "chung cho mọi trình độ" : "trình độ " + lv}: hỏi đáp, chia sẻ mẹo học, luyện viết câu.</p>`;
   else if (!CH.pair) {
-    const list = (CH.inbox || []).map(r => `<button class="inbox-row" data-a="chOpen" data-v="${r.id}"><span class="cav" style="--h:${r.partner.hue}">${r.partner.icon}</span>
+    const list = (CH.inbox || []).map(r => `<div class="inbox-item"><button class="inbox-row" data-a="chOpen" data-v="${r.id}"><span class="cav" style="--h:${r.partner.hue}">${r.partner.icon}</span>
       <span class="grow"><b>${esc(r.partner.name)}</b>${r.saved ? ` <span class="tag good">⭐ Bạn chat</span>` : r.theirKeep ? ` <span class="tag">muốn giữ cuộc trò chuyện</span>` : ""}<br><span class="muted small">${esc(r.preview || "Chưa có tin nhắn, hãy chào bạn ấy nhé!")}</span></span>
-      ${r.unread ? `<span class="badge">${r.unread}</span>` : ""}</button>`).join("");
+      ${r.muted ? `<span title="Đã tắt thông báo">🔕</span>` : ""}${r.unread ? `<span class="badge">${r.unread}</span>` : ""}</button>
+      <button class="mini ghost inbox-x" data-a="chBlockRoom" data-v="${r.id}" title="Chặn người này, không bao giờ thấy tin của họ nữa">⛔</button></div>`).join("");
     return `<div class="wrap narrow">${tabs}<section class="panel">
       <div class="row between nowrap"><div><h2>Ghép đôi 1-1</h2><p class="muted small">Ghép ngay với một người cùng trình độ, kể cả khi họ chưa online: họ sẽ nhận thông báo và trả lời sau.</p></div>${mascot(CH.waiting ? "think" : "cheer", 70, CH.waiting ? "bob" : "")}</div>
       ${CH.waiting ? `<div class="row"><span class="spin"></span><span>Chưa có ai phù hợp. App sẽ tự ghép khi có người vào (bạn có thể rời trang này).</span><button class="mini" data-a="chCancel">Huỷ tìm</button></div>`
         : `<button class="primary big" data-a="chMatch">🔍 Tìm bạn luyện tập mới</button>`}
       <h3>Cuộc trò chuyện của bạn</h3>
       ${list ? `<div class="inbox">${list}</div>` : `<p class="muted">Chưa có cuộc trò chuyện nào.</p>`}
+      <p class="muted small">⛔ Không muốn nói chuyện với ai: bấm ⛔ để chặn. Bạn sẽ không bao giờ thấy tin, bị ghép lại hay nhận thông báo từ người đó.</p>
       <p class="muted small">⭐ Khi cả hai cùng bấm <b>Giữ cuộc trò chuyện</b>, hai bạn thành <b>bạn chat</b>: tin nhắn được giữ lại để nhắn với nhau mỗi ngày, nhưng vẫn chỉ thấy biệt danh của nhau. Cuộc trò chuyện chưa giữ sẽ tự xoá sau 30 ngày.</p></section></div>`;
   }
   else {
     const P = CH.pairInfo || {}, w = P.partner;
     head = `<div class="row between nowrap"><span class="row nowrap"><button class="mini ghost" data-a="chBack">←</button>${w ? `<span class="cav" style="--h:${w.hue}">${w.icon}</span><b>${esc(w.name)}</b>` : ""}${P.level ? ` <span class="tag">${esc(P.level)}</span>` : ""}</span>
       <span class="row">${P.saved ? `<span class="tag good">⭐ Bạn chat</span>` : `<button class="mini ${P.mineKeep ? "sel" : ""}" data-a="chKeep" data-v="${P.mineKeep ? 0 : 1}">${P.mineKeep ? "✓ Đã bấm giữ" : "⭐ Giữ cuộc trò chuyện"}</button>`}
-      <button class="mini" data-a="chLeave">${P.saved ? "Huỷ bạn chat" : "Kết thúc"}</button></span></div>
+      <button class="mini" data-a="chMute" data-v="${P.muted ? 0 : 1}" title="${P.muted ? "Bật lại thông báo tin nhắn của người này" : "Tắt thông báo tin nhắn của người này"}">${P.muted ? "🔕 Đã tắt thông báo" : "🔔 Thông báo"}</button><button class="mini" data-a="chLeave">${P.saved ? "Huỷ bạn chat" : "Kết thúc"}</button><button class="mini danger" data-a="chBlockRoom" data-v="${CH.pair.id}" title="Không bao giờ thấy tin người này nữa">⛔ Chặn</button></span></div>
       ${!P.saved && P.mineKeep ? `<p class="muted small">Đang chờ bạn ấy cũng bấm “Giữ”. Khi cả hai cùng giữ, tin nhắn sẽ không bị xoá.</p>` : !P.saved && P.theirKeep ? `<p class="fb small">⭐ Bạn ấy muốn giữ cuộc trò chuyện này. Bấm “Giữ cuộc trò chuyện” để thành bạn chat!</p>` : ""}
       ${CH.closed ? `<p class="fb small">Cuộc trò chuyện đã kết thúc.</p>` : ""}`;
   }

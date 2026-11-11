@@ -15,7 +15,7 @@ import { sendPush, type Sub } from "@/lib/push";
    POST {action:"report", id, reason} · {action:"block", id} */
 const MAX_TEXT = 500, MAX_AUDIO = 1_500_000, MAX_SEC = 60, NEW_PER_DAY = 8;
 type Db = ReturnType<typeof createAdminClient>;
-type Room = { id: string; kind: string; level: string | null; a: string | null; b: string | null; closed_at: string | null; a_keep: boolean; b_keep: boolean; saved_at: string | null; last_msg_at: string | null; last_push_at: string | null; created_at: string };
+type Room = { id: string; kind: string; level: string | null; a: string | null; b: string | null; closed_at: string | null; a_keep: boolean; b_keep: boolean; saved_at: string | null; last_msg_at: string | null; last_push_at: string | null; created_at: string; a_mute?: boolean; b_mute?: boolean };
 
 async function me() {
   const s = await createClient();
@@ -24,6 +24,7 @@ async function me() {
 }
 const bad = (error: string, status = 400) => NextResponse.json({ error }, { status });
 const other = (r: Room, uid: string) => (r.a === uid ? r.b : r.a) as string;
+const mutedFor = (r: Room, uid: string) => !!(r.a === uid ? r.a_mute : r.b_mute);
 
 async function banned(db: Db, uid: string) {
   const { data } = await db.from("chat_bans").select("until, reason").eq("user_id", uid).maybeSingle();
@@ -67,7 +68,7 @@ export async function GET(req: Request) {
       const { data: last } = await db.from("chat_messages").select("id, user_id, text, audio_path, recalled, hidden").eq("room_id", r.id).order("id", { ascending: false }).limit(1);
       const { count } = await db.from("chat_messages").select("id", { count: "exact", head: true }).eq("room_id", r.id).neq("user_id", uid).gt("id", rd.get(r.id) || 0);
       const m = last?.[0], mineKeep = r.a === uid ? r.a_keep : r.b_keep, theirKeep = r.a === uid ? r.b_keep : r.a_keep;
-      return { id: r.id, level: r.level, partner: alias(other(r, uid), r.id), saved: !!r.saved_at, mineKeep, theirKeep, unread: count || 0, at: r.last_msg_at || r.created_at,
+      return { id: r.id, level: r.level, partner: alias(other(r, uid), r.id), saved: !!r.saved_at, mineKeep, theirKeep, muted: mutedFor(r, uid), unread: count || 0, at: r.last_msg_at || r.created_at,
         preview: !m ? "" : (m.user_id === uid ? "Bạn: " : "") + (m.recalled ? "Đã thu hồi một tin nhắn" : m.hidden ? "(tin đã ẩn)" : m.audio_path ? "🎤 Tin nhắn giọng nói" : String(m.text || "").slice(0, 80)) };
     }));
     const { data: q } = await db.from("chat_queue").select("since").eq("user_id", uid).maybeSingle();
@@ -98,7 +99,7 @@ export async function GET(req: Request) {
   if (rows.length) await db.from("chat_reads").upsert({ user_id: uid, room_id: room, last_id: rows[rows.length - 1].id });
   // Tin đã thu hồi trong 10 phút gần đây: báo để màn hình người khác cập nhật
   const { data: rc } = await db.from("chat_messages").select("id").eq("room_id", room).eq("recalled", true).gte("created_at", new Date(Date.now() - 864e5).toISOString());
-  const pairInfo = r.kind === "pair" ? { partner: alias(other(r, uid), room), saved: !!r.saved_at, mineKeep: r.a === uid ? r.a_keep : r.b_keep, theirKeep: r.a === uid ? r.b_keep : r.a_keep, level: r.level } : null;
+  const pairInfo = r.kind === "pair" ? { partner: alias(other(r, uid), room), saved: !!r.saved_at, muted: mutedFor(r, uid), mineKeep: r.a === uid ? r.a_keep : r.b_keep, theirKeep: r.a === uid ? r.b_keep : r.a_keep, level: r.level } : null;
   return NextResponse.json({ messages, recalled: (rc || []).map((x) => x.id), me: alias(uid, room), closed: gone, pair: pairInfo, ban: await banned(db, uid) });
 }
 
@@ -142,7 +143,7 @@ export async function POST(req: Request) {
       const { data: mem } = await db.from("chat_members").select("last_seen").eq("user_id", to).maybeSingle();
       const away = !mem || Date.now() - new Date(mem.last_seen).getTime() > 120e3;
       const quiet = !r.last_push_at || Date.now() - new Date(r.last_push_at).getTime() > 600e3;
-      if (away && quiet) {
+      if (away && quiet && !mutedFor(r, to)) {
         await db.from("chat_rooms").update({ last_push_at: now }).eq("id", r.id);
         const w = alias(uid, r.id);
         await pushTo(db, to, { title: `${w.icon} ${w.name} nhắn cho bạn`, body: b.audio ? "🎤 Tin nhắn giọng nói" : text.slice(0, 120), url: "/?view=chat" });
@@ -208,8 +209,20 @@ export async function POST(req: Request) {
     const r = await canUse(db, uid, String(b.room)); if (!r || r.kind !== "pair" || r.closed_at) return bad("Không tìm thấy cuộc trò chuyện");
     const on = !!b.on, col = r.a === uid ? "a_keep" : "b_keep", theirs = r.a === uid ? r.b_keep : r.a_keep;
     await db.from("chat_rooms").update({ [col]: on, saved_at: on && theirs ? r.saved_at || new Date().toISOString() : null }).eq("id", r.id);
-    if (on && !theirs) { const w = alias(uid, r.id); await pushTo(db, other(r, uid), { title: `⭐ ${w.name} muốn giữ cuộc trò chuyện`, body: "Bấm “Giữ cuộc trò chuyện” để trở thành bạn chat và nhắn với nhau mỗi ngày (vẫn ẩn danh).", url: "/?view=chat" }); }
+    if (on && !theirs && !mutedFor(r, other(r, uid))) { const w = alias(uid, r.id); await pushTo(db, other(r, uid), { title: `⭐ ${w.name} muốn giữ cuộc trò chuyện`, body: "Bấm “Giữ cuộc trò chuyện” để trở thành bạn chat và nhắn với nhau mỗi ngày (vẫn ẩn danh).", url: "/?view=chat" }); }
     return NextResponse.json({ ok: true, saved: on && theirs });
+  }
+  // Chặn người trong cuộc trò chuyện 1-1 (không cần chọn tin nhắn): đóng cuộc trò chuyện, không bao giờ ghép hay thấy tin người đó nữa
+  if (b.action === "blockRoom") {
+    const r = await canUse(db, uid, String(b.room)); if (!r || r.kind !== "pair") return bad("Không tìm thấy cuộc trò chuyện");
+    await db.from("chat_blocks").upsert({ user_id: uid, blocked: other(r, uid) });
+    await db.from("chat_rooms").update({ closed_at: new Date().toISOString() }).eq("id", r.id);
+    return NextResponse.json({ ok: true });
+  }
+  if (b.action === "mute") {
+    const r = await canUse(db, uid, String(b.room)); if (!r || r.kind !== "pair") return bad("Không tìm thấy cuộc trò chuyện");
+    await db.from("chat_rooms").update({ [r.a === uid ? "a_mute" : "b_mute"]: !!b.on }).eq("id", r.id);
+    return NextResponse.json({ ok: true });
   }
   if (b.action === "open") { await db.from("chat_members").upsert({ user_id: uid, open: !!b.on }); return NextResponse.json({ ok: true }); }
 

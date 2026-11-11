@@ -624,3 +624,4 @@ html, body { min-height: 100% } html { background: var(--bg) }
 .inbox-row .grow { min-width: 0; overflow: hidden; text-overflow: ellipsis } .inbox-row .badge { margin-left: auto }
 .msg.recalled { background: transparent !important; border: 1.5px dashed var(--line); color: var(--muted) } .msg.recalled .muted { color: var(--muted) }
 .adm-to { display: inline-flex; gap: 6px; align-items: center; background: var(--accent-soft); border: 2px solid var(--accent); border-radius: 99px; padding: 4px 6px 4px 14px; font-size: .9rem } .adm-table tr.sel td { background: var(--accent-soft) }
+.inbox-item { display: flex; gap: 6px; align-items: center } .inbox-item .inbox-row { flex: 1 } .inbox-x { flex: none }
