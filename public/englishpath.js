@@ -1269,9 +1269,7 @@ function vSettings() {
     <p class="muted small">Muốn giọng đọc tự nhiên hơn: dùng Edge (có sẵn giọng "Natural"), hoặc trên Windows vào Cài đặt → Thời gian & ngôn ngữ → Giọng nói để cài thêm giọng tiếng Anh.</p></section>
    <section class="panel"><h3>Hiển thị</h3><div class="row"><span>Cỡ chữ</span>${["s", "m", "l"].map(k => `<button class="seg ${fs === k ? "sel" : ""}" data-a="fs" data-v="${k}">${k.toUpperCase()}</button>`).join("")}</div>
     <div class="row"><span>Giao diện</span>${[["auto", "Theo máy"], ["light", "Sáng"], ["dark", "Tối"]].map(([k, t]) => `<button class="seg ${th === k ? "sel" : ""}" data-a="theme" data-v="${k}">${t}</button>`).join("")}</div></section>
-   <section class="panel"><h3>Gemini AI</h3><p>${AI.quota ? `<span class="tag bad">Hết lượt miễn phí</span> Gemini giới hạn số lần gọi mỗi phút và mỗi ngày. App đang dùng nội dung mẫu và sẽ tự thử lại sau 5 phút. Nếu hết lượt theo ngày, lượt mới có lại vào khoảng 14–15 giờ chiều (giờ Việt Nam).` : AI.on && AI.busy ? `<span class="tag">Đang quá tải</span> ${esc(AI.msg)}. App vẫn dùng AI và tự thử lại; nếu vẫn lỗi sẽ tạm dùng nội dung mẫu.` : AI.on ? `<span class="tag good">Đang hoạt động</span> Bài học, chấm câu, role-play và tra từ dùng AI.` : `<span class="tag bad">Chưa hoạt động</span> ${esc(AI.msg)}`}</p>
-    <p class="muted small">Key nằm trong file .env.local (GEMINI_API_KEY, GEMINI_MODEL). Sửa file rồi khởi động lại app.</p><button data-a="checkAI">Kiểm tra lại kết nối</button></section>
-   <section class="panel"><h3>Dữ liệu</h3><div class="row">
+   <section class="panel">
     <button class="danger" data-a="reset" id="resetBtn">Xóa toàn bộ tiến độ và làm lại</button></div></section></div>`;
 }
 

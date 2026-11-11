@@ -100,6 +100,12 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   if (!(await requireUser())) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
   const { system, contents, json, heavy } = await req.json();
+  // Việc nhỏ (chấm câu, role-play, tra từ...) → Groq/OpenRouter trước để giữ lượt Gemini
+  // Soạn bài (heavy) → Gemini trước vì soạn bài tốt hơn; Gemini hết lượt thì AI dự phòng soạn thay
+  if (!heavy && PROVIDERS.length) {
+    try { return NextResponse.json(await askFallback(system, contents, !!json, 25000)); }
+    catch (e) { console.warn("AI dự phòng lỗi, thử Gemini:", String((e as Error)?.message ?? e)); }
+  }
   try {
     if (!process.env.GEMINI_API_KEY) throw new Error("503 UNAVAILABLE no gemini key");
     const res = await generate({
@@ -108,12 +114,9 @@ export async function POST(req: Request) {
     }, PROVIDERS.length > 0 && !heavy, !!heavy);
     return NextResponse.json({ text: res.text ?? "", engine: "Gemini" });
   } catch (e) {
-    // Gemini hết lượt / quá tải / quá chậm → chuyển sang AI dự phòng (Groq, OpenRouter) nếu có key
-    if (PROVIDERS.length && (isQuota(e) || isBusy(e))) {
-      try {
-        const r = await askFallback(system, contents, !!json, heavy ? 90000 : 25000);
-        return NextResponse.json(r);
-      } catch (e2) { console.warn("AI dự phòng lỗi:", String((e2 as Error)?.message ?? e2)); }
+    if (heavy && PROVIDERS.length && (isQuota(e) || isBusy(e))) {
+      try { return NextResponse.json(await askFallback(system, contents, !!json, 90000)); }
+      catch (e2) { console.warn("AI dự phòng lỗi:", String((e2 as Error)?.message ?? e2)); }
     }
     return NextResponse.json({ error: errMsg(e), busy: isBusy(e), quota: isQuota(e) }, { status: isQuota(e) ? 429 : 502 });
   }

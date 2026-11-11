@@ -53,7 +53,7 @@ type Content = string | { role?: string; parts?: Part[] }[];
 // Đổi định dạng tin nhắn của Gemini sang dạng OpenAI
 function toMessages(system: string | undefined, contents: Content, json: boolean) {
   const msgs: { role: string; content: string }[] = [];
-  const sys = (system || "") + (json ? "\n\nChỉ trả về một đối tượng JSON hợp lệ, không kèm chữ nào khác." : "");
+  const sys = (system || "") + (json ? "\n\nReturn only one valid JSON object, no other text. Keep every language instruction above exactly (English text stays English)." : "");
   if (sys.trim()) msgs.push({ role: "system", content: sys });
   if (typeof contents === "string") msgs.push({ role: "user", content: contents });
   else for (const c of contents || []) msgs.push({ role: c.role === "model" ? "assistant" : "user", content: (c.parts || []).map((p) => p.text || "").join("\n") });
