@@ -449,3 +449,7 @@ button.primary.big { border-radius: 14px }
 .msg .trbox { margin-top: 4px } .msg.ai .trbtn { background: var(--surface) }
 .pop-tr:empty { display: none }
 .ailist { display: grid; gap: 8px; margin-top: 6px } .ailist .tag { white-space: normal; text-align: right; max-width: 60% }
+.stepper li.go { cursor: pointer } .stepper li.go:hover em { color: var(--accent); text-decoration: underline }
+.backbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; background: var(--mark-soft, #fff4d6); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin: 10px 0 }
+.revlist { display: grid; gap: 10px; padding-left: 0; list-style-position: inside } .revlist li { line-height: 1.6 }
+.revword { border-bottom: 1px dashed var(--line); padding-bottom: 8px; display: grid; gap: 2px } .revword .row { gap: 8px; align-items: center }
