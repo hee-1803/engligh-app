@@ -604,3 +604,18 @@ html, body { min-height: 100% } html { background: var(--bg) }
 .adm-table { overflow-x: auto } .adm-table table { width: 100%; border-collapse: collapse; min-width: 720px }
 .adm-table th { text-align: left; font-size: .8rem; color: var(--muted); padding: 8px; border-bottom: 2px solid var(--line) }
 .adm-table td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: .92rem }
+.adm-rep { display: grid; gap: 6px; padding: 12px 0; border-bottom: 1px dashed var(--line) }
+/* ---------- Cộng đồng: trò chuyện ẩn danh ---------- */
+.chtabs { align-items: center; margin-bottom: 12px }
+.cbox { max-height: min(60vh, 560px); min-height: 260px; background: color-mix(in srgb, var(--sunk) 55%, transparent); border-radius: 20px; padding: 12px }
+.cmsg { display: flex; gap: 8px; align-items: flex-end; max-width: 100% } .cmsg.mine { justify-content: flex-end }
+.cbody { display: grid; gap: 2px; max-width: 82% } .cmsg.mine .cbody { justify-items: end }
+.cbody .msg { max-width: 100% } .cmsg .msg.ai { background: var(--surface) }
+.cav { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 1.1rem; background: hsl(var(--h) 85% 88%); box-shadow: 0 2px 0 hsl(var(--h) 50% 75%) }
+.cname { font-size: .74rem; color: var(--muted) } .ctime { font-size: .7rem; color: var(--muted) } .ctime a { color: var(--muted); text-decoration: none; font-weight: 900; padding: 0 4px }
+.cmenu { gap: 6px; flex-wrap: wrap; background: var(--surface); border-radius: 14px; padding: 6px; box-shadow: var(--bub) }
+.cmsg audio { height: 36px; max-width: 220px; vertical-align: middle }
+.recbar { align-items: center; background: var(--bad-soft); border-radius: 99px; padding: 6px 8px 6px 16px }
+.recdot { width: 12px; height: 12px; border-radius: 50%; background: var(--bad); animation: recp 1s infinite } @keyframes recp { 50% { opacity: .3 } }
+.rules { padding-left: 18px; display: grid; gap: 6px; margin: 0 }
+.panel.center > .mascot, .panel.center > .stk { justify-self: center }

@@ -5,6 +5,9 @@ import "../englishpath.css";
 type U = { id: string; email: string; name: string; provider: string; joined: string; lastSignIn: string; level: string; goal: string;
   sessions: number; lastStudy: string; today: boolean; week: boolean; cards: number; push: number };
 type Data = { stats: { users: number; today: number; week: number; sessions: number; push: number; newWeek: number }; users: U[] };
+type Rep = { id: number; reason: string; created_at: string; reporter: string; reported: string; reporterEmail?: string; reportedEmail?: string; room_id: string;
+  message: { id: number; text: string | null; audio_path: string | null; hidden: boolean } | null };
+type Ban = { user_id: string; until: string; reason: string };
 type Probe = { name: string; model?: string; ok: boolean; ms?: number; error?: string };
 
 const fmt = (s: string) => (s ? new Date(s).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }) : "–");
@@ -21,6 +24,12 @@ export default function AdminPage() {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [probe, setProbe] = useState<Probe[] | null>(null);
+  const [reps, setReps] = useState<{ reports: Rep[]; bans: Ban[] } | null>(null);
+  async function loadReps() { try { const r = await fetch("/api/admin?reports=1"); if (r.ok) setReps(await r.json()); } catch {} }
+  useEffect(() => { loadReps(); }, []);
+  async function mod(body: Record<string, unknown>) {
+    await fetch("/api/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); loadReps();
+  }
 
   async function load() {
     setErr("");
@@ -102,6 +111,24 @@ export default function AdminPage() {
               <td>{u.push ? <span className="tag good">✓ {u.push} thiết bị</span> : <span className="muted small">Chưa bật</span>}</td>
               <td><button className="mini" disabled={!u.push} onClick={() => { setTo(u); scrollTo({ top: 0, behavior: "smooth" }); }}>Gửi</button></td>
             </tr>))}</tbody></table></div>
+      </section>
+
+      <section className="panel">
+        <div className="row between"><h3>Báo cáo vi phạm trong trò chuyện ({reps?.reports.length ?? "…"})</h3><button className="mini" onClick={loadReps}>↻</button></div>
+        <p className="muted small">Tin nhắn bị 2 người báo cáo sẽ tự ẩn. Người bị 3 người khác nhau báo cáo trong 24 giờ sẽ tự bị khoá chat 24 giờ.</p>
+        {reps?.reports.length === 0 && <p className="muted">Chưa có báo cáo nào. 🎉</p>}
+        {reps?.reports.map((r) => (
+          <div key={r.id} className="adm-rep">
+            <div><b>{r.message?.audio_path ? "🎤 (tin nhắn giọng nói)" : `“${r.message?.text || "(đã xoá)"}”`}</b>{r.message?.hidden && <span className="tag"> đã ẩn</span>}</div>
+            <div className="muted small">Người gửi: <b>{r.reportedEmail}</b> · Người báo cáo: {r.reporterEmail} · Lý do: {r.reason || "–"} · {new Date(r.created_at).toLocaleString("vi-VN")} · {r.room_id.startsWith("p-") ? "Ghép đôi" : r.room_id.replace("lv-", "Phòng ")}</div>
+            <div className="row">
+              <button className="mini" onClick={() => mod({ mod: "dismiss", reportId: r.id })}>Bỏ qua</button>
+              {r.message && !r.message.hidden && <button className="mini" onClick={() => mod({ mod: "hide", reportId: r.id, messageId: r.message!.id })}>Ẩn tin nhắn</button>}
+              <button className="mini danger" onClick={() => mod({ mod: "ban", reportId: r.id, userId: r.reported, days: 1, messageId: r.message?.id })}>Khoá chat 1 ngày</button>
+              <button className="mini danger" onClick={() => mod({ mod: "ban", reportId: r.id, userId: r.reported, days: 30, messageId: r.message?.id })}>Khoá 30 ngày</button>
+            </div>
+          </div>))}
+        {!!reps?.bans.length && <><h3>Đang bị khoá chat</h3>{reps.bans.map((b) => <div key={b.user_id} className="row between nowrap"><span className="small">{d.users.find((u) => u.id === b.user_id)?.email || b.user_id.slice(0, 8)} · đến {new Date(b.until).toLocaleString("vi-VN")} · {b.reason}</span><button className="mini" onClick={() => mod({ mod: "unban", userId: b.user_id })}>Mở khoá</button></div>)}</>}
       </section>
 
       <section className="panel">

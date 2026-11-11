@@ -13,10 +13,24 @@ async function guard() {
 }
 const dayVN = (offset: number) => new Date(Date.now() + 7 * 3600e3 - offset * 864e5).toISOString().slice(0, 10);
 
-// GET: tổng quan + danh sách người dùng
-export async function GET() {
+// GET: tổng quan + danh sách người dùng · ?reports=1: báo cáo vi phạm trong trò chuyện
+export async function GET(req: Request) {
   const deny = await guard(); if (deny) return deny;
   const db = createAdminClient();
+  if (new URL(req.url).searchParams.get("reports")) {
+    const { data: reps } = await db.from("chat_reports").select("*").eq("status", "open").order("created_at", { ascending: false }).limit(100);
+    const ids = [...new Set((reps || []).map((r) => r.message_id).filter(Boolean))];
+    const { data: msgs } = ids.length ? await db.from("chat_messages").select("id, text, audio_path, hidden, room_id").in("id", ids) : { data: [] };
+    const mm = new Map((msgs || []).map((m) => [m.id, m]));
+    const uids = [...new Set((reps || []).flatMap((r) => [r.reporter, r.reported]))];
+    const emails = new Map<string, string>();
+    await Promise.all(uids.map(async (id) => { const { data } = await db.auth.admin.getUserById(id); emails.set(id, data.user?.email || id.slice(0, 8)); }));
+    const { data: bans } = await db.from("chat_bans").select("*").gt("until", new Date().toISOString());
+    return NextResponse.json({
+      reports: (reps || []).map((r) => ({ ...r, message: mm.get(r.message_id) || null, reporterEmail: emails.get(r.reporter), reportedEmail: emails.get(r.reported) })),
+      bans: bans || [],
+    });
+  }
   const users: { id: string; email?: string; created_at: string; last_sign_in_at?: string; app_metadata?: { provider?: string }; user_metadata?: { full_name?: string; name?: string } }[] = [];
   for (let page = 1; page <= 20; page++) {
     const { data, error } = await db.auth.admin.listUsers({ page, perPage: 200 });
@@ -59,6 +73,17 @@ export async function GET() {
 // POST { title, body, userId? | all: true } → gửi thông báo
 export async function POST(req: Request) {
   const deny = await guard(); if (deny) return deny;
+  const peek = await req.clone().json().catch(() => ({}));
+  // Xử lý báo cáo: { mod: "dismiss"|"hide"|"ban"|"unban", reportId?, messageId?, userId?, days? }
+  if (peek.mod) {
+    const db = createAdminClient();
+    if (peek.mod === "hide" && peek.messageId) await db.from("chat_messages").update({ hidden: true }).eq("id", peek.messageId);
+    if (peek.mod === "ban" && peek.userId) await db.from("chat_bans").upsert({ user_id: peek.userId, until: new Date(Date.now() + (Number(peek.days) || 1) * 864e5).toISOString(), reason: "Quản trị viên khoá" });
+    if (peek.mod === "ban" && peek.messageId) await db.from("chat_messages").update({ hidden: true }).eq("id", peek.messageId);
+    if (peek.mod === "unban" && peek.userId) await db.from("chat_bans").delete().eq("user_id", peek.userId);
+    if (peek.reportId) await db.from("chat_reports").update({ status: "done" }).eq("id", peek.reportId);
+    return NextResponse.json({ ok: true });
+  }
   if (!process.env.VAPID_PRIVATE_KEY) return NextResponse.json({ error: "Thiếu VAPID_PRIVATE_KEY" }, { status: 500 });
   const { title, body, userId, all } = await req.json();
   const t = String(title || "").trim().slice(0, 80), b = String(body || "").trim().slice(0, 240);

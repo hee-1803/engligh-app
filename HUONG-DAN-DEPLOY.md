@@ -75,3 +75,7 @@ Thứ tự: Gemini → Groq → OpenRouter.
 
 ## Trang quản trị /admin
 Thêm biến trên Vercel: `ADMIN_EMAILS=email-cua-ban@gmail.com` (nhiều email cách nhau bởi dấu phẩy). Cần sẵn `SUPABASE_SERVICE_ROLE_KEY` và `VAPID_PRIVATE_KEY`.
+
+## Cộng đồng (trò chuyện ẩn danh)
+1. Supabase → SQL Editor → dán toàn bộ nội dung `supabase/chat.sql` → Run (tạo bảng, 7 phòng chung, kho ghi âm `chat-voice`, lịch tự dọn).
+2. Cần sẵn `SUPABASE_SERVICE_ROLE_KEY` trên Vercel. (Tùy chọn) `CHAT_SALT=chuỗi-ngẫu-nhiên` để tạo biệt danh.
