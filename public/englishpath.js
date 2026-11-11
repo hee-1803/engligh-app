@@ -1506,7 +1506,10 @@ const ACT = {
   chMatch: async () => { CH.lastMatch = Date.now(); try { const d = await chApi({action:"match", level:S.level || "A1"}); if (d.room) { toast("Đã ghép! Bạn ấy có thể chưa online, cứ chào trước nhé 👋"); chOpen(d.room.id); } else { CH.waiting = true; render(); } } catch (e) { toast(e.message); } },
   chCancel: async () => { try { await chApi({action:"cancel"}); } catch (e) {} CH.waiting = false; render(); },
   chOpen: v => chOpen(v),
-  chMute: async v => { try { await chApi({action:"mute", room:CH.pair.id, on:v === "1"}); if (CH.pairInfo) CH.pairInfo.muted = v === "1"; toast(v === "1" ? "🔕 Đã tắt thông báo của cuộc trò chuyện này. Tin nhắn vẫn hiện trong hộp thư." : "🔔 Đã bật lại thông báo"); render(); } catch (e) { toast(e.message); } },
+  chBlocks: async () => { CH.showBlocks = !CH.showBlocks; if (CH.showBlocks) { try { const r = await timeoutFetch("/api/chat?blocks=1", {}, 10000); CH.blocks = (await r.json()).blocks || []; } catch (e) { CH.blocks = []; } } render(); },
+  chUnblock: async v => { const [key, reopen] = String(v).split("|"); try { const d = await chApi({action:"unblock", key, reopen:reopen === "1"}); CH.blocks = (CH.blocks || []).filter(b => b.key !== key); toast("Đã bỏ chặn"); if (d.room) return chOpen(d.room); render(); chPoll(true); } catch (e) { toast(e.message); } },
+  chHMenu: () => { CH.hmenu = !CH.hmenu; render(); },
+  chMute: async v => { try { await chApi({action:"mute", room:CH.pair.id, on:v === "1"}); if (CH.pairInfo) CH.pairInfo.muted = v === "1"; CH.hmenu = false; toast(v === "1" ? "🔕 Đã tắt thông báo của cuộc trò chuyện này. Tin nhắn vẫn hiện trong hộp thư." : "🔔 Đã bật lại thông báo"); render(); } catch (e) { toast(e.message); } },
   chBlockRoom: async (v, btn) => { if (!btn.dataset.c) { btn.dataset.c = 1; btn.textContent = "Bấm lần nữa để chặn"; btn.classList.add("danger"); return; }
     try { await chApi({action:"blockRoom", room:v}); toast("Đã chặn. Bạn sẽ không bao giờ thấy tin, bị ghép hay nhận thông báo từ người này nữa."); } catch (e) { return toast(e.message); }
     CH.inbox = (CH.inbox || []).filter(r => r.id !== v); CH.pair = null; CH.msgs = []; CH.last = 0; render(); chPoll(true); },
@@ -1674,7 +1677,7 @@ async function chBadge() {
   CH_BADGE_AT = Date.now();
   try { const r = await timeoutFetch("/api/chat?inbox=1", {}, 10000); if (!r.ok) return; const d = await r.json(); if (d.unread !== CH.unread) { CH.unread = d.unread; renderHeader(); } } catch (e) {}
 }
-function chOpen(id) { CH.tab = "pair"; CH.pair = {id}; CH.pairInfo = null; CH.msgs = []; CH.last = 0; CH.menu = null; render(); chPoll(true); }
+function chOpen(id) { CH.hmenu = false; CH.tab = "pair"; CH.pair = {id}; CH.pairInfo = null; CH.msgs = []; CH.last = 0; CH.menu = null; render(); chPoll(true); }
 function chScroll() { requestAnimationFrame(() => { const b = $("#chbox"); if (b) b.scrollTop = b.scrollHeight; }); }
 setInterval(() => chPoll(false), 3000);
 async function chSend() {
@@ -1742,14 +1745,18 @@ function vChat() {
         : `<button class="primary big" data-a="chMatch">🔍 Tìm bạn luyện tập mới</button>`}
       <h3>Cuộc trò chuyện của bạn</h3>
       ${list ? `<div class="inbox">${list}</div>` : `<p class="muted">Chưa có cuộc trò chuyện nào.</p>`}
-      <p class="muted small">⛔ Không muốn nói chuyện với ai: bấm ⛔ để chặn. Bạn sẽ không bao giờ thấy tin, bị ghép lại hay nhận thông báo từ người đó.</p>
+      <p class="muted small">⛔ Không muốn nói chuyện với ai: bấm ⛔ để chặn. Bạn sẽ không bao giờ thấy tin, bị ghép lại hay nhận thông báo từ người đó. <a href="#" data-a="chBlocks">${CH.showBlocks ? "Ẩn danh sách đã chặn" : "Xem người đã chặn / bỏ chặn"}</a></p>
+      ${CH.showBlocks ? `<div class="inbox">${(CH.blocks || []).length ? CH.blocks.map(b => `<div class="inbox-item blk"><span class="cav" style="--h:${b.who.hue}">${b.who.icon}</span><span class="grow"><b>${esc(b.who.name)}</b><br><span class="muted small">Chặn lúc ${new Date(b.at).toLocaleString("vi-VN")}</span></span>
+        <button class="mini" data-a="chUnblock" data-v="${b.key}|0">Bỏ chặn</button>${b.room ? `<button class="mini" data-a="chUnblock" data-v="${b.key}|1">Bỏ chặn & mở lại chat</button>` : ""}</div>`).join("") : `<p class="muted small">Bạn chưa chặn ai.</p>`}</div>` : ""}
       <p class="muted small">⭐ Khi cả hai cùng bấm <b>Giữ cuộc trò chuyện</b>, hai bạn thành <b>bạn chat</b>: tin nhắn được giữ lại để nhắn với nhau mỗi ngày, nhưng vẫn chỉ thấy biệt danh của nhau. Cuộc trò chuyện chưa giữ sẽ tự xoá sau 30 ngày.</p></section></div>`;
   }
   else {
     const P = CH.pairInfo || {}, w = P.partner;
-    head = `<div class="row between nowrap"><span class="row nowrap"><button class="mini ghost" data-a="chBack">←</button>${w ? `<span class="cav" style="--h:${w.hue}">${w.icon}</span><b>${esc(w.name)}</b>` : ""}${P.level ? ` <span class="tag">${esc(P.level)}</span>` : ""}</span>
-      <span class="row">${P.saved ? `<span class="tag good">⭐ Bạn chat</span>` : `<button class="mini ${P.mineKeep ? "sel" : ""}" data-a="chKeep" data-v="${P.mineKeep ? 0 : 1}">${P.mineKeep ? "✓ Đã bấm giữ" : "⭐ Giữ cuộc trò chuyện"}</button>`}
-      <button class="mini" data-a="chMute" data-v="${P.muted ? 0 : 1}" title="${P.muted ? "Bật lại thông báo tin nhắn của người này" : "Tắt thông báo tin nhắn của người này"}">${P.muted ? "🔕 Đã tắt thông báo" : "🔔 Thông báo"}</button><button class="mini" data-a="chLeave">${P.saved ? "Huỷ bạn chat" : "Kết thúc"}</button><button class="mini danger" data-a="chBlockRoom" data-v="${CH.pair.id}" title="Không bao giờ thấy tin người này nữa">⛔ Chặn</button></span></div>
+    head = `<div class="phead"><button class="mini ghost" data-a="chBack" aria-label="Quay lại">←</button>${w ? `<span class="cav" style="--h:${w.hue}">${w.icon}</span><span class="pname"><b>${esc(w.name)}</b>${P.level ? ` <span class="tag">${esc(P.level)}</span>` : ""}${P.muted ? " 🔕" : ""}</span>` : `<span class="pname"></span>`}
+      ${P.saved ? `<span class="tag good">⭐ Bạn chat</span>` : `<button class="mini ${P.mineKeep ? "sel" : ""}" data-a="chKeep" data-v="${P.mineKeep ? 0 : 1}" title="Giữ cuộc trò chuyện">${P.mineKeep ? "✓ Đã giữ" : "⭐ Giữ"}</button>`}
+      <button class="mini" data-a="chHMenu" aria-label="Tuỳ chọn" aria-expanded="${CH.hmenu ? "true" : "false"}">⋯</button></div>
+      ${CH.hmenu ? `<div class="cmenu row hmenu"><button class="mini" data-a="chMute" data-v="${P.muted ? 0 : 1}">${P.muted ? "🔔 Bật lại thông báo" : "🔕 Tắt thông báo"}</button>
+        <button class="mini" data-a="chLeave">${P.saved ? "Huỷ bạn chat" : "Kết thúc"}</button><button class="mini danger" data-a="chBlockRoom" data-v="${CH.pair.id}">⛔ Chặn</button></div>` : ""}
       ${!P.saved && P.mineKeep ? `<p class="muted small">Đang chờ bạn ấy cũng bấm “Giữ”. Khi cả hai cùng giữ, tin nhắn sẽ không bị xoá.</p>` : !P.saved && P.theirKeep ? `<p class="fb small">⭐ Bạn ấy muốn giữ cuộc trò chuyện này. Bấm “Giữ cuộc trò chuyện” để thành bạn chat!</p>` : ""}
       ${CH.closed ? `<p class="fb small">Cuộc trò chuyện đã kết thúc.</p>` : ""}`;
   }
@@ -1770,7 +1777,7 @@ function vChat() {
     ${canSend ? (CH.rec ? `<div class="row recbar"><span class="recdot"></span><b id="recT">0:00</b><span class="muted small">Đang ghi âm (tối đa 60 giây)</span><button class="ghost" data-a="chRecCancel">Huỷ</button><button class="primary" data-a="chRecStop">Dừng & gửi</button></div>`
       : `<div class="row nowrap"><label class="sr" for="chIn">Tin nhắn</label><input id="chIn" data-enter="chSend" maxlength="500" placeholder="Viết bằng tiếng Anh (hoặc hỏi bằng tiếng Việt)..." autocomplete="off">
          <button class="round" data-a="chRec" aria-label="Ghi âm" title="Gửi tin nhắn giọng nói">🎤</button><button class="primary" data-a="chSend" ${CH.sending ? "disabled" : ""}>${CH.sending ? "..." : "Gửi"}</button></div>`) : ""}
-    <p class="muted small">Ẩn danh · Không chia sẻ thông tin cá nhân · Bấm vào từ tiếng Anh để tra nghĩa · ⋯ để báo cáo hoặc chặn.</p></section></div>`;
+    <p class="muted small">Ẩn danh · Không chia sẻ thông tin cá nhân · Bấm vào từ tiếng Anh để tra nghĩa · ⋯ để thu hồi, báo cáo hoặc chặn.</p></section></div>`;
 }
 /* =====================================================================
    GIAO DIỆN THEO MÙA / NGÀY LỄ + SINH NHẬT NGƯỜI DÙNG

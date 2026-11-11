@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
+import { randomUUID, createHmac } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { alias, checkText, LEVELS } from "@/lib/chat";
@@ -24,6 +24,7 @@ async function me() {
 }
 const bad = (error: string, status = 400) => NextResponse.json({ error }, { status });
 const other = (r: Room, uid: string) => (r.a === uid ? r.b : r.a) as string;
+const tok = (id: string) => createHmac("sha256", process.env.CHAT_SALT || process.env.CRON_SECRET || "ep").update("blk|" + id).digest("hex").slice(0, 24);
 const mutedFor = (r: Room, uid: string) => !!(r.a === uid ? r.a_mute : r.b_mute);
 
 async function banned(db: Db, uid: string) {
@@ -59,6 +60,15 @@ export async function GET(req: Request) {
   const db = createAdminClient(), u = new URL(req.url), uid = user.id;
   await seen(db, uid, u.searchParams.get("lv"));
 
+  // Danh sách người mình đã chặn (không lộ id thật: dùng mã ẩn + biệt danh trong cuộc trò chuyện gần nhất)
+  if (u.searchParams.get("blocks")) {
+    const { data: bl } = await db.from("chat_blocks").select("blocked, created_at").eq("user_id", uid).order("created_at", { ascending: false });
+    const list = await Promise.all((bl || []).map(async (x) => {
+      const { data: rr } = await db.from("chat_rooms").select("id").eq("kind", "pair").or(`and(a.eq.${uid},b.eq.${x.blocked}),and(a.eq.${x.blocked},b.eq.${uid})`).order("created_at", { ascending: false }).limit(1);
+      return { key: tok(x.blocked), who: alias(x.blocked, rr?.[0]?.id || "p-blocked"), at: x.created_at, room: !!rr?.length };
+    }));
+    return NextResponse.json({ blocks: list });
+  }
   if (u.searchParams.get("inbox")) {
     const { data: rooms } = await db.from("chat_rooms").select("*").eq("kind", "pair").is("closed_at", null).or(`a.eq.${uid},b.eq.${uid}`)
       .order("last_msg_at", { ascending: false, nullsFirst: false }).limit(50);
@@ -218,6 +228,16 @@ export async function POST(req: Request) {
     await db.from("chat_blocks").upsert({ user_id: uid, blocked: other(r, uid) });
     await db.from("chat_rooms").update({ closed_at: new Date().toISOString() }).eq("id", r.id);
     return NextResponse.json({ ok: true });
+  }
+  // Bỏ chặn: mở lại cuộc trò chuyện 1-1 gần nhất giữa hai người (nếu có)
+  if (b.action === "unblock") {
+    const { data: bl } = await db.from("chat_blocks").select("blocked").eq("user_id", uid);
+    const hit = (bl || []).find((x) => tok(x.blocked) === String(b.key));
+    if (!hit) return bad("Không tìm thấy");
+    await db.from("chat_blocks").delete().eq("user_id", uid).eq("blocked", hit.blocked);
+    const { data: rr } = await db.from("chat_rooms").select("id").eq("kind", "pair").or(`and(a.eq.${uid},b.eq.${hit.blocked}),and(a.eq.${hit.blocked},b.eq.${uid})`).order("created_at", { ascending: false }).limit(1);
+    if (rr?.[0] && b.reopen) await db.from("chat_rooms").update({ closed_at: null }).eq("id", rr[0].id);
+    return NextResponse.json({ ok: true, room: b.reopen ? rr?.[0]?.id || null : null });
   }
   if (b.action === "mute") {
     const r = await canUse(db, uid, String(b.room)); if (!r || r.kind !== "pair") return bad("Không tìm thấy cuộc trò chuyện");
