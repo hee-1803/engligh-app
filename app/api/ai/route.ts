@@ -74,8 +74,8 @@ async function generate(params: { contents: unknown; config?: Record<string, unk
   let i = 0, discovered = false;
   while (true) {
     if (i >= tryList.length) {
-      // Hết model đã khai báo (đều hết lượt) → tìm thêm model Gemini khác còn lượt
-      if (discovered || !(last === undefined || isQuota(last))) break;
+      // Hết model đã khai báo (hết lượt hoặc quá tải) → tìm thêm model Gemini khác
+      if (discovered || !(last === undefined || isQuota(last) || isBusy(last))) break;
       discovered = true;
       for (const m of await discoverModels()) if (!tryList.includes(m) && !isOut(m)) tryList.push(m);
       if (i >= tryList.length) break;
@@ -104,6 +104,7 @@ async function generate(params: { contents: unknown; config?: Record<string, unk
         if (!isBusy(e)) throw e; // lỗi key, model sai... thì không thử lại
       }
     }
+    if (last && isBusy(last)) exhausted.set(model, Math.max(exhausted.get(model) || 0, Date.now() + 2 * 60e3)); // quá tải: tạm bỏ qua 2 phút
   }
   throw last ?? new Error("429 RESOURCE_EXHAUSTED: mọi model Gemini đều đã hết lượt");
 }
