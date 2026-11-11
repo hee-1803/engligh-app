@@ -7,6 +7,32 @@ import { askFallback, probeFallbacks, PROVIDERS } from "@/lib/fallback-ai";
 // GEMINI_FALLBACK_MODELS=ten-model-1,ten-model-2
 const MODELS = [MODEL, ...(process.env.GEMINI_FALLBACK_MODELS || "").split(",").map((s) => s.trim()).filter(Boolean)];
 const noThinking = new Set<string>();
+// Model đã hết lượt → tạm bỏ qua 30 phút
+const exhausted = new Map<string, number>();
+const isOut = (m: string) => (exhausted.get(m) || 0) > Date.now();
+// Tự tìm các model Gemini khác mà key được dùng (mỗi model có hạn mức miễn phí riêng)
+let lastModel = MODEL;
+let found: { at: number; list: string[] } | null = null;
+async function discoverModels(): Promise<string[]> {
+  if (found && Date.now() - found.at < 6 * 3600e3) return found.list;
+  const ids: string[] = [];
+  try {
+    const pager = await ai.models.list({ config: { pageSize: 100 } });
+    for await (const m of pager) {
+      const id = String(m.name || "").replace(/^models\//, "");
+      const acts = (m as { supportedActions?: string[] }).supportedActions || [];
+      if (!/^gemini/.test(id) || (acts.length && !acts.includes("generateContent"))) continue;
+      if (/embed|tts|image|audio|live|vision|robotics|computer|native|aqa|exp-\d|learnlm/i.test(id)) continue;
+      ids.push(id);
+    }
+  } catch { /* không lấy được danh sách: chỉ dùng model đã khai báo */ }
+  // Ưu tiên: flash → flash-lite → pro; bản mới (số lớn) trước; bản "latest"/ổn định trước bản preview
+  const ver = (id: string) => Number((id.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1] || 0);
+  const tier = (id: string) => (/flash-lite/.test(id) ? 1 : /flash/.test(id) ? 0 : /pro/.test(id) ? 2 : 3);
+  ids.sort((a, b) => tier(a) - tier(b) || ver(b) - ver(a) || Number(/preview/.test(a)) - Number(/preview/.test(b)) || a.length - b.length);
+  found = { at: Date.now(), list: ids.slice(0, 8) };
+  return found.list;
+}
 // Không chờ Gemini quá lâu: việc nhỏ 20 giây, soạn bài 110 giây
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error("504 timeout UNAVAILABLE: Gemini phản hồi quá chậm")), ms))]);
@@ -44,7 +70,17 @@ async function generate(params: { contents: unknown; config?: Record<string, unk
   let last: unknown;
   const list = !heavy && FAST ? [FAST, ...MODELS.filter((m) => m !== FAST)] : MODELS;
   const ms = heavy ? 110000 : 20000;
-  for (const model of quick ? list.slice(0, 1) : list) {
+  const tryList = list.filter((m) => !isOut(m));
+  let i = 0, discovered = false;
+  while (true) {
+    if (i >= tryList.length) {
+      // Hết model đã khai báo (đều hết lượt) → tìm thêm model Gemini khác còn lượt
+      if (discovered || !(last === undefined || isQuota(last))) break;
+      discovered = true;
+      for (const m of await discoverModels()) if (!tryList.includes(m) && !isOut(m)) tryList.push(m);
+      if (i >= tryList.length) break;
+    }
+    const model = tryList[i++]; lastModel = model;
     for (const wait of quick ? [0] : heavy ? [0, 1000, 3000] : [0, 800]) {
       if (wait) await sleep(wait);
       try {
@@ -63,12 +99,13 @@ async function generate(params: { contents: unknown; config?: Record<string, unk
         return await withTimeout(ai.models.generateContent({ model, ...params } as any), ms);
       } catch (e) {
         last = e;
-        if (isQuota(e)) break; // hết lượt ở model này: chuyển sang model dự phòng nếu có
+        if (isQuota(e)) { exhausted.set(model, Date.now() + 30 * 60e3); break; } // hết lượt ở model này: thử model khác
+        if ([400, 403, 404].includes(statusOf(e)) && discovered) break; // model tự tìm không dùng được: bỏ qua
         if (!isBusy(e)) throw e; // lỗi key, model sai... thì không thử lại
       }
     }
   }
-  throw last;
+  throw last ?? new Error("429 RESOURCE_EXHAUSTED: mọi model Gemini đều đã hết lượt");
 }
 
 // GET: kiểm tra key và tên model (không tốn lượt gọi sinh nội dung)
@@ -80,9 +117,9 @@ export async function GET(req: Request) {
     if (process.env.GEMINI_API_KEY) {
       const t0 = Date.now();
       try {
-        await withTimeout(ai.models.generateContent({ model: MODEL, contents: "Say OK", config: { maxOutputTokens: 5 } }), 15000);
-        gem = { name: "Gemini", model: MODEL, ok: true, ms: Date.now() - t0 };
-      } catch (e) { gem = { name: "Gemini", model: MODEL, ok: false, error: errMsg(e) }; }
+        await generate({ contents: "Say OK", config: { maxOutputTokens: 5 } }, true, false);
+        gem = { name: "Gemini", model: lastModel, ok: true, ms: Date.now() - t0 };
+      } catch (e) { gem = { name: "Gemini", model: lastModel, ok: false, error: errMsg(e) }; }
     }
     return NextResponse.json({ list: [gem, ...(await probeFallbacks())] });
   }
@@ -112,7 +149,7 @@ export async function POST(req: Request) {
       contents,
       config: { systemInstruction: system, temperature: json ? 0.3 : 0.7, ...(json ? { responseMimeType: "application/json" } : {}) },
     }, PROVIDERS.length > 0 && !heavy, !!heavy);
-    return NextResponse.json({ text: res.text ?? "", engine: "Gemini" });
+    return NextResponse.json({ text: res.text ?? "", engine: "Gemini", model: lastModel });
   } catch (e) {
     if (heavy && PROVIDERS.length && (isQuota(e) || isBusy(e))) {
       try { return NextResponse.json(await askFallback(system, contents, !!json, 90000)); }
