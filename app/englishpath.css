@@ -619,3 +619,8 @@ html, body { min-height: 100% } html { background: var(--bg) }
 .recdot { width: 12px; height: 12px; border-radius: 50%; background: var(--bad); animation: recp 1s infinite } @keyframes recp { 50% { opacity: .3 } }
 .rules { padding-left: 18px; display: grid; gap: 6px; margin: 0 }
 .panel.center > .mascot, .panel.center > .stk { justify-self: center }
+.inbox { display: grid; gap: 8px }
+.inbox-row { display: flex; gap: 12px; align-items: center; text-align: left; border-radius: 20px; padding: 10px 14px; width: 100%; justify-content: flex-start; font-weight: 600 }
+.inbox-row .grow { min-width: 0; overflow: hidden; text-overflow: ellipsis } .inbox-row .badge { margin-left: auto }
+.msg.recalled { background: transparent !important; border: 1.5px dashed var(--line); color: var(--muted) } .msg.recalled .muted { color: var(--muted) }
+.adm-to { display: inline-flex; gap: 6px; align-items: center; background: var(--accent-soft); border: 2px solid var(--accent); border-radius: 99px; padding: 4px 6px 4px 14px; font-size: .9rem } .adm-table tr.sel td { background: var(--accent-soft) }

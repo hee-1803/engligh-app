@@ -1499,18 +1499,23 @@ async function testPush(btn) { btn.disabled = true; const r = await fetch("/api/
    ===================================================================== */
 const ACT = {
   chAgree: () => { S.profile.chatOK = true; save(); chPoll(true); render(); },
-  chTab: v => { CH.tab = v; CH.msgs = []; CH.last = 0; CH.menu = null; render(); chPoll(v === "pair" ? "pair" : true); },
+  chTab: v => { CH.tab = v; CH.pair = null; CH.msgs = []; CH.last = 0; CH.menu = null; render(); chPoll(true); },
   chRoom: v => { CH.room = v; CH.msgs = []; CH.last = 0; render(); chPoll(true); },
   chSend: () => chSend(),
   chRec: () => chRecStart(), chRecStop: () => chRecStop(false), chRecCancel: () => chRecStop(true),
-  chMatch: async () => { CH.lastMatch = Date.now(); try { const d = await chApi({action:"match", level:S.level || "A1"}); CH.pair = d.room || null; CH.waiting = !!d.waiting; CH.msgs = []; CH.last = 0; CH.closed = false; render(); chPoll(true); } catch (e) { toast(e.message); } },
+  chMatch: async () => { CH.lastMatch = Date.now(); try { const d = await chApi({action:"match", level:S.level || "A1"}); if (d.room) { toast("Đã ghép! Bạn ấy có thể chưa online, cứ chào trước nhé 👋"); chOpen(d.room.id); } else { CH.waiting = true; render(); } } catch (e) { toast(e.message); } },
   chCancel: async () => { try { await chApi({action:"cancel"}); } catch (e) {} CH.waiting = false; render(); },
-  chLeave: async () => { try { await chApi({action:"leave", room:CH.pair?.id}); } catch (e) {} CH.pair = null; CH.msgs = []; CH.last = 0; render(); },
+  chOpen: v => chOpen(v),
+  chBack: () => { CH.pair = null; CH.msgs = []; CH.last = 0; render(); chPoll(true); },
+  chKeep: async v => { try { const d = await chApi({action:"keep", room:CH.pair.id, on:v === "1"}); toast(d.saved ? "⭐ Hai bạn đã là bạn chat!" : v === "1" ? "Đã bấm giữ. Chờ bạn ấy đồng ý nhé." : "Đã bỏ giữ"); chPoll(false); if (CH.pairInfo) { CH.pairInfo.mineKeep = v === "1"; CH.pairInfo.saved = !!d.saved; } render(); } catch (e) { toast(e.message); } },
+  chLeave: async (v, btn) => { if (!btn.dataset.c) { btn.dataset.c = 1; btn.textContent = "Bấm lần nữa để xác nhận"; return; }
+    try { await chApi({action:"leave", room:CH.pair?.id}); } catch (e) {} CH.pair = null; CH.msgs = []; CH.last = 0; render(); chPoll(true); },
+  chRecall: async v => { try { await chApi({action:"recall", id:Number(v)}); const m = CH.msgs.find(x => x.id === Number(v)); if (m) { m.recalled = true; m.text = ""; m.audio = null; } CH.menu = null; render(); } catch (e) { toast(e.message); } },
   chMenu: v => { CH.menu = v ? Number(v) : null; render(); },
   chReport: async v => { const [id, reason] = String(v).split("|"); try { await chApi({action:"report", id:Number(id), reason}); CH.menu = null; toast("Đã gửi báo cáo. Cảm ơn bạn!"); chPoll(true); } catch (e) { toast(e.message); } },
-  chBlock: async v => { try { await chApi({action:"block", id:Number(v)}); CH.menu = null; CH.msgs = CH.msgs.filter(m => m.id !== Number(v)); toast("Đã chặn. Bạn sẽ không thấy tin nhắn của người này nữa."); if (CH.tab === "pair") { CH.pair = null; } chPoll(true); } catch (e) { toast(e.message); } },
+  chBlock: async v => { try { await chApi({action:"block", id:Number(v)}); CH.menu = null; CH.msgs = CH.msgs.filter(m => m.id !== Number(v)); toast("Đã chặn. Bạn sẽ không thấy tin nhắn của người này nữa."); if (CH.tab === "pair") { CH.pair = null; CH.msgs = []; CH.last = 0; } chPoll(true); } catch (e) { toast(e.message); } },
   festFx: v => { S.profile.festFx = v === "true"; save(); applyFestive(); render(); toast(v === "true" ? "Đã bật hiệu ứng rơi" : "Đã tắt hiệu ứng rơi"); },
-  go: v => { view = v; Q = null; FC = null; closePop(); UI.menu = false; render(); scrollTo(0, 0); if (v === "chat") chPoll(CH.tab === "pair" ? "pair" : true); },
+  go: v => { view = v; Q = null; FC = null; closePop(); UI.menu = false; render(); scrollTo(0, 0); if (v === "chat") chPoll(true); },
   speak: v => say(v),
   slow: v => say(v, Math.max(0.45, ttsRate() - 0.25)),
   pron: v => { const l = L(), [kind, i] = v.split(":"), w = l.les.words[Number(i)], target = kind === "w" ? w.w : w.ex;
@@ -1637,26 +1642,35 @@ async function chApi(body) {
   const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || "lỗi " + r.status); return d;
 }
 async function chPoll(reset) {
-  if (view !== "chat" || document.visibilityState !== "visible") return;
+  if (view !== "chat" || document.visibilityState !== "visible" || !S.profile?.chatOK) return chBadge();
+  const lv = encodeURIComponent(S.level || "");
   try {
-    if (CH.tab === "pair" || reset === "pair") {
-      const r = await timeoutFetch("/api/chat?pair=1", {}, 10000), d = await r.json(); if (!r.ok) throw new Error(d.error);
-      const changed = (d.room?.id || "") !== (CH.pair?.id || "");
-      CH.pair = d.room; CH.waiting = d.waiting && !d.room; CH.queue = Math.max(0, d.queue - (CH.waiting ? 1 : 0));
-      // Đang chờ: cứ 15 giây thử ghép lại (giữ chỗ trong hàng chờ và bắt được người vừa vào)
-      if (CH.waiting && Date.now() - (CH.lastMatch || 0) > 15000) { CH.lastMatch = Date.now(); try { const m = await chApi({action:"match", level:S.level || "A1"}); if (m.room) { CH.pair = m.room; CH.waiting = false; } } catch (e) {} }
-      if (changed) { CH.msgs = []; CH.last = 0; CH.closed = false; if (d.room) toast("Đã ghép với một bạn luyện tập 🎉"); }
+    if (CH.tab === "pair" && !CH.pair) {           // danh sách cuộc trò chuyện 1-1
+      const r = await timeoutFetch(`/api/chat?inbox=1&lv=${lv}`, {}, 10000), d = await r.json(); if (!r.ok) throw new Error(d.error);
+      // Đang chờ: cứ 15 giây thử ghép lại
+      if (d.waiting && Date.now() - (CH.lastMatch || 0) > 15000) { CH.lastMatch = Date.now(); try { const m = await chApi({action:"match", level:S.level || "A1"}); if (m.room) { toast("Đã ghép với một bạn luyện tập 🎉"); return chOpen(m.room.id); } } catch (e) {} }
+      CH.inbox = d.rooms; CH.waiting = d.waiting; CH.unread = d.unread; CH.err = ""; return render();
     }
-    const room = chRoomId(); if (!room) { CH.err = ""; return render(); }
+    const room = chRoomId(); if (!room) return render();
     if (reset) { CH.msgs = []; CH.last = 0; }
-    const r = await timeoutFetch(`/api/chat?room=${encodeURIComponent(room)}&after=${CH.last}`, {}, 10000), d = await r.json();
+    const r = await timeoutFetch(`/api/chat?room=${encodeURIComponent(room)}&after=${CH.last}&lv=${lv}`, {}, 10000), d = await r.json();
     if (!r.ok) throw new Error(d.error);
-    CH.me = d.me; CH.closed = d.closed; CH.ban = d.ban; CH.err = "";
+    CH.me = d.me; CH.closed = d.closed; CH.ban = d.ban; CH.err = ""; if (d.pair) CH.pairInfo = d.pair;
     const box = $("#chbox"), atBottom = !box || box.scrollHeight - box.scrollTop - box.clientHeight < 80;
-    if (d.messages.length || reset) { const seen = new Set(CH.msgs.map(m => m.id)); CH.msgs = [...CH.msgs, ...d.messages.filter(m => !seen.has(m.id))].slice(-200); CH.last = CH.msgs.at(-1)?.id || CH.last; render(); if (atBottom) chScroll(); }
+    const rec = new Set(d.recalled || []); let changed = false;
+    CH.msgs.forEach(m => { if (rec.has(m.id) && !m.recalled) { m.recalled = true; m.text = ""; m.audio = null; changed = true; } });
+    if (d.messages.length || reset || changed) { const seen = new Set(CH.msgs.map(m => m.id)); CH.msgs = [...CH.msgs, ...d.messages.filter(m => !seen.has(m.id))].slice(-300); CH.last = CH.msgs.at(-1)?.id || CH.last; render(); if (atBottom || reset) chScroll(); }
     else if (reset !== false) render();
   } catch (e) { if (CH.err !== e.message) { CH.err = e.message; render(); } }
 }
+// Số tin chưa đọc trên tab "Cộng đồng" (kiểm tra mỗi phút khi không ở trang chat)
+let CH_BADGE_AT = 0;
+async function chBadge() {
+  if (!S.profile?.chatOK || document.visibilityState !== "visible" || Date.now() - CH_BADGE_AT < 60000) return;
+  CH_BADGE_AT = Date.now();
+  try { const r = await timeoutFetch("/api/chat?inbox=1", {}, 10000); if (!r.ok) return; const d = await r.json(); if (d.unread !== CH.unread) { CH.unread = d.unread; renderHeader(); } } catch (e) {}
+}
+function chOpen(id) { CH.tab = "pair"; CH.pair = {id}; CH.pairInfo = null; CH.msgs = []; CH.last = 0; CH.menu = null; render(); chPoll(true); }
 function chScroll() { requestAnimationFrame(() => { const b = $("#chbox"); if (b) b.scrollTop = b.scrollHeight; }); }
 setInterval(() => chPoll(false), 3000);
 async function chSend() {
@@ -1713,20 +1727,35 @@ function vChat() {
   let head = "";
   if (CH.tab === "room") head = `<div class="row">${[...CH_LEVELS, "ALL"].map(k => `<button class="mini seg ${(CH.room || "lv-" + (CH_LEVELS.includes(S.level) ? S.level : "A1")) === "lv-" + k ? "sel" : ""}" data-a="chRoom" data-v="lv-${k}">${k === "ALL" ? "Mọi trình độ" : k}</button>`).join("")}</div>
      <p class="muted small">Phòng ${lv === "ALL" ? "chung cho mọi trình độ" : "trình độ " + lv}: hỏi đáp, chia sẻ mẹo học, luyện viết câu.</p>`;
-  else if (!CH.pair) return `<div class="wrap narrow">${tabs}<section class="panel center">${mascot(CH.waiting ? "think" : "cheer", 110, CH.waiting ? "bob" : "")}
-     ${CH.waiting ? `<h2>Đang tìm bạn luyện tập...</h2><p class="muted">Ghép với người cùng trình độ ${esc(S.level || "")} (hoặc lệch 1 bậc). ${CH.queue ? `Đang có ${CH.queue} người khác cũng đang chờ.` : "Chưa có ai khác đang chờ, bạn để trang này mở nhé, app sẽ tự ghép khi có người vào."}</p><button data-a="chCancel">Huỷ tìm</button>`
-       : `<h2>Luyện nói 1-1 với một người lạ</h2><p class="muted">App ghép bạn với một người cùng trình độ đang online. Hai bạn chỉ thấy biệt danh của nhau. Gợi ý: chọn một chủ đề trong bài học gần nhất và cùng nói về nó.</p><button class="primary big" data-a="chMatch">🔍 Tìm bạn luyện tập</button>`}</section></div>`;
-  else head = `<div class="row between nowrap"><span>Đang trò chuyện với <b>${CH.pair.partner.icon} ${esc(CH.pair.partner.name)}</b>${CH.pair.level ? ` <span class="tag">${esc(CH.pair.level)}</span>` : ""}</span>
-     <span class="row"><button class="mini" data-a="chMatch">⏭ Người khác</button><button class="mini" data-a="chLeave">Kết thúc</button></span></div>
-     ${CH.closed ? `<p class="fb small">Cuộc trò chuyện đã kết thúc. Bấm “Người khác” để tìm bạn mới.</p>` : ""}`;
+  else if (!CH.pair) {
+    const list = (CH.inbox || []).map(r => `<button class="inbox-row" data-a="chOpen" data-v="${r.id}"><span class="cav" style="--h:${r.partner.hue}">${r.partner.icon}</span>
+      <span class="grow"><b>${esc(r.partner.name)}</b>${r.saved ? ` <span class="tag good">⭐ Bạn chat</span>` : r.theirKeep ? ` <span class="tag">muốn giữ cuộc trò chuyện</span>` : ""}<br><span class="muted small">${esc(r.preview || "Chưa có tin nhắn, hãy chào bạn ấy nhé!")}</span></span>
+      ${r.unread ? `<span class="badge">${r.unread}</span>` : ""}</button>`).join("");
+    return `<div class="wrap narrow">${tabs}<section class="panel">
+      <div class="row between nowrap"><div><h2>Ghép đôi 1-1</h2><p class="muted small">Ghép ngay với một người cùng trình độ, kể cả khi họ chưa online: họ sẽ nhận thông báo và trả lời sau.</p></div>${mascot(CH.waiting ? "think" : "cheer", 70, CH.waiting ? "bob" : "")}</div>
+      ${CH.waiting ? `<div class="row"><span class="spin"></span><span>Chưa có ai phù hợp. App sẽ tự ghép khi có người vào (bạn có thể rời trang này).</span><button class="mini" data-a="chCancel">Huỷ tìm</button></div>`
+        : `<button class="primary big" data-a="chMatch">🔍 Tìm bạn luyện tập mới</button>`}
+      <h3>Cuộc trò chuyện của bạn</h3>
+      ${list ? `<div class="inbox">${list}</div>` : `<p class="muted">Chưa có cuộc trò chuyện nào.</p>`}
+      <p class="muted small">⭐ Khi cả hai cùng bấm <b>Giữ cuộc trò chuyện</b>, hai bạn thành <b>bạn chat</b>: tin nhắn được giữ lại để nhắn với nhau mỗi ngày, nhưng vẫn chỉ thấy biệt danh của nhau. Cuộc trò chuyện chưa giữ sẽ tự xoá sau 30 ngày.</p></section></div>`;
+  }
+  else {
+    const P = CH.pairInfo || {}, w = P.partner;
+    head = `<div class="row between nowrap"><span class="row nowrap"><button class="mini ghost" data-a="chBack">←</button>${w ? `<span class="cav" style="--h:${w.hue}">${w.icon}</span><b>${esc(w.name)}</b>` : ""}${P.level ? ` <span class="tag">${esc(P.level)}</span>` : ""}</span>
+      <span class="row">${P.saved ? `<span class="tag good">⭐ Bạn chat</span>` : `<button class="mini ${P.mineKeep ? "sel" : ""}" data-a="chKeep" data-v="${P.mineKeep ? 0 : 1}">${P.mineKeep ? "✓ Đã bấm giữ" : "⭐ Giữ cuộc trò chuyện"}</button>`}
+      <button class="mini" data-a="chLeave">${P.saved ? "Huỷ bạn chat" : "Kết thúc"}</button></span></div>
+      ${!P.saved && P.mineKeep ? `<p class="muted small">Đang chờ bạn ấy cũng bấm “Giữ”. Khi cả hai cùng giữ, tin nhắn sẽ không bị xoá.</p>` : !P.saved && P.theirKeep ? `<p class="fb small">⭐ Bạn ấy muốn giữ cuộc trò chuyện này. Bấm “Giữ cuộc trò chuyện” để thành bạn chat!</p>` : ""}
+      ${CH.closed ? `<p class="fb small">Cuộc trò chuyện đã kết thúc.</p>` : ""}`;
+  }
   const bubble = m => {
     const ws = (m.text || "").split(/\s+/).filter(Boolean), vi = ws.filter(w => VIx.test(w)).length > Math.max(1, ws.length * 0.3); // chủ yếu là tiếng Việt
-    const body = m.hidden ? `<span class="muted">(Tin nhắn đã bị ẩn do vi phạm)</span>`
+    const body = m.recalled ? `<span class="muted"><i>${m.mine ? "Bạn đã thu hồi một tin nhắn" : "Tin nhắn đã được thu hồi"}</i></span>` : m.hidden ? `<span class="muted">(Tin nhắn đã bị ẩn do vi phạm)</span>`
       : m.audio ? `<audio controls preload="none" src="${esc(m.audio)}"></audio><span class="muted small"> ${m.sec}s</span>`
       : vi ? esc(m.text) + trBtn(m.text, "vi", "en", "Xem tiếng Anh") : tw(m.text) + ` <button class="mini" data-a="speak" data-v="${esc(m.text)}" aria-label="Nghe">🔊</button>${trBtn(m.text, "en", "vi")}`;
-    return `<div class="cmsg ${m.mine ? "mine" : ""}">${m.mine ? "" : `<span class="cav" style="--h:${m.who.hue}">${m.who.icon}</span>`}<div class="cbody">${m.mine ? "" : `<b class="cname">${esc(m.who.name)}</b>`}<div class="msg ${m.mine ? "user" : "ai"}">${body}</div>
-      <span class="ctime">${new Date(m.at).toLocaleTimeString("vi-VN", {hour:"2-digit", minute:"2-digit"})}${m.mine || m.hidden ? "" : ` · <a href="#" data-a="chMenu" data-v="${m.id}">⋯</a>`}</span>
-      ${CH.menu === m.id ? `<div class="row cmenu"><span class="small">🚩 Báo cáo:</span>${["Thô tục", "Quấy rối", "Nội dung người lớn", "Lừa đảo/quảng cáo", "Khác"].map(r => `<button class="mini" data-a="chReport" data-v="${m.id}|${r}">${r}</button>`).join("")}<button class="mini" data-a="chBlock" data-v="${m.id}">⛔ Chặn người này</button><button class="mini ghost" data-a="chMenu" data-v="">Đóng</button></div>` : ""}</div></div>`;
+    return `<div class="cmsg ${m.mine ? "mine" : ""}">${m.mine ? "" : `<span class="cav" style="--h:${m.who.hue}">${m.who.icon}</span>`}<div class="cbody">${m.mine ? "" : `<b class="cname">${esc(m.who.name)}</b>`}<div class="msg ${m.mine ? "user" : "ai"}${m.recalled ? " recalled" : ""}">${body}</div>
+      <span class="ctime">${new Date(m.at).toLocaleTimeString("vi-VN", {hour:"2-digit", minute:"2-digit"})}${m.hidden || m.recalled ? "" : ` · <a href="#" data-a="chMenu" data-v="${m.id}">⋯</a>`}</span>
+      ${CH.menu === m.id && m.mine ? `<div class="row cmenu"><button class="mini danger" data-a="chRecall" data-v="${m.id}">↩️ Thu hồi</button><button class="mini ghost" data-a="chMenu" data-v="">Đóng</button></div>` : ""}
+      ${CH.menu === m.id && !m.mine ? `<div class="row cmenu"><span class="small">🚩 Báo cáo:</span>${["Thô tục", "Quấy rối", "Nội dung người lớn", "Lừa đảo/quảng cáo", "Khác"].map(r => `<button class="mini" data-a="chReport" data-v="${m.id}|${r}">${r}</button>`).join("")}<button class="mini" data-a="chBlock" data-v="${m.id}">⛔ Chặn người này</button><button class="mini ghost" data-a="chMenu" data-v="">Đóng</button></div>` : ""}</div></div>`;
   };
   const canSend = room && !CH.closed && !CH.ban;
   return `<div class="wrap narrow">${tabs}<section class="panel">${head}
@@ -1815,12 +1844,12 @@ function renderHeader() {
   const due = dueCards().length, name = displayName() || ME?.email || "Bạn";
   const active = view === "settings" ? "" : view;
   h.innerHTML = `<div class="hin"><a href="#" class="brand" data-a="go" data-v="home"><span class="logo">${mascot("happy", 40)}</span><span><b>Lộ Trình</b><small>Tiếng Anh cá nhân hóa</small></span></a>
-    ${focus ? "" : `<nav class="tabs-top" aria-label="Điều hướng">${tabs.map(([k, t]) => `<a href="#" class="${active === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : ""}</a>`).join("")}</nav>`}
+    ${focus ? "" : `<nav class="tabs-top" aria-label="Điều hướng">${tabs.map(([k, t]) => `<a href="#" class="${active === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : k === "chat" && CH.unread ? `<span class="badge">${CH.unread}</span>` : ""}</a>`).join("")}</nav>`}
     <div class="tools">${S.level ? `<span class="lvl" title="Trình độ hiện tại">${S.level}</span>` : ""}
      <div class="usermenu"><button class="avatar" data-a="menu" aria-label="Tài khoản ${esc(ME?.email || "")}">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc(name[0].toUpperCase())}</button>
      ${UI.menu ? `<div class="menu"><div class="who"><b>${esc(displayName() || "Tài khoản")}</b><span>${esc(ME?.email || "")}</span></div>${ME?.admin ? `<a href="/admin">🛠️ Quản trị</a>` : ""}${S.path ? `<a href="#" data-a="go" data-v="settings">Cài đặt</a>` : ""}<a href="/auth/signout">Đăng xuất</a></div>` : ""}</div></div></div>`;
   const bn = $("#bnav");
-  if (bn) { bn.hidden = focus; bn.innerHTML = focus ? "" : [...tabs, ["settings", "Cài đặt"]].map(([k, t]) => `<a href="#" class="${view === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : ""}</a>`).join(""); }
+  if (bn) { bn.hidden = focus; bn.innerHTML = focus ? "" : [...tabs, ["settings", "Cài đặt"]].map(([k, t]) => `<a href="#" class="${view === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : k === "chat" && CH.unread ? `<span class="badge">${CH.unread}</span>` : ""}</a>`).join(""); }
 }
 function render() {
   const a = $("#app"); if (!a) return;
@@ -1861,7 +1890,8 @@ function render() {
   app.innerHTML = `<div class="wrap"><section class="panel center"><p><span class="spin"></span> Đang tải tiến độ của bạn...</p></section></div>`;
   AI = {on:false, msg:"đang kiểm tra kết nối..."};
   const meP = fetch("/api/me").then(r => r.ok ? r.json() : null).catch(() => null);
-  S = await loadState(); BASE = Number(S.rev || 0); ME = await meP; try { applyFestive(); } catch (e) {} setInterval(() => { try { applyFestive(); } catch (e) {} }, 30 * 60e3); render(); remindLoop(); setInterval(remindLoop, 60e3);
+  S = await loadState(); BASE = Number(S.rev || 0); ME = await meP;
+  if (new URLSearchParams(location.search).get("view") === "chat" && S.path) { view = "chat"; history.replaceState(null, "", "/"); setTimeout(() => chPoll(true), 300); } try { applyFestive(); } catch (e) {} setInterval(() => { try { applyFestive(); } catch (e) {} }, 30 * 60e3); render(); remindLoop(); setInterval(remindLoop, 60e3);
   // Kiểm tra Gemini chạy ngầm, không chặn giao diện
   checkAI().then(() => { if (!["lesson", "quiz", "flip"].includes(view)) render(); setTimeout(prefetchNext, 1500); });
   setInterval(async () => { if (AI.quota && Date.now() - (AI.quotaAt || 0) < 300e3) return; if (!AI.on || AI.busy) { const was = AI.on && !AI.busy; await checkAI(); if (AI.on && !AI.busy && !was && !["lesson", "quiz"].includes(view)) render(); } }, 180e3);

@@ -6,8 +6,9 @@ const COLORS = ["Xanh", "Hồng", "Tím", "Vàng", "Cam", "Bạc", "Ngọc", "M�
 const ICONS = ["🦊", "🐱", "🐻", "🐰", "🦉", "🐿️", "🦌", "🦦", "🐦", "🐬", "🐼", "🐧", "🦫", "🦔", "🦜", "🐝"];
 
 // Biệt danh ẩn danh: cố định theo người + phòng + ngày, đổi mỗi ngày để không ai lần ra ai
+// Phòng ghép đôi: biệt danh cố định suốt cuộc trò chuyện (để nhận ra nhau khi nhắn mỗi ngày)
 export function alias(userId: string, room: string) {
-  const day = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+  const day = room.startsWith("p-") ? "pair" : new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
   const h = createHash("sha256").update(`${process.env.CHAT_SALT || process.env.CRON_SECRET || "ep"}|${userId}|${room}|${day}`).digest();
   const a = h[0] % ANIMALS.length;
   return { name: `${ANIMALS[a]} ${COLORS[h[1] % COLORS.length]} #${(h[2] % 90) + 10}`, icon: ICONS[a], hue: h[3] % 360 };

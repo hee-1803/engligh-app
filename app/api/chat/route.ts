@@ -3,15 +3,19 @@ import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { alias, checkText, LEVELS } from "@/lib/chat";
+import { sendPush, type Sub } from "@/lib/push";
 
 /* Trò chuyện ẩn danh.
-   GET  ?room=lv-A1&after=123     → tin nhắn mới (không bao giờ trả user_id của người khác)
-   GET  ?pair=1                   → trạng thái ghép đôi của mình
-   POST {action:"send", room, text?, audio?(base64), mime?, sec?}
-   POST {action:"match", level} · {action:"cancel"} · {action:"leave", room}
+   GET  ?room=lv-A1&after=123&lv=A1  → tin nhắn mới (không bao giờ trả user_id của người khác)
+   GET  ?inbox=1&lv=A1               → danh sách cuộc trò chuyện 1-1 của mình
+   POST {action:"send", room, text? | audio(base64), mime, sec}
+   POST {action:"recall", id}                     → thu hồi tin của mình
+   POST {action:"match", level}                   → ghép đôi (người đang chờ, hoặc người từng vào cộng đồng gần đây)
+   POST {action:"cancel"} · {action:"leave", room} · {action:"keep", room, on}
    POST {action:"report", id, reason} · {action:"block", id} */
-const MAX_TEXT = 500, MAX_AUDIO = 1_500_000, MAX_SEC = 60;
+const MAX_TEXT = 500, MAX_AUDIO = 1_500_000, MAX_SEC = 60, NEW_PER_DAY = 8;
 type Db = ReturnType<typeof createAdminClient>;
+type Room = { id: string; kind: string; level: string | null; a: string | null; b: string | null; closed_at: string | null; a_keep: boolean; b_keep: boolean; saved_at: string | null; last_msg_at: string | null; last_push_at: string | null; created_at: string };
 
 async function me() {
   const s = await createClient();
@@ -19,6 +23,7 @@ async function me() {
   return user;
 }
 const bad = (error: string, status = 400) => NextResponse.json({ error }, { status });
+const other = (r: Room, uid: string) => (r.a === uid ? r.b : r.a) as string;
 
 async function banned(db: Db, uid: string) {
   const { data } = await db.from("chat_bans").select("until, reason").eq("user_id", uid).maybeSingle();
@@ -28,48 +33,73 @@ async function blockedSet(db: Db, uid: string) {
   const { data } = await db.from("chat_blocks").select("user_id, blocked").or(`user_id.eq.${uid},blocked.eq.${uid}`);
   return new Set((data || []).map((r) => (r.user_id === uid ? r.blocked : r.user_id)));
 }
-// Được vào phòng không: phòng chung thì ai cũng vào được; phòng ghép đôi chỉ 2 người trong đó
-async function canUse(db: Db, uid: string, room: string) {
+async function canUse(db: Db, uid: string, room: string): Promise<Room | null> {
   const { data: r } = await db.from("chat_rooms").select("*").eq("id", room).maybeSingle();
   if (!r) return null;
   if (r.kind === "pair" && r.a !== uid && r.b !== uid) return null;
-  return r;
+  return r as Room;
+}
+// Đánh dấu đang dùng cộng đồng (để người khác ghép được với mình cả khi mình offline)
+async function seen(db: Db, uid: string, lv: string | null) {
+  const level = LEVELS.includes(lv || "") ? lv : undefined;
+  await db.from("chat_members").upsert({ user_id: uid, last_seen: new Date().toISOString(), ...(level ? { level } : {}) });
+}
+async function pushTo(db: Db, uid: string, payload: { title: string; body: string; url?: string }) {
+  if (!process.env.VAPID_PRIVATE_KEY) return;
+  const { data: subs } = await db.from("push_subscriptions").select("endpoint, keys").eq("user_id", uid);
+  const gone: string[] = [];
+  for (const s of subs || []) if ((await sendPush({ endpoint: s.endpoint, keys: s.keys } as Sub, payload)) === "gone") gone.push(s.endpoint);
+  if (gone.length) await db.from("push_subscriptions").delete().in("endpoint", gone);
 }
 
 export async function GET(req: Request) {
   const user = await me(); if (!user) return bad("Chưa đăng nhập", 401);
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return bad("Máy chủ chưa cấu hình SUPABASE_SERVICE_ROLE_KEY", 500);
-  const db = createAdminClient(), u = new URL(req.url);
+  const db = createAdminClient(), u = new URL(req.url), uid = user.id;
+  await seen(db, uid, u.searchParams.get("lv"));
 
-  if (u.searchParams.get("pair")) {
-    const { data: rooms } = await db.from("chat_rooms").select("*").eq("kind", "pair").is("closed_at", null).or(`a.eq.${user.id},b.eq.${user.id}`).order("created_at", { ascending: false }).limit(1);
-    const { data: q } = await db.from("chat_queue").select("since, level").eq("user_id", user.id).maybeSingle();
-    const { count } = await db.from("chat_queue").select("user_id", { count: "exact", head: true });
-    const r = rooms?.[0];
-    return NextResponse.json({ room: r ? { id: r.id, level: r.level, partner: alias(r.a === user.id ? r.b : r.a, r.id) } : null, waiting: !!q, since: q?.since, queue: count || 0 });
+  if (u.searchParams.get("inbox")) {
+    const { data: rooms } = await db.from("chat_rooms").select("*").eq("kind", "pair").is("closed_at", null).or(`a.eq.${uid},b.eq.${uid}`)
+      .order("last_msg_at", { ascending: false, nullsFirst: false }).limit(50);
+    const { data: reads } = await db.from("chat_reads").select("room_id, last_id").eq("user_id", uid);
+    const rd = new Map((reads || []).map((r) => [r.room_id, Number(r.last_id)]));
+    const list = await Promise.all((rooms || []).map(async (r: Room) => {
+      const { data: last } = await db.from("chat_messages").select("id, user_id, text, audio_path, recalled, hidden").eq("room_id", r.id).order("id", { ascending: false }).limit(1);
+      const { count } = await db.from("chat_messages").select("id", { count: "exact", head: true }).eq("room_id", r.id).neq("user_id", uid).gt("id", rd.get(r.id) || 0);
+      const m = last?.[0], mineKeep = r.a === uid ? r.a_keep : r.b_keep, theirKeep = r.a === uid ? r.b_keep : r.a_keep;
+      return { id: r.id, level: r.level, partner: alias(other(r, uid), r.id), saved: !!r.saved_at, mineKeep, theirKeep, unread: count || 0, at: r.last_msg_at || r.created_at,
+        preview: !m ? "" : (m.user_id === uid ? "Bạn: " : "") + (m.recalled ? "Đã thu hồi một tin nhắn" : m.hidden ? "(tin đã ẩn)" : m.audio_path ? "🎤 Tin nhắn giọng nói" : String(m.text || "").slice(0, 80)) };
+    }));
+    const { data: q } = await db.from("chat_queue").select("since").eq("user_id", uid).maybeSingle();
+    return NextResponse.json({ rooms: list, waiting: !!q, unread: list.reduce((n, r) => n + r.unread, 0) });
   }
 
   const room = u.searchParams.get("room") || "";
-  const r = await canUse(db, user.id, room); if (!r) return bad("Không vào được phòng này", 403);
+  const r = await canUse(db, uid, room); if (!r) return bad("Không vào được phòng này", 403);
   const after = Number(u.searchParams.get("after") || 0);
-  const blocks = await blockedSet(db, user.id);
-  let q = db.from("chat_messages").select("id, user_id, text, audio_path, audio_sec, hidden, created_at").eq("room_id", room).order("id", { ascending: false }).limit(60);
+  const blocks = await blockedSet(db, uid);
+  let q = db.from("chat_messages").select("id, user_id, text, audio_path, audio_sec, hidden, recalled, created_at").eq("room_id", room).order("id", { ascending: false }).limit(r.kind === "pair" ? 200 : 60);
   if (after) q = q.gt("id", after);
   const { data, error } = await q;
   if (error) return bad(error.message, 500);
   const rows = (data || []).reverse().filter((m) => !blocks.has(m.user_id));
-  const paths = rows.filter((m) => m.audio_path && !m.hidden).map((m) => m.audio_path!);
+  const paths = rows.filter((m) => m.audio_path && !m.hidden && !m.recalled).map((m) => m.audio_path!);
   const urls = new Map<string, string>();
   if (paths.length) {
     const { data: signed } = await db.storage.from("chat-voice").createSignedUrls(paths, 3600);
     (signed || []).forEach((s) => s.signedUrl && s.path && urls.set(s.path, s.signedUrl));
   }
-  const messages = rows.map((m) => ({
-    id: m.id, mine: m.user_id === user.id, who: alias(m.user_id, room), at: m.created_at,
-    text: m.hidden ? "" : m.text || "", hidden: !!m.hidden, audio: m.hidden || !m.audio_path ? null : urls.get(m.audio_path) || null, sec: m.audio_sec || 0,
-  }));
-  const closed = r.kind === "pair" && !!r.closed_at;
-  return NextResponse.json({ messages, me: alias(user.id, room), closed, ban: await banned(db, user.id) });
+  const gone = !!(r.kind === "pair" && r.closed_at);
+  const messages = rows.map((m) => {
+    const off = m.hidden || m.recalled;
+    return { id: m.id, mine: m.user_id === uid, who: alias(m.user_id, room), at: m.created_at, recalled: !!m.recalled, hidden: !!m.hidden && !m.recalled,
+      text: off ? "" : m.text || "", audio: off || !m.audio_path ? null : urls.get(m.audio_path) || null, sec: m.audio_sec || 0 };
+  });
+  if (rows.length) await db.from("chat_reads").upsert({ user_id: uid, room_id: room, last_id: rows[rows.length - 1].id });
+  // Tin đã thu hồi trong 10 phút gần đây: báo để màn hình người khác cập nhật
+  const { data: rc } = await db.from("chat_messages").select("id").eq("room_id", room).eq("recalled", true).gte("created_at", new Date(Date.now() - 864e5).toISOString());
+  const pairInfo = r.kind === "pair" ? { partner: alias(other(r, uid), room), saved: !!r.saved_at, mineKeep: r.a === uid ? r.a_keep : r.b_keep, theirKeep: r.a === uid ? r.b_keep : r.a_keep, level: r.level } : null;
+  return NextResponse.json({ messages, recalled: (rc || []).map((x) => x.id), me: alias(uid, room), closed: gone, pair: pairInfo, ban: await banned(db, uid) });
 }
 
 export async function POST(req: Request) {
@@ -82,7 +112,7 @@ export async function POST(req: Request) {
     if (ban) return bad(`Bạn đang bị tạm khoá trò chuyện đến ${new Date(ban.until).toLocaleString("vi-VN")} do bị báo cáo vi phạm.`, 403);
     const r = await canUse(db, uid, b.room); if (!r) return bad("Không vào được phòng này", 403);
     if (r.kind === "pair" && r.closed_at) return bad("Cuộc trò chuyện này đã kết thúc", 400);
-    // Chống spam: tối đa 1 tin / 2 giây và 20 tin / phút
+    if (r.kind === "pair" && (await blockedSet(db, uid)).has(other(r, uid))) return bad("Không gửi được tin nhắn", 403);
     const { data: recent } = await db.from("chat_messages").select("created_at").eq("user_id", uid).gte("created_at", new Date(Date.now() - 60e3).toISOString()).order("created_at", { ascending: false });
     if ((recent || []).length >= 20) return bad("Bạn gửi hơi nhanh, nghỉ một chút rồi gửi tiếp nhé.", 429);
     if (recent?.[0] && Date.now() - new Date(recent[0].created_at).getTime() < 2000) return bad("Chờ 2 giây giữa hai tin nhắn nhé.", 429);
@@ -104,36 +134,84 @@ export async function POST(req: Request) {
     }
     const { data, error } = await db.from("chat_messages").insert({ room_id: b.room, user_id: uid, text: b.audio ? null : text, audio_path, audio_sec }).select("id").single();
     if (error) return bad(error.message, 500);
+    if (r.kind === "pair") {
+      const now = new Date().toISOString();
+      await db.from("chat_rooms").update({ last_msg_at: now }).eq("id", r.id);
+      // Người kia không mở app trong 2 phút → báo bằng thông báo (tối đa 1 lần / 10 phút mỗi cuộc trò chuyện)
+      const to = other(r, uid);
+      const { data: mem } = await db.from("chat_members").select("last_seen").eq("user_id", to).maybeSingle();
+      const away = !mem || Date.now() - new Date(mem.last_seen).getTime() > 120e3;
+      const quiet = !r.last_push_at || Date.now() - new Date(r.last_push_at).getTime() > 600e3;
+      if (away && quiet) {
+        await db.from("chat_rooms").update({ last_push_at: now }).eq("id", r.id);
+        const w = alias(uid, r.id);
+        await pushTo(db, to, { title: `${w.icon} ${w.name} nhắn cho bạn`, body: b.audio ? "🎤 Tin nhắn giọng nói" : text.slice(0, 120), url: "/?view=chat" });
+      }
+    }
     return NextResponse.json({ ok: true, id: data.id });
+  }
+
+  if (b.action === "recall") {
+    const { data: m } = await db.from("chat_messages").select("id, user_id, audio_path, recalled").eq("id", Number(b.id)).maybeSingle();
+    if (!m || m.user_id !== uid) return bad("Chỉ thu hồi được tin nhắn của chính bạn");
+    if (m.audio_path) await db.storage.from("chat-voice").remove([m.audio_path]);
+    await db.from("chat_messages").update({ recalled: true, text: null, audio_path: null }).eq("id", m.id);
+    return NextResponse.json({ ok: true });
   }
 
   if (b.action === "match") {
     const ban = await banned(db, uid); if (ban) return bad("Bạn đang bị tạm khoá trò chuyện do bị báo cáo vi phạm.", 403);
     const level = LEVELS.includes(b.level) ? b.level : "A1", li = LEVELS.indexOf(level);
-    await db.from("chat_rooms").update({ closed_at: new Date().toISOString() }).eq("kind", "pair").is("closed_at", null).or(`a.eq.${uid},b.eq.${uid}`);
+    await seen(db, uid, level);
+    const today = new Date(Date.now() - 864e5).toISOString();
+    const { count: made } = await db.from("chat_rooms").select("id", { count: "exact", head: true }).eq("kind", "pair").or(`a.eq.${uid},b.eq.${uid}`).gte("created_at", today);
+    if ((made || 0) >= NEW_PER_DAY) return bad(`Mỗi ngày tìm tối đa ${NEW_PER_DAY} bạn mới. Hãy trò chuyện tiếp với các bạn đã ghép nhé!`, 429);
+
     const blocks = await blockedSet(db, uid);
-    // Ưu tiên người cùng trình độ, rồi lệch 1 bậc; người chờ lâu nhất trước
+    // Không ghép lại với người đang có cuộc trò chuyện chung
+    const { data: mine } = await db.from("chat_rooms").select("a, b").eq("kind", "pair").is("closed_at", null).or(`a.eq.${uid},b.eq.${uid}`);
+    const skip = new Set([uid, ...blocks, ...(mine || []).flatMap((r) => [r.a, r.b])]);
     const near = LEVELS.filter((_, i) => Math.abs(i - li) <= 1);
-    const { data: waiting } = await db.from("chat_queue").select("user_id, level, since").in("level", near).neq("user_id", uid)
-      .gte("since", new Date(Date.now() - 5 * 60e3).toISOString()).order("since");
-    const cand = (waiting || []).filter((w) => !blocks.has(w.user_id)).sort((x, y) => Number(x.level !== level) - Number(y.level !== level))[0];
-    if (cand) {
-      const { data: taken } = await db.from("chat_queue").delete().eq("user_id", cand.user_id).select("user_id");
-      if (taken?.length) {
-        await db.from("chat_queue").delete().eq("user_id", uid);
-        const id = "p-" + randomUUID();
-        await db.from("chat_rooms").insert({ id, kind: "pair", level: cand.level === level ? level : `${level}/${cand.level}`, a: cand.user_id, b: uid });
-        return NextResponse.json({ room: { id, partner: alias(cand.user_id, id) } });
-      }
+    const rank = (lv: string | null) => (lv === level ? 0 : 1);
+    const { data: bannedNow } = await db.from("chat_bans").select("user_id").gt("until", new Date().toISOString());
+    (bannedNow || []).forEach((x) => skip.add(x.user_id));
+
+    // 1) Người đang bấm tìm (đang online) — ưu tiên
+    const { data: waiting } = await db.from("chat_queue").select("user_id, level, since").in("level", near).gte("since", today).order("since");
+    let cand = (waiting || []).filter((w) => !skip.has(w.user_id)).sort((x, y) => rank(x.level) - rank(y.level))[0]?.user_id as string | undefined;
+    if (cand) await db.from("chat_queue").delete().eq("user_id", cand);
+    // 2) Không ai đang chờ → người từng vào cộng đồng trong 14 ngày (không cần đang online)
+    if (!cand) {
+      const { data: mem } = await db.from("chat_members").select("user_id, level, last_seen").eq("open", true).in("level", near)
+        .gte("last_seen", new Date(Date.now() - 14 * 864e5).toISOString()).order("last_seen", { ascending: false }).limit(200);
+      const pool = (mem || []).filter((m) => !skip.has(m.user_id)).sort((x, y) => rank(x.level) - rank(y.level));
+      const top = pool.slice(0, 20);
+      cand = top[Math.floor(Math.random() * top.length)]?.user_id;
     }
-    await db.from("chat_queue").upsert({ user_id: uid, level, since: new Date().toISOString() });
-    return NextResponse.json({ waiting: true });
+    if (!cand) {
+      await db.from("chat_queue").upsert({ user_id: uid, level, since: new Date().toISOString() });
+      return NextResponse.json({ waiting: true });
+    }
+    await db.from("chat_queue").delete().eq("user_id", uid);
+    const id = "p-" + randomUUID();
+    await db.from("chat_rooms").insert({ id, kind: "pair", level, a: cand, b: uid, last_msg_at: new Date().toISOString() });
+    const meA = alias(uid, id);
+    await pushTo(db, cand, { title: "🤝 Bạn có một bạn luyện tập mới!", body: `${meA.icon} ${meA.name} muốn cùng luyện tiếng Anh với bạn. Vào Cộng đồng để trả lời nhé.`, url: "/?view=chat" });
+    return NextResponse.json({ room: { id, partner: alias(cand, id) } });
   }
   if (b.action === "cancel") { await db.from("chat_queue").delete().eq("user_id", uid); return NextResponse.json({ ok: true }); }
   if (b.action === "leave") {
     await db.from("chat_rooms").update({ closed_at: new Date().toISOString() }).eq("id", String(b.room)).eq("kind", "pair").or(`a.eq.${uid},b.eq.${uid}`);
     return NextResponse.json({ ok: true });
   }
+  if (b.action === "keep") {
+    const r = await canUse(db, uid, String(b.room)); if (!r || r.kind !== "pair" || r.closed_at) return bad("Không tìm thấy cuộc trò chuyện");
+    const on = !!b.on, col = r.a === uid ? "a_keep" : "b_keep", theirs = r.a === uid ? r.b_keep : r.a_keep;
+    await db.from("chat_rooms").update({ [col]: on, saved_at: on && theirs ? r.saved_at || new Date().toISOString() : null }).eq("id", r.id);
+    if (on && !theirs) { const w = alias(uid, r.id); await pushTo(db, other(r, uid), { title: `⭐ ${w.name} muốn giữ cuộc trò chuyện`, body: "Bấm “Giữ cuộc trò chuyện” để trở thành bạn chat và nhắn với nhau mỗi ngày (vẫn ẩn danh).", url: "/?view=chat" }); }
+    return NextResponse.json({ ok: true, saved: on && theirs });
+  }
+  if (b.action === "open") { await db.from("chat_members").upsert({ user_id: uid, open: !!b.on }); return NextResponse.json({ ok: true }); }
 
   if (b.action === "report" || b.action === "block") {
     const { data: m } = await db.from("chat_messages").select("id, room_id, user_id").eq("id", Number(b.id)).maybeSingle();
@@ -145,7 +223,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
     await db.from("chat_reports").insert({ message_id: m.id, room_id: m.room_id, reporter: uid, reported: m.user_id, reason: String(b.reason || "").slice(0, 200) });
-    // Tự xử lý: tin bị 2 người báo cáo → ẩn; người bị 3 người khác nhau báo cáo trong 24 giờ → khoá chat 24 giờ
     const { data: onMsg } = await db.from("chat_reports").select("reporter").eq("message_id", m.id);
     if (new Set((onMsg || []).map((x) => x.reporter)).size >= 2 || m.room_id.startsWith("p-")) await db.from("chat_messages").update({ hidden: true }).eq("id", m.id);
     const { data: onUser } = await db.from("chat_reports").select("reporter").eq("reported", m.user_id).gte("created_at", new Date(Date.now() - 864e5).toISOString());

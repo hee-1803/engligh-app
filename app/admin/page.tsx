@@ -53,7 +53,7 @@ export default function AdminPage() {
       const r = await fetch("/api/admin", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, body, ...(to === "all" ? { all: true } : { userId: to.id }) }) });
       const j = await r.json(); if (!r.ok) throw new Error(j.error);
-      setMsg(`✓ Đã gửi tới ${j.sent}/${j.devices} thiết bị (${j.people} người)${j.removed ? `, xoá ${j.removed} thiết bị đã gỡ` : ""}.`);
+      setMsg(`✓ Đã gửi tới ${j.sent}/${j.devices} thiết bị ${to === "all" ? `(${j.people} người)` : `của ${to.email}`}${j.removed ? `, xoá ${j.removed} thiết bị đã gỡ` : ""}.${j.sent === 0 ? " Thiết bị không nhận được: có thể người này đã tắt thông báo hoặc gỡ app." : ""}`);
       setTitle(""); setBody("");
     } catch (e) { setMsg("✗ " + (e as Error).message); }
     setBusy(false);
@@ -80,17 +80,18 @@ export default function AdminPage() {
 
       <div className="adm-stats">{cards.map(([t, n, sub]) => <div key={t} className="panel"><span className="muted small">{t}</span><b>{n}</b>{sub && <span className="muted small">{sub}</span>}</div>)}</div>
 
-      <section className="panel">
+      <section className="panel" id="adm-send">
         <h3>Gửi thông báo</h3>
         <div className="row">
           <span>Gửi tới:</span>
           <button className={`seg ${to === "all" ? "sel" : ""}`} onClick={() => setTo("all")}>Tất cả người đã bật ({S.push})</button>
-          {to && to !== "all" && <span className="tag">{to.name || to.email}</span>}
+          {to && to !== "all" && <span className="adm-to">👤 <b>{to.name || "(chưa đặt tên)"}</b> · {to.email} · {to.push} thiết bị <button className="mini ghost" onClick={() => setTo(null)}>✕</button></span>}
           {(!to || to === "all") && <span className="muted small">hoặc bấm “Gửi” ở một người trong danh sách</span>}
         </div>
         <input placeholder="Tiêu đề, ví dụ: 🎄 Chủ đề Giáng Sinh đã có!" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} />
         <textarea placeholder="Nội dung (tối đa 240 ký tự)" value={body} maxLength={240} onChange={(e) => setBody(e.target.value)} />
-        <div className="row"><button className="primary" disabled={busy || !to || !title.trim() || !body.trim()} onClick={send}>{busy ? "Đang gửi..." : "Gửi thông báo"}</button>
+        <div className="row"><button className="primary" disabled={busy || !to || !title.trim() || !body.trim()} onClick={send}>{busy ? "Đang gửi..." : to === "all" ? "Gửi cho tất cả" : to ? "Gửi cho người này" : "Gửi thông báo"}</button>
+          {!to ? <span className="muted small">Chọn người nhận trước</span> : (!title.trim() || !body.trim()) && <span className="muted small">Nhập tiêu đề và nội dung</span>}
           {msg && <span className="small">{msg}</span>}</div>
       </section>
 
@@ -102,14 +103,14 @@ export default function AdminPage() {
         <div className="adm-table"><table>
           <thead><tr><th>Người dùng</th><th>Trình độ</th><th>Buổi</th><th>Học gần nhất</th><th>Tham gia</th><th>Thông báo</th><th /></tr></thead>
           <tbody>{list.map((u) => (
-            <tr key={u.id}>
+            <tr key={u.id} className={to !== "all" && to?.id === u.id ? "sel" : ""}>
               <td><b>{u.name || "(chưa đặt tên)"}</b><br /><span className="muted small">{u.email || u.id.slice(0, 8)} · {u.provider}</span></td>
               <td>{u.level ? <span className="tag">{u.level}</span> : "–"}<br /><span className="muted small">{GOAL[u.goal] || ""}</span></td>
               <td>{u.sessions}<br /><span className="muted small">{u.cards} từ</span></td>
               <td>{u.today ? <span className="tag good">Hôm nay</span> : fmt(u.lastStudy)}</td>
               <td>{fmt(u.joined)}</td>
               <td>{u.push ? <span className="tag good">✓ {u.push} thiết bị</span> : <span className="muted small">Chưa bật</span>}</td>
-              <td><button className="mini" disabled={!u.push} onClick={() => { setTo(u); scrollTo({ top: 0, behavior: "smooth" }); }}>Gửi</button></td>
+              <td><button className="mini" disabled={!u.push} onClick={() => { setTo(u); setMsg(""); document.getElementById("adm-send")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>{to !== "all" && to?.id === u.id ? "✓ Đã chọn" : "Chọn gửi"}</button></td>
             </tr>))}</tbody></table></div>
       </section>
 
