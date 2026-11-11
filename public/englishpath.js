@@ -404,11 +404,40 @@ function migrate(d) {
   if (s.current && !s.current.les) s.current = null;
   return s;
 }
-function save() { clearTimeout(saveTimer); saveTimer = setTimeout(pushState, 500); }
-async function pushState() {
-  try { const r = await fetch("/api/state", {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(S)});
-    if (!r.ok) throw new Error(r.status); } catch (e) { toast("Chưa lưu được tiến độ, sẽ thử lại khi bạn học tiếp"); }
+// Lưu tiến độ ngay khi có thay đổi (0,5 giây sau), không cần bấm "Lưu & thoát".
+// Mỗi bản lưu có số thứ tự rev: điện thoại đang giữ bản cũ sẽ không ghi đè bản mới từ máy tính.
+let BASE = 0, SAVING = false, DIRTY = false;
+function save() { DIRTY = true; clearTimeout(saveTimer); saveTimer = setTimeout(pushState, 500); }
+async function pushState(keepalive = false) {
+  clearTimeout(saveTimer); saveTimer = null;
+  if (SAVING) { saveTimer = setTimeout(pushState, 400); return; }
+  SAVING = true; DIRTY = false;
+  const next = BASE + 1;
+  try { S.rev = next;
+    const body = JSON.stringify(S);
+    const r = await fetch("/api/state?base=" + BASE, {method:"PUT", keepalive: keepalive && body.length < 60000, headers:{"Content-Type":"application/json"}, body});
+    if (r.status === 409) { const d = await r.json(); adoptState(d.data, "Đã tải tiến độ mới nhất từ thiết bị khác"); }
+    else if (!r.ok) throw new Error(r.status);
+    else BASE = next;
+  } catch (e) { S.rev = BASE; DIRTY = true; saveTimer = setTimeout(pushState, 5000); if (!keepalive) toast("Chưa lưu được tiến độ, app sẽ tự thử lại"); }
+  SAVING = false;
 }
+function adoptState(data, msg) {
+  if (!data) return;
+  S = migrate(data); BASE = Number(S.rev || 0); try { applyFestive(); } catch (e) {}
+  if (view === "lesson") { Q = null; if (L()) restoreLessonQuiz(); }
+  render(); if (msg) toast(msg);
+}
+// Mở lại app / chuyển tab: kiểm tra máy chủ có bản mới hơn không
+async function syncFromServer() {
+  if (DIRTY || SAVING || saveTimer) return;
+  try { const r = await timeoutFetch("/api/state", {}, 10000); if (!r.ok) return; const d = await r.json();
+    if (d && Number(d.rev || 0) > BASE && !DIRTY && !SAVING) adoptState(d, "Đã cập nhật tiến độ từ thiết bị khác"); } catch (e) {}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") syncFromServer(); else if (DIRTY) pushState(true); });
+addEventListener("pagehide", () => { if (DIRTY) pushState(true); });
+addEventListener("focus", syncFromServer);
+setInterval(() => { if (document.visibilityState === "visible") syncFromServer(); }, 60000);
 async function loadState() {
   try { const r = await timeoutFetch("/api/state", {}, 15000); if (r.ok) return migrate(await r.json()); if (r.status === 401) location.href = "/login"; } catch (e) {}
   return blank();
@@ -438,7 +467,6 @@ async function gemini(system, prompt, json = true, history, ms = 30000) {
   if (!r.ok && !d.quota && (d.busy || r.status >= 500)) pauseAI(d.error ? "quá tải" : "lỗi " + r.status);
   if (!r.ok) { if (d.quota) { AI = {on:false, quota:true, quotaAt:Date.now(), msg:d.error}; toast("Đã hết lượt Gemini miễn phí. Tạm dùng nội dung mẫu, app sẽ tự thử lại sau 5 phút."); }
     throw new Error(d.error || ("Gemini lỗi " + r.status)); }
-  if (d.engine && d.engine !== "Gemini" && LAST_ENGINE !== d.engine) toast(`Gemini đang bận/hết lượt → đang dùng ${d.engine} (dự phòng)`);
   if (d.engine) { LAST_ENGINE = d.engine; LAST_ENGINE_AT = Date.now(); }
   if (!json) return d.text;
   return JSON.parse(String(d.text).replace(/^```(json)?|```$/g, "").trim());
@@ -600,16 +628,19 @@ Trả JSON đúng cấu trúc:
    QUIZ CHUNG (test đầu vào, ôn bài cũ, kiểm tra từ, kiểm tra định kỳ, ôn tập)
    ===================================================================== */
 function makeQuiz(mode, items, feedback) { return {mode, items, i:0, res:[], pick:null, start:Date.now(), feedback}; }
+// Lấy 3 đáp án sai KHÔNG trùng nhau và không trùng đáp án đúng (kho từ có thể chứa cùng một từ ở nhiều bài)
+function distinctOpts(right, cands, fill) {
+  const seen = new Set([String(right).trim().toLowerCase()]), out = [];
+  for (const x of [...shuffle(cands), ...fill]) { const k = String(x || "").trim().toLowerCase(); if (!k || seen.has(k)) continue; seen.add(k); out.push(x); if (out.length === 3) break; }
+  return shuffle([right, ...out]);
+}
 function meaningQ(card, pool, skill = "vocab") {
-  const w = normWord(card); const others = shuffle(pool.map(normWord).filter(x => x.vi && x.w !== w.w && x.vi !== w.vi)).slice(0, 3).map(x => x.vi);
-  while (others.length < 3) others.push(["thời tiết","cái bàn","nhanh chóng","bữa sáng","gia đình"][others.length]);
-  const opts = shuffle([w.vi, ...others]);
+  const w = normWord(card);
+  const opts = distinctOpts(w.vi, pool.map(normWord).filter(x => x.vi && x.w !== w.w).map(x => x.vi), ["thời tiết","cái bàn","nhanh chóng","bữa sáng","gia đình"]);
   return {type:"mcq", q:`"${w.w}"${w.ipa ? " " + w.ipa : ""} nghĩa là gì?`, opts, ans:opts.indexOf(w.vi), skill, word:w.w, speak:w.w};
 }
 function wordQ(card, pool) {
-  const w = normWord(card); const others = shuffle(pool.map(normWord).filter(x => x.w !== w.w)).slice(0, 3).map(x => x.w);
-  while (others.length < 3) others.push(["window","quickly","family"][others.length]);
-  const opts = shuffle([w.w, ...others]);
+  const w = normWord(card); const opts = distinctOpts(w.w, pool.map(normWord).filter(x => x.w !== w.w).map(x => x.w), ["window","quickly","family","yesterday","beautiful"]);
   return {type:"mcq", q:`Từ nào có nghĩa là "${w.vi}"?`, opts, ans:opts.indexOf(w.w), skill:"vocab", word:w.w};
 }
 const gramQ = g => { const right = g.opts[g.ans], opts = shuffle(g.opts.slice()); return {type:"mcq", q:g.q, opts, ans:opts.indexOf(right), skill:"grammar", explain:g.explain, speak:g.q}; };
@@ -772,15 +803,30 @@ function restoreLessonQuiz() {
   if (l.step === 1 && l.vi > l.les.words.length) Q = makeQuiz("vcheck", vcheckItems(), true);
 }
 function vcheckItems() { const ws = L().les.words, pool = [...ws, ...cardList().map(c => c.w)]; return shuffle(ws).slice(0, 4).map((w, k) => k % 2 ? wordQ(w, pool) : meaningQ(w, pool)); }
-function setStep(n) { L().step = n; Q = null; restoreLessonQuiz(); save(); render(); scrollTo(0, 0); }
+function setStep(n) { const l = L(); l.max = Math.max(l.max || 0, l.step, n); l.step = n; Q = null; if (!(n < l.max && n < 2)) restoreLessonQuiz(); save(); render(); scrollTo(0, 0); }
+// Xem lại bước đã học: bấm thanh tiến trình. Bước 1–2 (đã làm quiz) hiện bản tóm tắt thay vì làm lại.
+function reviewPanel(k) {
+  const l = L(), ws = l.les.words, g = l.les.grammar;
+  if (k === 0) return `<section class="panel"><h2>Xem lại: Ôn bài cũ${l.prevTopic ? ` · ${esc(l.prevTopic)}` : ""}</h2>
+    ${(l.warmItems || []).length ? `<ol class="revlist">${l.warmItems.map(it => `<li><b>${esc(it.q)}</b><br><span class="tag good">${esc(it.opts ? it.opts[it.ans] : it.ans)}</span>${it.explain ? ` <span class="muted small">${esc(it.explain)}</span>` : ""}</li>`).join("")}</ol>` : `<p class="muted">Buổi này không có phần ôn bài cũ.</p>`}</section>`;
+  return `<section class="panel"><h2>Xem lại: Từ vựng & ngữ pháp</h2>
+    <div class="revlist">${ws.map(w => `<div class="revword"><div class="row nowrap"><b>${esc(w.w)}</b><button class="round sm" data-a="speak" data-v="${esc(w.w)}" aria-label="Nghe">🔊</button><span class="ipa">${esc(w.ipa || "")}</span>${w.pos ? `<span class="tag">${esc(w.pos)}</span>` : ""}</div>
+      <div>${esc(w.vi)}</div>${w.ex ? `<div class="muted small"><i>${esc(w.ex)}</i>${w.ex_vi ? " · " + esc(w.ex_vi) : ""}</div>` : ""}</div>`).join("")}</div></section>
+    ${g ? `<section class="panel"><h3>Ngữ pháp: ${esc(g.name || "")}</h3>${g.pattern ? `<p><code>${esc(g.pattern)}</code></p>` : ""}<p>${esc(g.note || "")}</p>
+      ${(g.quiz || []).map(qz => `<p class="small">• ${esc(qz.q)} → <b>${esc((qz.opts || [])[qz.ans] ?? "")}</b>${qz.explain ? ` <span class="muted">(${esc(qz.explain)})</span>` : ""}</p>`).join("")}</section>` : ""}`;
+}
 
 function vLesson() {
   const l = L(); if (!l) { view = "home"; return vHome(); }
+  const mx = l.max = Math.max(l.max || 0, l.step);
   const head = `<header class="lhead"><div class="row between"><button class="ghost" data-a="exitLesson">← Lưu & thoát</button>
      <span class="muted small">${fmtTime(Date.now() - l.started)}</span></div>
      <div class="lesson-title hue-${topicStk(l.les.topic)[1]}">${stk(topicStk(l.les.topic)[0], 64, "", -8)}<div class="grow"><p class="eyebrow">${l.les.remedial ? "Buổi ôn tập" : "Buổi " + (doneN() + 1)}${l.les.level ? " · " + l.les.level : ""} · Bước ${l.step + 1}/6: ${STEPS[l.step]}</p><h2>${esc(l.les.topic)}</h2></div>${stk(STEP_STK[l.step], 46, "step-stk", 10)}</div>
-     <ol class="stepper">${STEPS.map((s, k) => `<li class="${k < l.step ? "done" : k === l.step ? "cur" : ""}"><span>${k + 1}</span><em>${s}</em></li>`).join("")}</ol></header>`;
-  return `<div class="wrap narrow">${head}${[step1, step2, step3, step4, step5, step6][l.step]()}</div>`;
+     <ol class="stepper">${STEPS.map((s, k) => { const reach = k <= mx && k !== l.step; return `<li class="${k < mx || k < l.step ? "done" : ""} ${k === l.step ? "cur" : ""} ${reach ? "go" : ""}" ${reach ? `data-a="step" data-v="${k}" role="button" tabindex="0" title="Xem lại bước ${k + 1}"` : ""}><span>${k + 1}</span><em>${s}</em></li>`; }).join("")}</ol>
+     ${mx > 0 ? `<p class="muted small center">Bấm vào thanh tiến trình để quay lại xem bước đã học.</p>` : ""}</header>`;
+  const back = l.step < mx ? `<div class="backbar"><span>👀 Đang xem lại bước ${l.step + 1}: <b>${STEPS[l.step]}</b></span><button class="primary mini" data-a="step" data-v="${mx}">Về bước đang học (${mx + 1}) →</button></div>` : "";
+  const body = l.step < mx && l.step < 2 ? reviewPanel(l.step) : [step1, step2, step3, step4, step5, step6][l.step]();
+  return `<div class="wrap narrow">${head}${back}${body}</div>`;
 }
 // Bước 1: Ôn bài cũ
 function step1() {
@@ -908,11 +954,21 @@ async function rpSend(arg) {
   if (aiOn()) {
     const sys = `You are role-playing as ${rp.ai_role}. Setting (Vietnamese): ${rp.setting}. The learner (level ${S.level}) plays: ${rp.user_role}.
 Learner's tasks (Vietnamese, numbered from 0): ${(rp.tasks || []).map((x, k) => k + ". " + x).join(" | ")}. Lesson words: ${l.les.words.map(w => w.w).join(", ")}.
-Stay in character. Reply in 1-2 short sentences suited to the level, and gently steer the learner toward unfinished tasks.
-Return JSON {"reply":"your in-character reply","fix":"if the learner's LAST message has a clear mistake, a corrected natural version; otherwise empty string","done":[indices of tasks the learner has completed so far in the whole conversation]}`;
-    const hist = l.chat.map(m => ({role:m.role === "ai" ? "model" : "user", parts:[{text:m.text}]}));
+Stay in character. ALWAYS write "reply" in ENGLISH ONLY — never Vietnamese, even though the setting and tasks above are written in Vietnamese and even if the learner writes Vietnamese. Reply in 1-2 short sentences suited to the level, and gently steer the learner toward unfinished tasks.
+Return JSON {"reply":"your in-character reply IN ENGLISH","fix":"if the learner's LAST message has a clear mistake, the corrected natural ENGLISH version of it (never a Vietnamese translation); otherwise empty string","done":[indices of tasks the learner has completed so far in the whole conversation]}`;
+    const VI0 = /[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹàáèéìíòóùúýãõĩũ]/i;
+    // Bỏ các câu tiếng Việt cũ của AI khỏi lịch sử gửi đi, để AI không "bắt chước" nói tiếng Việt tiếp
+    const hist = l.chat.filter(m => !(m.role === "ai" && VI0.test(m.text))).map(m => ({role:m.role === "ai" ? "model" : "user", parts:[{text:m.text}]}));
     if (hist[0]?.role === "model") hist.unshift({role:"user", parts:[{text:"(Start the role-play.)"}]});
-    try { const j = await gemini(sys, null, true, hist);
+    // Nhắc lại yêu cầu tiếng Anh ngay trong tin cuối (model nhỏ hay làm theo câu gần nhất)
+    const last = hist[hist.length - 1]; if (last?.role === "user") last.parts = [...last.parts, {text:"\n\n(Remember: answer in ENGLISH only. \"reply\" and \"fix\" must both be English sentences.)"}];
+    const VI = /[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹàáèéìíòóùúýãõĩũ]/i;
+    try { let j = await gemini(sys, null, true, hist);
+      if (VI.test(j.reply || "") || VI.test(j.fix || "")) {
+        try { const j2 = await gemini(sys + "\nIMPORTANT: your previous answer contained Vietnamese. Write \"reply\" and \"fix\" in English only.", null, true, hist); if (j2 && !VI.test(j2.reply || "")) j = {...j, ...j2}; } catch (e) {} }
+      // Vẫn còn tiếng Việt → tự dịch sang tiếng Anh để role-play không bị lẫn
+      const toEn = async x => { if (!x || !VI.test(x)) return x; try { const r = await timeoutFetch(`/api/translate?sl=vi&tl=en&q=${encodeURIComponent(x)}`, {}, 10000); const d = await r.json(); return r.ok && d.text ? d.text : x; } catch (e) { return x; } };
+      j.reply = await toEn(j.reply); j.fix = await toEn(j.fix);
       if (j.fix && clean(j.fix) !== clean(t)) l.chat[l.chat.length - 1].fix = j.fix;
       if (Array.isArray(j.done)) l.tasksDone = [...new Set([...l.tasksDone, ...j.done.map(Number).filter(n => n >= 0 && n < (rp.tasks || []).length)])];
       l.chat.push({role:"ai", text:j.reply || FALLBACK_RP[0]});
@@ -1102,7 +1158,7 @@ function vHome() {
   const celebrate = UI.celebrate?.length ? `<section class="panel celebrate">${confetti()}<div class="row nowrap">${mascot("cheer", 100, "bob")}<div class="grow"><p class="eyebrow">Nhãn dán mới</p><h2>Bạn vừa mở khóa ${UI.celebrate.length} nhãn dán!</h2></div></div>
      <div class="badge-row">${UI.celebrate.map(id => BADGE[id] ? badgeCard(BADGE[id]) : "").join("")}</div><div class="row"><button class="primary" data-a="closeCelebrate">Tuyệt quá!</button><a href="#" class="link" data-a="go" data-v="history">Xem bộ sưu tập →</a></div></section>` : "";
   return `<div class="wrap">
-   ${celebrate}
+   ${festBanner()}${celebrate}
    <section class="hero-home">
      <div class="hh-text"><p class="eyebrow">${esc(focusName())}</p><h1>Chào ${esc(displayName() || "bạn")}!</h1><p class="hh-line">${greetLine()}</p>
        <div class="hh-chips"><span>${stk("flame", 22, "", 0)} ${st} ngày liên tiếp</span><span>${stk("cap", 22, "", 0)} Khóa ${p.from} → ${p.to}</span><span>${stk("calendar", 22, "", 0)} Tuần ${Math.min(p.weeks, Math.floor(n / 5) + 1)}/${p.weeks}</span></div>
@@ -1256,9 +1312,17 @@ function vSettings() {
     <p class="muted small">Hoặc thêm một lời nhắc cố định vào lịch điện thoại (lúc ${remindCfg().start} mỗi ngày):</p>
     <div class="row"><a class="btn mini" target="_blank" rel="noopener" href="${gcalLink()}">Google Calendar ↗</a><button class="mini" data-a="ics">Tải file lịch (.ics)</button></div></section>
    <section class="panel"><div class="row between"><h3>Trạng thái AI</h3><button class="mini" data-a="probeAI" ${PROBE === "…" ? "disabled" : ""}>${PROBE === "…" ? `<span class="spin"></span> Đang kiểm tra` : "Kiểm tra AI"}</button></div>
-    <p class="muted small">Thứ tự dùng: Gemini → Groq → OpenRouter. AI dự phòng chỉ chạy khi Gemini hết lượt, quá tải hoặc quá chậm.${LAST_ENGINE ? ` Lần gần nhất trả lời: <b>${esc(LAST_ENGINE)}</b> (${new Date(LAST_ENGINE_AT).toLocaleTimeString("vi-VN", {hour:"2-digit", minute:"2-digit"})}).` : ""}</p>
+    <p class="muted small">Chấm câu, role-play, tra từ: Groq → OpenRouter → Gemini. Soạn bài mới: Gemini trước (giữ lượt Gemini cho việc này), hết lượt thì Groq/OpenRouter soạn thay.${LAST_ENGINE ? ` Lần gần nhất trả lời: <b>${esc(LAST_ENGINE)}</b> (${new Date(LAST_ENGINE_AT).toLocaleTimeString("vi-VN", {hour:"2-digit", minute:"2-digit"})}).` : ""}</p>
     ${Array.isArray(PROBE) ? `<div class="ailist">${PROBE.map(p => `<div class="row between nowrap"><span><b>${esc(p.name)}</b> <span class="muted small">${esc(p.model || "")}</span></span>${p.ok ? `<span class="tag good">✓ Hoạt động · ${(p.ms / 1000).toFixed(1)}s</span>` : `<span class="tag bad" title="${esc(p.error || "")}">✗ ${esc(p.error || "Lỗi")}</span>`}</div>`).join("")}
       ${PROBE.length < 3 ? `<p class="muted small">AI nào chưa hiện là chưa có key (GROQ_API_KEY / OPENROUTER_API_KEY) trên máy chủ.</p>` : ""}</div>` : ""}</section>
+   <section class="panel"><h3>Ngày sinh & giao diện theo mùa</h3>
+    <div class="row timerow"><div class="tfield"><label for="bday">Ngày sinh (không bắt buộc)</label><input id="bday" type="date" value="${esc(S.profile.birthday && S.profile.birthday.length === 10 ? S.profile.birthday : "")}" data-change="setBday"></div></div>
+    <p class="muted small">Đúng ngày sinh nhật, giao diện của bạn sẽ đổi sang chủ đề sinh nhật để chúc mừng 🎂. Chỉ bạn thấy.</p>
+    <label for="festSel">Giao diện theo mùa & ngày lễ</label>
+    <select id="festSel" data-change="setFest"><option value="auto" ${(S.profile.festive || "auto") === "auto" ? "selected" : ""}>Tự động theo ngày (khuyên dùng)</option><option value="off" ${S.profile.festive === "off" ? "selected" : ""}>Tắt, dùng màu mặc định</option>
+      ${Object.entries(FEST).map(([k, f]) => `<option value="${k}" ${S.profile.festive === k ? "selected" : ""}>Xem thử: ${esc(f.name)}</option>`).join("")}</select>
+    <div class="row"><span>Hiệu ứng rơi (hoa, lá, nốt nhạc…)</span>${[[true, "Bật"], [false, "Tắt"]].map(([k, t]) => `<button class="seg ${(S.profile.festFx !== false) === k ? "sel" : ""}" data-a="festFx" data-v="${k}">${t}</button>`).join("")}</div>
+    <p class="muted small">Hôm nay: <b>${esc(FEST[festiveTheme()]?.name || "Mặc định")}</b>. Tết Âm lịch, Tết Dương lịch, 14/2, 8/3, 18/3, 1/6, Trung thu, 14/10, 20/11, Giáng Sinh và 4 mùa.</p></section>
    <section class="panel"><h3>Giọng đọc & micro</h3>
     <label for="voiceSel">Giọng đọc tiếng Anh</label><select id="voiceSel" data-change="setVoice">${VOICES.length ? VOICES.map(v => `<option value="${esc(v.name)}" ${pickVoice()?.name === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("") : `<option>Giọng mặc định của trình duyệt</option>`}</select>
     <div class="row"><span>Tốc độ đọc</span>${[["0.6", "Rất chậm"], ["0.7", "Chậm"], ["0.8", "Vừa"], ["0.95", "Nhanh"]].map(([k, t]) => `<button class="seg ${Number(k) === ttsRate() ? "sel" : ""}" data-a="ttsRate" data-v="${k}">${t}</button>`).join("")}
@@ -1269,7 +1333,9 @@ function vSettings() {
     <p class="muted small">Muốn giọng đọc tự nhiên hơn: dùng Edge (có sẵn giọng "Natural"), hoặc trên Windows vào Cài đặt → Thời gian & ngôn ngữ → Giọng nói để cài thêm giọng tiếng Anh.</p></section>
    <section class="panel"><h3>Hiển thị</h3><div class="row"><span>Cỡ chữ</span>${["s", "m", "l"].map(k => `<button class="seg ${fs === k ? "sel" : ""}" data-a="fs" data-v="${k}">${k.toUpperCase()}</button>`).join("")}</div>
     <div class="row"><span>Giao diện</span>${[["auto", "Theo máy"], ["light", "Sáng"], ["dark", "Tối"]].map(([k, t]) => `<button class="seg ${th === k ? "sel" : ""}" data-a="theme" data-v="${k}">${t}</button>`).join("")}</div></section>
-   <section class="panel">
+   <section class="panel"><h3>Gemini AI</h3><p>${AI.quota ? `<span class="tag bad">Hết lượt miễn phí</span> Gemini giới hạn số lần gọi mỗi phút và mỗi ngày. App đang dùng nội dung mẫu và sẽ tự thử lại sau 5 phút. Nếu hết lượt theo ngày, lượt mới có lại vào khoảng 14–15 giờ chiều (giờ Việt Nam).` : AI.on && AI.busy ? `<span class="tag">Đang quá tải</span> ${esc(AI.msg)}. App vẫn dùng AI và tự thử lại; nếu vẫn lỗi sẽ tạm dùng nội dung mẫu.` : AI.on ? `<span class="tag good">Đang hoạt động</span> Bài học, chấm câu, role-play và tra từ dùng AI.` : `<span class="tag bad">Chưa hoạt động</span> ${esc(AI.msg)}`}</p>
+    <p class="muted small">Key nằm trong file .env.local (GEMINI_API_KEY, GEMINI_MODEL). Sửa file rồi khởi động lại app.</p><button data-a="checkAI">Kiểm tra lại kết nối</button></section>
+   <section class="panel"><h3>Dữ liệu</h3><div class="row">
     <button class="danger" data-a="reset" id="resetBtn">Xóa toàn bộ tiến độ và làm lại</button></div></section></div>`;
 }
 
@@ -1504,7 +1570,11 @@ const ACT = {
   reset: (v, btn) => { if (!btn.dataset.c) { btn.dataset.c = 1; btn.textContent = "Bấm lần nữa để xác nhận xóa"; return; }
     S = blank(); Q = null; FC = null; SV = null; pushState(); view = "home"; render(); toast("Đã xóa tiến độ"); },
 };
-const CHANGE = { setRemind: v => { S.profile.remind = v; if (toMin(S.profile.remindEnd || "23:00") < toMin(v)) S.profile.remindEnd = v; save(); render(); toast("Đã lưu giờ nhắc"); },
+const CHANGE = {
+  festFx: v => { S.profile.festFx = v === "true"; save(); applyFestive(); render(); },
+  setBday: v => { S.profile.birthday = v || ""; save(); applyFestive(); render(); toast(v ? "Đã lưu ngày sinh 🎂" : "Đã xoá ngày sinh"); },
+  setFest: v => { S.profile.festive = v; save(); applyFestive(); render(); },
+  setRemind: v => { S.profile.remind = v; if (toMin(S.profile.remindEnd || "23:00") < toMin(v)) S.profile.remindEnd = v; save(); render(); toast("Đã lưu giờ nhắc"); },
   setRemindEnd: v => { S.profile.remindEnd = toMin(v) < toMin(remindTime()) ? remindTime() : v; save(); render(); toast("Đã lưu giờ nhắc"); }, setVoice: v => { pref("ep_voice", v); say("Hello! Nice to meet you."); } };
 
 document.addEventListener("click", e => {
@@ -1515,7 +1585,8 @@ document.addEventListener("click", e => {
   if (POP && !e.target.closest("#pop")) closePop();
   if (UI.menu && !e.target.closest(".usermenu")) { UI.menu = false; renderHeader(); }
   const a = e.target.closest("[data-a]"); if (!a || a.disabled) return;
-  e.preventDefault(); const fn = ACT[a.dataset.a]; if (fn) fn(a.dataset.v, a);
+  e.preventDefault(); const fn = ACT[a.dataset.a];
+  if (fn) { const r = fn(a.dataset.v, a); if (view === "lesson" && S.current) { save(); if (r && r.then) r.then(() => S.current && save(), () => {}); } }
 }, true);
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") { closePop(); UI.menu = false; }
@@ -1540,6 +1611,69 @@ document.addEventListener("input", e => {
 document.addEventListener("change", e => { const t = e.target; if (t.dataset.change) CHANGE[t.dataset.change]?.(t.value); });
 setInterval(() => document.querySelectorAll("[data-start]").forEach(el => el.textContent = fmtTime(Date.now() - Number(el.dataset.start))), 1000);
 
+
+/* =====================================================================
+   GIAO DIỆN THEO MÙA / NGÀY LỄ + SINH NHẬT NGƯỜI DÙNG
+   Sửa danh sách ngày đặc biệt ở FEST_DAYS (tháng-ngày, số ngày hiện trước, số ngày hiện sau).
+   ===================================================================== */
+// Mùng 1 Tết Âm lịch (cập nhật thêm năm khi cần)
+const TET = {2026:"02-17", 2027:"02-06", 2028:"01-26", 2029:"02-13", 2030:"02-03", 2031:"01-23", 2032:"02-11", 2033:"01-31", 2034:"02-19", 2035:"02-08"};
+// Rằm tháng 8 (Trung thu)
+const TRUNGTHU = {2026:"09-25", 2027:"09-15", 2028:"10-03", 2029:"09-22", 2030:"09-12", 2031:"10-01", 2032:"09-19", 2033:"09-08", 2034:"09-27", 2035:"09-16"};
+const FEST = {
+  tet:      {name:"Tết Nguyên Đán", emo:["🧧","🌸","🏮","🎆"], msg:"Chúc mừng năm mới! Năm mới học tiếng Anh tiến bộ vượt bậc nhé 🧧"},
+  valentine:{name:"Lễ Tình nhân 14/2", emo:["💖","💌","🌹","💕"], msg:"Happy Valentine's Day! Học thêm vài câu tỏ tình bằng tiếng Anh nào 💌"},
+  women83:  {name:"Quốc tế Phụ nữ 8/3", emo:["🌷","💐","🌸","💗"], msg:"Chúc mừng ngày 8/3! Gửi lời chúc tới những người phụ nữ tuyệt vời 💐"},
+  founder:  {name:"Sinh nhật người sáng lập 18/3", emo:["🎨","🎵","🎻","🖌️","🎹","🎶","🌿","🎂"], msg:"Hôm nay 18/3 là sinh nhật người tạo ra app này, một người yêu hội họa, âm nhạc và thiên nhiên. Cảm ơn bạn đã cùng học, cùng yêu cái đẹp! 🎨🎵"},
+  kids:     {name:"Quốc tế Thiếu nhi 1/6", emo:["🎈","🍭","🧸","🪁"], msg:"Happy Children's Day! Ai cũng có một đứa trẻ bên trong, học vui như chơi nhé 🎈"},
+  midautumn:{name:"Tết Trung thu", emo:["🏮","🥮","🌕","⭐"], msg:"Trung thu vui vẻ! Thử kể về Tết Trung thu bằng tiếng Anh xem 🥮"},
+  special1410:{name:"Ngày đặc biệt 14/10", emo:["💝","🌹","🎀","✨"], msg:"Happy birthday to someone very special 💝"},
+  teacher:  {name:"Ngày Nhà giáo Việt Nam 20/11", emo:["📚","💐","🍎","✏️"], msg:"Chúc mừng ngày Nhà giáo Việt Nam 20/11! Tri ân những người thầy, người cô 💐"},
+  newyear:  {name:"Tết Dương lịch", emo:["🎆","🥂","🎇","✨","🎉"], msg:"Happy New Year! Năm mới, mục tiêu mới: mỗi ngày thêm vài từ, cuối năm nói tiếng Anh thật tự tin 🎆"},
+  xmas:     {name:"Giáng Sinh", emo:["🎄","❄️","🎁","⛄"], msg:"Merry Christmas! Giáng Sinh an lành và ấm áp 🎄"},
+  birthday: {name:"Sinh nhật của bạn", emo:["🎂","🎉","🎈","🎁"], msg:""},
+  // 4 mùa: thiên nhiên + nốt nhạc + nét cọ (tinh thần nghệ thuật của app), rơi thưa và nhẹ hơn ngày lễ
+  spring:   {name:"Mùa xuân", emo:["🌸","🌱","🎵","🌼","🦋"], msg:"Xuân về, hoa nở. Gieo vài từ mới hôm nay, mai sẽ nở thành câu nói 🌸"},
+  summer:   {name:"Mùa hè", emo:["🌻","🎶","🦋","🌊","☀️"], msg:"Hè rực rỡ! Học một bài nhẹ rồi nghe một bản nhạc tiếng Anh nhé ☀️🎶"},
+  autumn:   {name:"Mùa thu", emo:["🍁","🍂","🎵","🎻"], msg:"Thu dịu dàng như một bản violin. Pha tách trà và học vài câu mới nào 🍂🎻"},
+  winter:   {name:"Mùa đông", emo:["❄️","🎶","🎹","⛄"], msg:"Đông về, ngoài kia lạnh nhưng tiếng Anh của bạn vẫn ấm. Vào học thôi ❄️🎹"},
+};
+// [mã, tháng-ngày, hiện trước bao nhiêu ngày, hiện sau bao nhiêu ngày]
+const FEST_DAYS = [["valentine","02-14",1,0], ["women83","03-08",1,0], ["founder","03-18",0,0], ["kids","06-01",1,0],
+  ["special1410","10-14",0,0], ["teacher","11-20",1,0], ["xmas","12-25",10,1], ["newyear","01-01",2,1], ["newyear","12-31",1,1]];
+function dayDiff(d, md, y) { const t = new Date(y, Number(md.slice(0, 2)) - 1, Number(md.slice(3))); return Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - t) / 864e5); }
+function birthdayToday(d = new Date()) { const b = S?.profile?.birthday || ""; const md = b.slice(-5); return /^\d\d-\d\d$/.test(md) && dayDiff(d, md, d.getFullYear()) === 0; }
+function festiveTheme(d = new Date()) {
+  const pick = S?.profile?.festive || "auto";
+  if (pick === "off") return null;
+  if (pick !== "auto") return FEST[pick] ? pick : null; // xem trước một chủ đề
+  if (birthdayToday(d)) return "birthday";
+  const y = d.getFullYear();
+  if (TET[y]) { const k = dayDiff(d, TET[y], y); if (k >= -7 && k <= 7) return "tet"; }
+  if (TRUNGTHU[y]) { const k = dayDiff(d, TRUNGTHU[y], y); if (k >= -3 && k <= 0) return "midautumn"; }
+  for (const [id, md, pre, post] of FEST_DAYS) { const k = dayDiff(d, md, y); if (k >= -pre && k <= post) return id; }
+  const m = d.getMonth() + 1;
+  return m >= 2 && m <= 4 ? "spring" : m >= 5 && m <= 7 ? "summer" : m >= 8 && m <= 10 ? "autumn" : "winter";
+}
+function applyFestive() {
+  const id = festiveTheme(), r = document.documentElement;
+  if (id) r.dataset.fest = id; else r.removeAttribute("data-fest");
+  let fx = document.getElementById("festfx");
+  const big = id && !["spring", "summer", "autumn", "winter"].includes(id);
+  // Hiệu ứng rơi: ngày lễ dày hơn, 4 mùa thưa và mờ; tắt nếu máy bật "giảm chuyển động" hoặc người dùng tắt
+  if (!id || S?.profile?.festFx === false || matchMedia("(prefers-reduced-motion: reduce)").matches) { fx?.remove(); return; }
+  if (fx && fx.dataset.id === id) return;
+  fx?.remove(); fx = document.createElement("div"); fx.id = "festfx"; fx.dataset.id = id; fx.setAttribute("aria-hidden", "true");
+  const N = big ? 18 : 12; fx.className = big ? "" : "calm";
+  fx.innerHTML = Array.from({length:N}, (_, i) => `<i style="left:${(i * (100 / N) + Math.random() * 4).toFixed(1)}%;animation-duration:${(9 + Math.random() * 8).toFixed(1)}s;animation-delay:-${(Math.random() * 15).toFixed(1)}s;font-size:${(14 + Math.random() * 14).toFixed(0)}px">${FEST[id].emo[i % FEST[id].emo.length]}</i>`).join("");
+  document.body.appendChild(fx);
+}
+function festBanner() {
+  const id = festiveTheme(); if (!id) return "";
+  if (["spring", "summer", "autumn", "winter"].includes(id)) { const f = FEST[id]; return `<section class="panel festbanner season"><div class="row nowrap"><span class="festemo">${f.emo[0]}</span><div class="grow"><p class="eyebrow">${esc(f.name)}</p><p class="festmsg">${esc(f.msg)}</p></div></div></section>`; }
+  const f = FEST[id], msg = id === "birthday" ? `Chúc mừng sinh nhật ${esc(displayName() || "bạn")}! 🎂 Chúc bạn tuổi mới thật nhiều niềm vui và nói tiếng Anh ngày càng giỏi. Happy birthday!` : esc(f.msg);
+  return `<section class="panel festbanner">${id === "birthday" ? confetti(50) : ""}<div class="row nowrap"><span class="festemo">${f.emo[0]}</span><div class="grow"><p class="eyebrow">${esc(f.name)}</p><p class="festmsg">${msg}</p></div></div></section>`;
+}
 /* =====================================================================
    KHUNG GIAO DIỆN
    ===================================================================== */
@@ -1547,6 +1681,7 @@ function applyPrefs() {
   const r = document.documentElement, th = pref("ep_theme") || "auto";
   r.dataset.fs = pref("ep_fs") || "m";
   if (th === "auto") r.removeAttribute("data-theme"); else r.dataset.theme = th;
+  try { applyFestive(); } catch (e) {}
 }
 function renderHeader() {
   const h = $("#hdr"); if (!h) return;
@@ -1600,7 +1735,7 @@ function render() {
   app.innerHTML = `<div class="wrap"><section class="panel center"><p><span class="spin"></span> Đang tải tiến độ của bạn...</p></section></div>`;
   AI = {on:false, msg:"đang kiểm tra kết nối..."};
   const meP = fetch("/api/me").then(r => r.ok ? r.json() : null).catch(() => null);
-  S = await loadState(); ME = await meP; render(); remindLoop(); setInterval(remindLoop, 60e3);
+  S = await loadState(); BASE = Number(S.rev || 0); ME = await meP; try { applyFestive(); } catch (e) {} setInterval(() => { try { applyFestive(); } catch (e) {} }, 30 * 60e3); render(); remindLoop(); setInterval(remindLoop, 60e3);
   // Kiểm tra Gemini chạy ngầm, không chặn giao diện
   checkAI().then(() => { if (!["lesson", "quiz", "flip"].includes(view)) render(); setTimeout(prefetchNext, 1500); });
   setInterval(async () => { if (AI.quota && Date.now() - (AI.quotaAt || 0) < 300e3) return; if (!AI.on || AI.busy) { const was = AI.on && !AI.busy; await checkAI(); if (AI.on && !AI.busy && !was && !["lesson", "quiz"].includes(view)) render(); } }, 180e3);
