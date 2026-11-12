@@ -450,7 +450,7 @@ async function loadState() {
 function pauseAI(reason) {
   const first = !AI.pauseUntil || Date.now() > AI.pauseUntil;
   AI.pauseUntil = Date.now() + 120e3;
-  if (first) toast("Gemini đang bận (" + reason + "). Tạm chấm cơ bản, 2 phút sau app tự dùng lại AI.");
+  if (first) console.warn("AI tạm nghỉ:", reason);
 }
 let LAST_ENGINE = "", LAST_ENGINE_AT = 0, PROBE = null;
 async function probeAI() {
@@ -620,8 +620,9 @@ Trả JSON đúng cấu trúc:
   if (!les) les = pickBankLesson();
   les.words = les.words.map(normWord);
   if (les.ai) await fillIPA(les.words).catch(() => {});
-  S.lessons[idx] = les; save();
-  return les;
+  // Nếu buổi này đã dùng bài mẫu (vì AI chưa soạn xong) thì giữ nguyên, không ghi đè
+  if (!S.lessons[idx]) { S.lessons[idx] = les; save(); }
+  return S.lessons[idx];
 }
 
 /* =====================================================================
@@ -775,11 +776,12 @@ async function startLesson() {
   if (testDue()) return startUnit();
   const idx = S.sessions.length;
   if (S.current && S.current.idx === idx) { view = "lesson"; restoreLessonQuiz(); return render(); }
-  if (!S.lessons[idx]) $("#app").innerHTML = `<div class="wrap narrow"><section class="panel center loading-card">${mascot("think", 130, "bob")}<p><span class="spin"></span> ${aiOn() ? `Gemini đang soạn bài học riêng cho bạn... <b class="timer" style="font-size:1rem" data-start="${Date.now()}">0:00</b>` : "Đang chuẩn bị buổi học..."}</p>
-    ${aiOn() ? `<p class="muted small" id="slowNote" hidden>Gemini đang chậm. Bạn có thể chờ thêm hoặc học bài mẫu ngay.</p><div class="row center"><button data-a="skipWait">Không chờ, dùng bài mẫu</button></div>` : ""}</section></div>`;
-  setTimeout(() => { const n = $("#slowNote"); if (n) n.hidden = false; }, 15000);
-  if (!S.lessons[idx]) view = "loading";
-  const les = await getLesson(idx);
+  // Không bắt người học chờ AI: chờ tối đa ~1,5 giây (bài soạn ngầm thường đã xong), nếu chưa có thì học ngay bài mẫu đúng trình độ
+  if (!S.lessons[idx]) {
+    const ready = await Promise.race([getLesson(idx).catch(() => null), new Promise(r => setTimeout(() => r(null), 1500))]);
+    if (!ready && !S.lessons[idx]) { S.lessons[idx] = pickBankLesson(); save(); }
+  }
+  const les = S.lessons[idx];
   if (!["home", "loading", "lesson", "path"].includes(view)) return;
   const prev = courseSessions().slice(-1)[0] || S.sessions.slice(-1)[0];
   const prevLes = prev ? S.lessons[prev.idx] : null;
@@ -1107,8 +1109,17 @@ function vSurvey() {
     <p class="muted small">Nếu chưa học, app nhắc mỗi tiếng từ giờ này đến 23:00. Đổi giờ và khoảng cách nhắc trong Cài đặt.</p>
     <div class="row">${edit ? `<button data-a="go" data-v="settings">Hủy</button>` : ""}<button class="primary" data-a="svSubmit" ${s.fields.length ? "" : "disabled"}>${!s.fields.length ? "Chọn ít nhất một lĩnh vực" : edit ? "Lưu mục tiêu" : "Tiếp tục: kiểm tra trình độ"}</button></div></section></div>`;
 }
+// Lần đầu dùng app: hỏi có bật thông báo nhắc học không
+function pushAskCard() {
+  if (S.profile?.pushAsked || PUSH.on) return "";
+  const ios = isIOS() && !isStandalone();
+  return `<section class="panel pushask"><div class="row nowrap">${stk("calendar", 54, "", -8)}<div class="grow"><h3>🔔 Cho phép app nhắc bạn học mỗi ngày?</h3>
+    <p class="small">Nếu hôm đó bạn chưa học, app sẽ nhắc từ ${esc(S.profile.remind || "20:00")}. Đổi giờ hoặc tắt bất cứ lúc nào trong Cài đặt.</p>
+    ${ios ? `<p class="small muted">Trên iPhone: bấm <b>Chia sẻ</b> → <b>Thêm vào MH chính</b>, rồi mở app từ biểu tượng ngoài màn hình để bật được thông báo.</p>` : ""}</div></div>
+    <div class="row">${ios ? "" : `<button class="primary" data-a="pushAsk" data-v="1">Bật thông báo</button>`}<button class="ghost" data-a="pushAsk" data-v="0">${ios ? "Đã hiểu" : "Để sau"}</button></div></section>`;
+}
 function vPlaceIntro() {
-  return `<div class="wrap narrow"><section class="panel hero with-art"><div class="hero-art">${mascot("think", 116, "bob")}</div><span class="eyebrow">Bước 2/2 · Kiểm tra trình độ</span><h1>Bài test đầu vào thích ứng</h1>
+  return `<div class="wrap narrow">${pushAskCard()}<section class="panel hero with-art"><div class="hero-art">${mascot("think", 116, "bob")}</div><span class="eyebrow">Bước 2/2 · Kiểm tra trình độ</span><h1>Bài test đầu vào thích ứng</h1>
     <p>${PLACEMENT_LEN} câu, khoảng 5 phút. Trả lời đúng thì câu sau khó hơn, sai thì dễ hơn, để xác định chính xác level của bạn từ A0 đến C1.</p>
     <p class="muted">Không biết thì chọn "Tôi không biết", đừng đoán, kết quả sẽ chính xác hơn.</p>
     <button class="primary" data-a="startPlacement">Bắt đầu kiểm tra</button>
@@ -1158,7 +1169,7 @@ function vHome() {
   const celebrate = UI.celebrate?.length ? `<section class="panel celebrate">${confetti()}<div class="row nowrap">${mascot("cheer", 100, "bob")}<div class="grow"><p class="eyebrow">Nhãn dán mới</p><h2>Bạn vừa mở khóa ${UI.celebrate.length} nhãn dán!</h2></div></div>
      <div class="badge-row">${UI.celebrate.map(id => BADGE[id] ? badgeCard(BADGE[id]) : "").join("")}</div><div class="row"><button class="primary" data-a="closeCelebrate">Tuyệt quá!</button><a href="#" class="link" data-a="go" data-v="history">Xem bộ sưu tập →</a></div></section>` : "";
   return `<div class="wrap">
-   ${festBanner()}${celebrate}
+   ${festBanner()}${pushAskCard()}${celebrate}
    <section class="hero-home">
      <div class="hh-text"><p class="eyebrow">${esc(focusName())}</p><h1>Chào ${esc(displayName() || "bạn")}!</h1><p class="hh-line">${greetLine()}</p>
        <div class="hh-chips"><span>${stk("flame", 22, "", 0)} ${st} ngày liên tiếp</span><span>${stk("cap", 22, "", 0)} Khóa ${p.from} → ${p.to}</span><span>${stk("calendar", 22, "", 0)} Tuần ${Math.min(p.weeks, Math.floor(n / 5) + 1)}/${p.weeks}</span></div>
@@ -1175,7 +1186,7 @@ function vHome() {
         <button class="primary big" data-a="startUnit">Làm bài kiểm tra</button>`
      : `<span class="eyebrow">${doneToday() && !cur ? "Bạn đã học hôm nay" : "Buổi học hôm nay"}</span>
         <h2>${cur ? esc(cur.les.topic) : nextLes ? esc(nextLes.topic) : `Buổi ${n + 1}`}</h2>
-        ${!cur && nextLes ? `<p class="small"><span class="tag good">Đã soạn xong</span> ${nextLes.ai ? "Bài do Gemini soạn riêng cho bạn" : `Bài mẫu trình độ ${nextLes.level || S.level}${nextLes.review ? " · ôn lại" : ""}`}</p>` : !cur && INFLIGHT[S.sessions.length] ? `<p class="small muted"><span class="spin"></span> Gemini đang soạn sẵn buổi này...</p>` : ""}
+        ${!cur && nextLes ? `<p class="small"><span class="tag good">Đã soạn xong</span> ${nextLes.ai ? "Bài soạn riêng theo mục tiêu của bạn" : `Bài mẫu trình độ ${nextLes.level || S.level}${nextLes.review ? " · ôn lại" : ""}`}</p>` : !cur && INFLIGHT[S.sessions.length] ? `<p class="small muted"><span class="spin"></span> Gemini đang soạn sẵn buổi này...</p>` : ""}
         <ol class="steps-mini">${STEPS.map((t, k) => `<li class="${cur && k < cur.step ? "done" : cur && k === cur.step ? "cur" : ""}">${stk(STEP_STK[k], 30, "", 0)}<span>${t}</span></li>`).join("")}</ol>
         <button class="primary big" data-a="startLesson">${cur ? "Học tiếp" : doneToday() ? "Học thêm buổi tiếp theo" : "Bắt đầu buổi học"}</button>`}
      ${AI.on ? "" : `<p class="fb small">Gemini chưa hoạt động (${esc(AI.msg)}). App dùng bài học mẫu và chấm điểm cơ bản.</p>`}
@@ -1302,7 +1313,7 @@ function vSettings() {
     <div class="row timerow"><div class="tfield"><label for="remindSet">Bắt đầu nhắc lúc</label><input id="remindSet" type="time" value="${remindCfg().start}" data-change="setRemind"></div>
      <div class="tfield"><label for="remindEnd">Nhắc đến</label><input id="remindEnd" type="time" value="${remindCfg().end}" data-change="setRemindEnd"></div></div>
     <div class="row"><span>Nhắc mỗi</span>${[[30, "30 phút"], [60, "1 tiếng"], [120, "2 tiếng"], [180, "3 tiếng"]].map(([k, t]) => `<button class="seg ${remindCfg().every === k ? "sel" : ""}" data-a="remEvery" data-v="${k}">${t}</button>`).join("")}</div>
-    <div class="row"><span>Giọng nhắc</span>${[["spicy", "😈 Lầy lội"], ["soft", "🙂 Nhẹ nhàng"]].map(([k, t]) => `<button class="seg ${(S.profile.remindTone || "spicy") === k ? "sel" : ""}" data-a="remTone" data-v="${k}">${t}</button>`).join("")}</div>
+    <div class="setrow"><span>Giọng nhắc</span><div class="row">${[["spicy", "😈 Lầy lội"], ["soft", "🙂 Nhẹ nhàng"]].map(([k, t]) => `<button class="seg ${(S.profile.remindTone || "spicy") === k ? "sel" : ""}" data-a="remTone" data-v="${k}">${t}</button>`).join("")}</div></div>
     <p class="fb small">${remindCfg().on ? `Các lần nhắc mỗi ngày (${remindSlots().length} lần): <b>${remindSlots().join(" · ")}</b>` : "Nhắc học đang tắt. Bạn sẽ không nhận thông báo nào."}</p>
     <div class="pushbox"><b>Nhận thông báo trên thiết bị này</b>
      <p class="muted small">Thông báo hiện trên điện thoại hoặc máy tính, kể cả khi đang đóng app. Mỗi thiết bị cần bật riêng một lần.</p>
@@ -1321,7 +1332,7 @@ function vSettings() {
     <label for="festSel">Giao diện theo mùa & ngày lễ</label>
     <select id="festSel" data-change="setFest"><option value="auto" ${(S.profile.festive || "auto") === "auto" ? "selected" : ""}>Tự động theo ngày (khuyên dùng)</option><option value="off" ${S.profile.festive === "off" ? "selected" : ""}>Tắt, dùng màu mặc định</option>
       ${Object.entries(FEST).map(([k, f]) => `<option value="${k}" ${S.profile.festive === k ? "selected" : ""}>Xem thử: ${esc(f.name)}</option>`).join("")}</select>
-    <div class="row"><span>Hiệu ứng rơi (hoa, lá, nốt nhạc…)</span>${[[true, "Bật"], [false, "Tắt"]].map(([k, t]) => `<button class="seg ${(S.profile.festFx !== false) === k ? "sel" : ""}" data-a="festFx" data-v="${k}">${t}</button>`).join("")}</div>
+    <div class="setrow"><span>Hiệu ứng rơi (hoa, lá, nốt nhạc…)</span><div class="row">${[[true, "Bật"], [false, "Tắt"]].map(([k, t]) => `<button class="seg ${(S.profile.festFx !== false) === k ? "sel" : ""}" data-a="festFx" data-v="${k}">${t}</button>`).join("")}</div></div>
     <p class="muted small">Hôm nay: <b>${esc(FEST[festiveTheme()]?.name || "Mặc định")}</b>. Tết Âm lịch, Tết Dương lịch, 14/2, 8/3, 18/3, 1/6, Trung thu, 14/10, 20/11, Giáng Sinh và 4 mùa.</p></section>
    <section class="panel"><h3>Giọng đọc & micro</h3>
     <label for="voiceSel">Giọng đọc tiếng Anh</label><select id="voiceSel" data-change="setVoice">${VOICES.length ? VOICES.map(v => `<option value="${esc(v.name)}" ${pickVoice()?.name === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("") : `<option>Giọng mặc định của trình duyệt</option>`}</select>
@@ -1429,7 +1440,7 @@ function drawViPop(syl, sent, d, loading) {
      ${d.alts?.length ? `<p class="small">Cách nói khác: ${d.alts.map(esc).join(" · ")}</p>` : ""}${d.note ? `<p class="small muted">${esc(d.note)}</p>` : ""}
      ${(d.examples || []).filter(x => x.en).map(x => `<div class="ex">${esc(x.en)}${x.vi ? `<br><span class="muted">${esc(x.vi)}</span>` : ""}</div>`).join("")}` : ""}
    ${loading ? `<p class="muted small"><span class="spin"></span> Đang tra theo ngữ cảnh câu...</p>` : ""}
-   ${!d && !loading ? `<p class="muted">${AI.on ? `Chưa tra được${POPERR ? ` (${esc(POPERR)})` : ""}.` : "Tra từng từ tiếng Việt cần Gemini đang hoạt động."} Bạn vẫn có thể dịch cả câu bên dưới.</p>` : ""}
+   ${!d && !loading ? `<p class="muted">${AI.on ? `Chưa tra được${POPERR ? ` (${esc(POPERR)})` : ""}.` : "Tra từng từ tiếng Việt cần AI đang hoạt động."} Bạn vẫn có thể dịch cả câu bên dưới.</p>` : ""}
    <div class="row">${d?.en ? `<button class="mini ${inCards ? "" : "primary"}" data-a="addVi" ${inCards ? "disabled" : ""}>${inCards ? "Đã có trong flashcard" : "+ Thêm vào flashcard"}</button>` : ""}
     <button class="mini" data-a="popTr" data-v="${esc(sent)}">🌐 Dịch cả câu</button></div>
    <div class="pop-tr"></div>`;
@@ -1498,6 +1509,7 @@ async function testPush(btn) { btn.disabled = true; const r = await fetch("/api/
    HÀNH ĐỘNG (data-a)
    ===================================================================== */
 const ACT = {
+  pushAsk: async (v, btn) => { S.profile.pushAsked = true; save(); if (v === "1") await enablePush(btn); else render(); },
   chAgree: () => { S.profile.chatOK = true; save(); chPoll(true); render(); },
   chTab: v => { CH.tab = v; CH.pair = null; CH.msgs = []; CH.last = 0; CH.menu = null; render(); chPoll(true); },
   chRoom: v => { CH.room = v; CH.msgs = []; CH.last = 0; render(); chPoll(true); },

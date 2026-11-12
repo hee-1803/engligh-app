@@ -632,3 +632,15 @@ html, body { min-height: 100% } html { background: var(--bg) }
 .cbody, .cmsg .msg { min-width: 0; overflow-wrap: anywhere }
 .chmore { justify-content: flex-end; margin-top: 4px }
 .inbox-item.blk { flex-wrap: wrap; padding: 8px 4px; border-bottom: 1px dashed var(--line) }
+/* Khung "hero" nền màu đậm: chữ luôn trắng cho dễ đọc */
+.panel.hero, .panel.hero h1, .panel.hero h2, .panel.hero h3, .panel.hero p, .panel.hero li, .panel.hero b { color: #fff }
+.panel.hero .muted, .panel.hero .small { color: rgba(255,255,255,.85) }
+.panel.hero .eyebrow { color: #ffe08a }
+.panel.hero button.ghost, .panel.hero a { color: #fff; text-decoration: underline; text-underline-offset: 3px }
+.panel.hero button.primary { background: #fff; color: var(--accent); text-shadow: none; box-shadow: 0 4px 0 rgba(0,0,0,.18), 0 10px 22px -8px rgba(0,0,0,.35) }
+.panel.hero button:not(.primary):not(.ghost) { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.5); color: #fff; box-shadow: 0 3px 0 rgba(0,0,0,.15) }
+/* Cài đặt: hàng nhãn + nút không bị rớt chữ */
+.setrow { display: grid; gap: 8px } .setrow .row { flex-wrap: nowrap }
+input[type="date"] { min-width: 210px; width: auto; max-width: 100%; white-space: nowrap }
+.tfield input[type="date"] { width: 230px; min-width: 0 }
+.pushask { border: 2px dashed var(--accent) } .pushask h3 { margin: 0 0 4px }
