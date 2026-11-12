@@ -49,6 +49,10 @@ export async function POST(req: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, id: data.id, ...r });
   }
+  if (b.action === "delete") {
+    const { error } = await db.from("lessons").delete().eq("id", b.id);
+    return error ? NextResponse.json({ error: error.message }, { status: 500 }) : NextResponse.json({ ok: true });
+  }
   if (b.action === "status") {
     if (!["draft", "published", "hidden"].includes(b.status)) return NextResponse.json({ error: "Trạng thái không hợp lệ" }, { status: 400 });
     if (b.status === "published") {

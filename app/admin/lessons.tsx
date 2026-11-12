@@ -56,6 +56,10 @@ export default function LessonsAdmin() {
     } catch (e) { setMsg("✗ " + (e as Error).message); }
     setBusy("");
   }
+  async function del(id: number | string, topic: string) {
+    if (!confirm(`Xoá VĨNH VIỄN bài "${topic}"?\nKhông khôi phục được. Người học đã học bài này vẫn giữ tiến độ và flashcard.`)) return;
+    try { const j = await api({ action: "delete", id }); setMsg(j.error ? "✗ " + j.error : "✓ Đã xoá bài"); if (!j.error && ed?.id === id) setEd(null); load(); } catch (e) { setMsg("✗ " + (e as Error).message); }
+  }
   async function setStatus(id: number | string, status: string) { try { const j = await api({ action: "status", id, status }); setMsg(j.error ? "✗ " + j.error + (j.errors ? ": " + j.errors.join("; ") : "") : "✓ Đã cập nhật"); load(); } catch (e) { setMsg("✗ " + (e as Error).message); } }
   async function importFile() {
     setBusy("import");
@@ -166,7 +170,7 @@ export default function LessonsAdmin() {
         {shown.map((r) => <tr key={r.id}><td className="muted">{String(r.id).slice(0, 6)}</td><td><span className="tag">{r.level}</span></td><td><b>{r.topic}</b><br /><span className="muted small">{r.topic_en}</span></td>
           <td><span className={`tag ${ST[r.status]?.[1]}`}>{ST[r.status]?.[0]}</span></td><td className="small">{({ file: "Kho có sẵn", admin: "Tự soạn", ai: "AI" } as Record<string, string>)[r.source] || r.source}</td>
           <td className="row nowrap"><button className="mini" onClick={() => open(r.id)}>Sửa</button><a className="btn mini" href={`/?preview=${encodeURIComponent(String(r.id))}`}>👀</a>
-            {r.status !== "published" ? <button className="mini" onClick={() => setStatus(r.id, "published")}>Phát hành</button> : <button className="mini danger" onClick={() => setStatus(r.id, "hidden")}>Ẩn</button>}</td></tr>)}
+            {r.status !== "published" ? <button className="mini" onClick={() => setStatus(r.id, "published")}>Phát hành</button> : <button className="mini danger" onClick={() => setStatus(r.id, "hidden")}>Ẩn</button>}<button className="mini danger" title="Xoá vĩnh viễn" onClick={() => del(r.id, r.topic)}>🗑️ Xoá</button></td></tr>)}
       </tbody></table></div>
       {pages > 1 && <div className="pager"><button className="mini" disabled={cur === 0} onClick={() => setPgN(cur - 1)}>‹ Trước</button>
         <span className="small">Trang {cur + 1}/{pages} · {list.length} bài</span><button className="mini" disabled={cur >= pages - 1} onClick={() => setPgN(cur + 1)}>Sau ›</button></div>}
