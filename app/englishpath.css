@@ -666,7 +666,8 @@ details.panel.help { padding: 16px 20px } .setlist + .setlist, .account + .setli
 .langpick { display: grid; border-radius: 18px; overflow: hidden; border: 2px solid var(--line) } .langpick .setitem.sel { background: var(--accent-soft) } .langpick .si-go { color: var(--accent); font-weight: 900 }
 .langsw .sel { color: var(--accent); text-decoration: underline }
 /* ---------- Màn hình mở app: 2 chú dê chạy từng bước quanh vòng elip ---------- */
-.boot { min-height: 72vh; display: grid; place-items: center; align-content: center; gap: 26px }
+.boot { width: 100%; min-height: 78vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; grid-column: 1 / -1 }
+#app > div:has(> .boot) { width: 100%; grid-column: 1 / -1 }
 .boot .gtrack { position: relative; width: 300px; height: 200px }
 .boot .lane { position: absolute; left: 30px; top: 55px; width: 240px; height: 110px; border-radius: 50%; border: 3px dashed color-mix(in srgb, #57a13e 35%, transparent); background: radial-gradient(ellipse, color-mix(in srgb, #9fdc9a 22%, transparent), transparent 70%) }
 .boot .runner { position: absolute; left: 0; top: 0; width: 92px; height: 72px; offset-anchor: 50% 92%;

@@ -12,7 +12,19 @@ const _t = s => (LANG === "en" && EN[s] !== undefined) ? EN[s] : s;
 const prevTr = p => { if (!p || LANG !== "en") return p || ""; const me = p.startsWith("Bạn: "); const body = me ? p.slice(5) : p; return (me ? "You: " : "") + _t(body); };
 const whoName = w => (LANG === "en" && w?.name_en) || w?.name || "";
 // Tên bài/ngữ pháp trong kho bài mẫu: giữ tiếng Việt làm dữ liệu gốc, chỉ dịch lúc hiển thị
-const tp = x => { x = String(x || ""); return x.startsWith("Ôn lại: ") ? _t("Ôn lại: ") + _t(x.slice(8)) : _t(x); };
+// Tên bài: có sẵn bản dịch thì dùng; bài do AI soạn trước đây (tiếng Việt) thì dịch tự động một lần và nhớ lại
+const VIRE = /[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]/i;
+let TPC = (() => { try { return JSON.parse(localStorage.getItem("ep_tpc") || "{}"); } catch (e) { return {}; } })(), TPQ = new Set(), TPT = null;
+function tpFetch() {
+  clearTimeout(TPT); TPT = setTimeout(async () => {
+    const list = [...TPQ].slice(0, 12); TPQ.clear();
+    await Promise.all(list.map(async x => { try { const r = await fetch(`/api/translate?sl=vi&tl=en&q=${encodeURIComponent(x)}`); const d = await r.json(); if (r.ok && d.text) TPC[x] = d.text; } catch (e) {} }));
+    try { localStorage.setItem("ep_tpc", JSON.stringify(TPC)); } catch (e) {}
+    if (list.some(x => TPC[x]) && typeof render === "function") render();
+  }, 150);
+}
+const tr1 = x => { if (LANG !== "en" || EN[x] !== undefined || !VIRE.test(x)) return _t(x); if (TPC[x]) return TPC[x]; TPQ.add(x); tpFetch(); return x; };
+const tp = x => { x = String(x || ""); return x.startsWith("Ôn lại: ") ? _t("Ôn lại: ") + tr1(x.slice(8)) : tr1(x); };
 const VI_OF = Object.fromEntries(Object.entries(EN).map(([v, e]) => [e, v]));
 // Nhãn lưu trong hồ sơ (lĩnh vực, tình huống) có thể được lưu bằng ngôn ngữ cũ: đổi sang ngôn ngữ đang dùng
 const relabel = x => LANG === "en" ? _t(x) : (VI_OF[x] || x);
