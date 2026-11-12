@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "../englishpath.css";
 import LessonsAdmin from "./lessons";
+import AboutAdmin from "./about";
 
 type U = { id: string; email: string; name: string; provider: string; joined: string; lastSignIn: string; level: string; goal: string;
   sessions: number; lastStudy: string; today: boolean; week: boolean; cards: number; push: number };
@@ -92,7 +93,7 @@ export default function AdminPage() {
   const banned = new Map((reps?.bans || []).map((b) => [b.user_id, b]));
   const openReps = reps?.reports || [], newFb = (fbs || []).filter((f) => f.status !== "done");
   const TABS: [string, string, number?][] = [["overview", "📊 Tổng quan"], ["users", "👥 Người dùng", S.users], ["notify", "🔔 Gửi thông báo"], ["lessons", "📚 Kho bài"],
-    ["feedback", "💬 Phản hồi", newFb.length], ["reports", "🚩 Vi phạm", openReps.length + (reps?.bans.length || 0)], ["ai", "🤖 AI"]];
+    ["feedback", "💬 Phản hồi", newFb.length], ["reports", "🚩 Vi phạm", openReps.length + (reps?.bans.length || 0)], ["about", "🌱 Giới thiệu"], ["ai", "🤖 AI"]];
   const cards: [string, number, string][] = [["Người dùng", S.users, `+${S.newWeek} trong 7 ngày`], ["Học hôm nay", S.today, ""], ["Học trong 7 ngày", S.week, ""],
     ["Tổng buổi học", S.sessions, ""], ["Bật thông báo", S.push, `${S.users ? Math.round((S.push / S.users) * 100) : 0}% người dùng`]];
   const pickUser = (u: U) => { setTo(u); setMsg(""); setTab("notify"); scrollTo({ top: 0, behavior: "smooth" }); };
@@ -192,6 +193,7 @@ export default function AdminPage() {
           <Pager k="reps" total={openReps.length} />
         </section></>}
 
+      {tab === "about" && <AboutAdmin key={rk} />}
       {tab === "ai" && <section className="panel">
         <div className="row between"><h3>Trạng thái AI</h3><button className="mini" onClick={checkAI}>Kiểm tra AI</button></div>
         <p className="muted small">Chấm câu, role-play, tra từ: Groq → OpenRouter → Gemini. Soạn bài mới: Gemini trước, hết lượt thì Groq/OpenRouter soạn thay.</p>
