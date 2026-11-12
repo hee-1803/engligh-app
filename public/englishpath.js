@@ -1301,7 +1301,7 @@ function setPage(pg) {
     <p>${esc(F.bio)}</p>
     <div class="row">${F.loves.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>
     <blockquote>“${esc(F.quote)}”</blockquote></section>
-   <p class="small muted center">${_t("Phiên bản")} ${APP_VERSION} · ${_t("Sinh nhật SEED cùng ngày với người sáng lập")} (${esc(F.birthday)}).</p>`; }
+   <p class="small muted center">${_t("Phiên bản")} ${APP_VERSION}${F.note ? " · " + esc(F.note) : ""}</p>`; }
   if (pg === "data") return `${_t("<section class=\"panel\"><p>Xoá toàn bộ tiến độ học để bắt đầu lại từ đầu. Không thể hoàn tác.</p><button class=\"danger\" data-a=\"reset\" id=\"resetBtn\">Xóa tiến độ và làm lại</button></section>")}`;
   return "";
 }
@@ -1314,10 +1314,11 @@ const ABOUT0 = {name:"Hồ Quốc Huy", birthday:"18/3",
   bio_vi:"Một người yêu cái đẹp: yêu thiên nhiên, cây cối, những bức tranh và từng nốt nhạc, và yêu con người. SEED được tạo ra từ mong muốn giúp mỗi người học tiếng Anh nhẹ nhàng như chăm một mầm cây: mỗi ngày tưới một chút, rồi đến lúc sẽ nở hoa.",
   bio_en:"Someone who loves beautiful things: nature, plants, paintings, every note of music, and people. SEED grew from a wish to make learning English feel as gentle as tending a seedling: a little water every day, and one day it blooms.",
   loves_vi:"🌿 Thiên nhiên\n🎨 Hội hoạ\n🎵 Âm nhạc\n🎻 Nhạc cụ\n💚 Con người", loves_en:"🌿 Nature\n🎨 Painting\n🎵 Music\n🎻 Instruments\n💚 People",
-  quote_vi:"Ngôn ngữ cũng như âm nhạc: không cần hoàn hảo, chỉ cần mỗi ngày được cất lên.", quote_en:"Language is like music: it doesn't have to be perfect, it just needs to be heard every day."};
+  quote_vi:"Ngôn ngữ cũng như âm nhạc: không cần hoàn hảo, chỉ cần mỗi ngày được cất lên.", quote_en:"Language is like music: it doesn't have to be perfect, it just needs to be heard every day.",
+  note_vi:"Sinh nhật SEED cùng ngày với người sáng lập ({birthday}).", note_en:"SEED shares its birthday with its founder ({birthday})."};
 function founder() {
   const A = {...ABOUT0, ...(ABOUT || {})}, en = LANG === "en", pick = k => ((en && A[k + "_en"]) || A[k + "_vi"] || "").trim();
-  return {name:A.name, tagline:pick("tagline"), bio:pick("bio"), loves:pick("loves").split("\n").map(x => x.trim()).filter(Boolean), quote:pick("quote"), birthday:A.birthday};
+  return {name:A.name, tagline:pick("tagline"), bio:pick("bio"), loves:pick("loves").split("\n").map(x => x.trim()).filter(Boolean), quote:pick("quote"), birthday:A.birthday, note:pick("note").replace("{birthday}", A.birthday)};
 }
 
 // Hướng dẫn sử dụng (gom tất cả chú thích chi tiết về đây)

@@ -1,5 +1,5 @@
 // Nội dung mặc định của trang "Về SEED" (dùng khi chưa sửa trong admin)
-export type About = { name: string; tagline_vi: string; tagline_en: string; bio_vi: string; bio_en: string; loves_vi: string; loves_en: string; quote_vi: string; quote_en: string; birthday: string };
+export type About = { name: string; tagline_vi: string; tagline_en: string; bio_vi: string; bio_en: string; loves_vi: string; loves_en: string; quote_vi: string; quote_en: string; birthday: string; note_vi: string; note_en: string };
 export const ABOUT_DEFAULT: About = {
   name: "Hồ Quốc Huy",
   tagline_vi: "Học tiếng Anh theo đúng mục tiêu của bạn, mỗi ngày một chút.",
@@ -11,4 +11,6 @@ export const ABOUT_DEFAULT: About = {
   quote_vi: "Ngôn ngữ cũng như âm nhạc: không cần hoàn hảo, chỉ cần mỗi ngày được cất lên.",
   quote_en: "Language is like music: it doesn't have to be perfect, it just needs to be heard every day.",
   birthday: "18/3",
+  note_vi: "Sinh nhật SEED cùng ngày với người sáng lập ({birthday}).",
+  note_en: "SEED shares its birthday with its founder ({birthday}).",
 };
