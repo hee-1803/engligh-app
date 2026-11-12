@@ -26,9 +26,13 @@ const FEATS: [string, string, string][] = [
 ];
 
 export default function LoginPage() {
-  // Ngôn ngữ: mặc định tiếng Anh, nhớ theo máy (dùng chung với app)
-  const [lang, setLang] = useState<"en" | "vi">("en");
-  useEffect(() => { try { if (localStorage.getItem("ep_lang") === "vi") setLang("vi"); } catch {} }, []);
+  // Ngôn ngữ: mặc định tiếng Việt, nhớ theo máy (dùng chung với app)
+  const [lang, setLang] = useState<"en" | "vi">("vi");
+  useEffect(() => { try {
+    const pick = localStorage.getItem("ep_lang");
+    const dev = String((navigator.languages && navigator.languages[0]) || navigator.language || "vi").toLowerCase().startsWith("en") ? "en" : "vi";
+    setLang(pick === "en" || pick === "vi" ? pick : dev);
+  } catch {} }, []);
   const L = (vi: string, en: string) => (lang === "vi" ? vi : en);
   const switchLang = (v: "en" | "vi") => { setLang(v); try { localStorage.setItem("ep_lang", v); } catch {} };
   const [msg, setMsg] = useState("");
@@ -168,7 +172,7 @@ export default function LoginPage() {
             </div>
           )}
           <p className="muted small center">{L("Chỉ dùng để đăng nhập. App không đăng gì lên tài khoản của bạn.", "Only used to log in. SEED never posts anything to your account.")}</p>
-          <p className="small center langsw"><button type="button" className={`mini ghost ${lang === "en" ? "sel" : ""}`} onClick={() => switchLang("en")}>English</button> · <button type="button" className={`mini ghost ${lang === "vi" ? "sel" : ""}`} onClick={() => switchLang("vi")}>Tiếng Việt</button></p>
+          <p className="small center langsw"><button type="button" className={`mini ghost ${lang === "vi" ? "sel" : ""}`} onClick={() => switchLang("vi")}>Tiếng Việt</button> · <button type="button" className={`mini ghost ${lang === "en" ? "sel" : ""}`} onClick={() => switchLang("en")}>English</button></p>
           {msg && <p className="fb small">{msg}</p>}
         </div>
       </section>

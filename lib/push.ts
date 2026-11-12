@@ -107,7 +107,7 @@ export function reminderFor(data: any) {
   const testDue = done > 0 && done % 5 === 0 && (data?.tests || []).filter((t: { course?: string }) => t.course === courseId).length < done / 5;
   // Đúng ngày sinh nhật: lời nhắc chúc mừng thay vì "chê"
   const bd = String(data?.profile?.birthday || "").slice(-5);
-  const en = (data?.profile?.lang || "en") === "en", nm = data?.profile?.name || "";
+  const en = (data?.profile?.uiLang || data?.profile?.lang) === "en", nm = data?.profile?.name || "";
   if (en && bd && bd === todayVN().slice(5)) return { title: `🎂 Happy birthday${nm ? " " + nm : ""}!`, body: "Today is all about you. Open the app for a little surprise, then enjoy a light lesson. Happy birthday! 🎉", url: "/" };
   if (bd && bd === todayVN().slice(5)) {
     return { title: `🎂 Chúc mừng sinh nhật${data?.profile?.name ? " " + data.profile.name : ""}!`,
