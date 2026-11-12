@@ -731,3 +731,4 @@ details.panel.help { padding: 16px 20px } .setlist + .setlist, .account + .setli
 .pager { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 10px }
 .led a.btn, td a.btn { display:inline-flex; align-items:center; gap:6px; padding:10px 18px; border-radius:99px; background:var(--card,#fff); border:2px solid var(--line); box-shadow:0 3px 0 var(--line); color:var(--ink); font-weight:800; text-decoration:none } td a.btn.mini { padding:5px 14px }
 a.setitem { color: var(--ink); text-decoration: none }
+.warn-t { color: #b45309 } .tag.warn { background:#fff3d6; color:#b45309; margin-left:6px }
