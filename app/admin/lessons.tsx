@@ -114,7 +114,7 @@ export default function LessonsAdmin() {
 
       {ed && (
         <div className="led">
-          <div className="row between"><b>{ed.id ? `Sửa bài #${ed.id}` : "Bài mới"}</b><button className="mini ghost" onClick={() => setEd(null)}>Đóng</button></div>
+          <div className="row between"><b>{ed.id ? `Sửa bài: ${ed.l.topic || "(chưa có tên)"}` : "Bài mới"}</b><button className="mini ghost" onClick={() => setEd(null)}>Đóng</button></div>
           <div className="lgrid">
             <label className="lf"><span>Trình độ</span><select value={ed.l.level} onChange={(e) => set((l) => { l.level = e.target.value; })}>{LEVELS.map((k) => <option key={k}>{k}</option>)}</select></label>
             <F label="Tên bài (Việt)" v={ed.l.topic} on={(x) => set((l) => { l.topic = x; })} />
