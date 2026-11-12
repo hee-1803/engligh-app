@@ -435,9 +435,28 @@ button.primary.big { border-radius: 14px }
 .applebtn:hover:not(:disabled) { background: #222; border-color: #222 }
 .phonebox { padding: 14px; border-radius: 14px; background: var(--sunk); display: grid; gap: 10px }
 .otp { font: 700 1.5rem var(--f-mono); letter-spacing: .5em; text-align: center }
-.legal { max-width: 720px; margin: 0 auto; padding: 32px max(16px, env(safe-area-inset-right, 0px)) 64px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 14px; line-height: 1.7 }
-.legal h2 { font-size: 1.3rem; margin-top: 10px }
-.legal ul, .legal ol { margin: 0; padding-left: 22px; display: grid; gap: 6px }
+.legal { max-width: 760px; margin: 0 auto; padding: 18px 16px 56px; display: grid; gap: 18px; line-height: 1.7 }
+.lg-top { display: flex; justify-content: space-between; align-items: center; gap: 12px }
+.lg-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-size: 1.1rem }
+.lg-brand img { border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.08) }
+.lg-lang { display: inline-flex; padding: 4px; border-radius: 99px; background: var(--surface); box-shadow: 0 2px 10px rgba(80,60,160,.08) }
+.lg-lang a { padding: 6px 14px; border-radius: 99px; font-size: .85rem; font-weight: 700; color: var(--muted); text-decoration: none }
+.lg-lang a.on { background: #57a13e; color: #fff }
+.lg-hero { padding: 26px 24px; border-radius: 28px; background: linear-gradient(135deg, #e9f6df, #fdf7e3); border: 1px solid #d9ecc9 }
+.lg-hero h1 { margin: 0; font-size: clamp(1.7rem, 5vw, 2.3rem); color: #24461a }
+.lg-hero p { margin: 4px 0 0; color: #5d7a4e; font-size: .9rem; font-weight: 600 }
+.lg-body { counter-reset: lgs; background: var(--surface); border-radius: 28px; padding: 8px 24px 24px; box-shadow: 0 6px 24px rgba(80,60,160,.08); display: grid; gap: 10px }
+.lg-body > p:first-child { margin-top: 16px; font-size: 1.02rem }
+.lg-body h2 { counter-increment: lgs; display: flex; align-items: center; gap: 10px; font-size: 1.15rem; margin: 18px 0 2px; padding-top: 18px; border-top: 1px dashed var(--line) }
+.lg-body h2::before { content: counter(lgs); flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #57a13e; color: #fff; font-size: .9rem }
+.lg-body h2 { font-variant-numeric: tabular-nums } .lg-body h2 { text-indent: 0 }
+.lg-body ul, .lg-body ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px }
+.lg-body li { position: relative; padding: 10px 14px 10px 40px; border-radius: 16px; background: var(--sunk, #f6f4fb) }
+.lg-body ul li::before { content: "🌱"; position: absolute; left: 13px; top: 10px; font-size: .9rem }
+.lg-body ol { counter-reset: lgo } .lg-body ol li { counter-increment: lgo }
+.lg-body ol li::before { content: counter(lgo); position: absolute; left: 12px; top: 11px; width: 20px; height: 20px; border-radius: 50%; background: #e3f1d8; color: #3c7a26; font: 800 .75rem/20px inherit; text-align: center }
+.lg-body p { margin: 0 } .lg-body a { color: #3c7a26; font-weight: 700 }
+.lg-back { justify-self: center; color: var(--muted); font-weight: 700; text-decoration: none }
 .btn.gt { color: #1a73e8; border-color: color-mix(in srgb, #1a73e8 35%, var(--line)) }
 .wordgrid .ipa { font-size: .78rem }
 

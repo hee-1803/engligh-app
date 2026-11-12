@@ -17,11 +17,18 @@ export default function Legal({ en, title, updated, children }: { en: boolean; t
   useEffect(() => { document.title = title + " · SEED"; document.documentElement.lang = en ? "en" : "vi"; }, [title, en]);
   return (
     <main className="legal">
-      <div className="row between"><a href="/" className="link">← SEED</a>
-        <span className="small"><a href="?lang=vi" className={en ? "link" : ""}>Tiếng Việt</a> · <a href="?lang=en" className={en ? "" : "link"}>English</a></span></div>
-      <h1>{title}</h1>
-      <p className="muted small">{en ? "Last updated" : "Cập nhật lần cuối"}: {updated}</p>
-      {children}
+      <nav className="lg-top">
+        <a href="/" className="lg-brand"><img src="/logo.png?v=6" alt="" width="36" height="36" /><b>SEED</b></a>
+        <div className="lg-lang" role="group" aria-label="Language">
+          <a href="?lang=vi" className={en ? "" : "on"}>Tiếng Việt</a><a href="?lang=en" className={en ? "on" : ""}>English</a>
+        </div>
+      </nav>
+      <header className="lg-hero">
+        <h1>{title}</h1>
+        <p>{en ? "Last updated" : "Cập nhật lần cuối"}: {updated}</p>
+      </header>
+      <article className="lg-body">{children}</article>
+      <a href="/" className="lg-back">← {en ? "Back to SEED" : "Quay lại SEED"}</a>
     </main>
   );
 }
