@@ -101,7 +101,7 @@ export default function LoginPage() {
       <section className="login-form">
         <div className="login-card">
           <div className="row nowrap">
-            <Mascot mood="happy" size={56} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}<img src="/logo.png?v=3" alt="" width={60} height={60} className="logo-lg" />
             <div>
               <h2>Chào mừng bạn!</h2>
               <p className="muted small">Đăng nhập để lưu tiến độ học trên mọi thiết bị.</p>

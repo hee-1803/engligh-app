@@ -5,12 +5,12 @@ export const metadata: Metadata = {
   title: "Lộ Trình Tiếng Anh",
   description: "Học tiếng Anh cá nhân hóa theo mục tiêu của bạn",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon-192.png", apple: "/apple-touch-icon.png" },
+  icons: { icon: "/favicon.png?v=3", apple: "/apple-touch-icon.png?v=3" },
   appleWebApp: { capable: true, title: "Lộ Trình", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#7c5cff",
+  themeColor: "#3fae7a",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

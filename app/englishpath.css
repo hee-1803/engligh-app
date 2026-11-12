@@ -644,3 +644,5 @@ html, body { min-height: 100% } html { background: var(--bg) }
 input[type="date"] { min-width: 210px; width: auto; max-width: 100%; white-space: nowrap }
 .tfield input[type="date"] { width: 230px; min-width: 0 }
 .pushask { border: 2px dashed var(--accent) } .pushask h3 { margin: 0 0 4px }
+img.logo { width: 40px; height: 40px; border-radius: 12px; background: none; box-shadow: 0 6px 14px -6px rgba(124,92,255,.6); display: block }
+.logo-lg { border-radius: 18px; box-shadow: 0 8px 20px -8px rgba(124,92,255,.6); flex: none }

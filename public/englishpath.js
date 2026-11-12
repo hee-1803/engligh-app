@@ -465,7 +465,7 @@ async function gemini(system, prompt, json = true, history, ms = 30000) {
   catch (e) { pauseAI(e.name === "AbortError" ? "phản hồi quá chậm" : "mất kết nối"); throw e; }
   const d = await r.json().catch(() => ({}));
   if (!r.ok && !d.quota && (d.busy || r.status >= 500)) pauseAI(d.error ? "quá tải" : "lỗi " + r.status);
-  if (!r.ok) { if (d.quota) { AI = {on:false, quota:true, quotaAt:Date.now(), msg:d.error}; toast("Đã hết lượt Gemini miễn phí. Tạm dùng nội dung mẫu, app sẽ tự thử lại sau 5 phút."); }
+  if (!r.ok) { if (d.quota) { AI = {on:false, quota:true, quotaAt:Date.now(), msg:d.error}; console.warn("AI hết lượt, tạm dùng nội dung mẫu"); }
     throw new Error(d.error || ("Gemini lỗi " + r.status)); }
   if (d.engine) { LAST_ENGINE = d.engine; LAST_ENGINE_AT = Date.now(); }
   if (!json) return d.text;
@@ -614,7 +614,7 @@ Trả JSON đúng cấu trúc:
 "translations":[{"src":"câu gốc","ref":"bản dịch mẫu","dir":"vi-en hoặc en-vi"}] (4 câu: 2 vi-en, 2 en-vi, có dùng từ và ngữ pháp của bài),
 "roleplay":{"ai_role":"vai của AI, tiếng Anh","user_role":"vai người học, tiếng Việt","setting":"bối cảnh tiếng Việt","tasks":["3 nhiệm vụ tiếng Việt"],"opening":"câu mở đầu của AI, tiếng Anh"}}`, true, null, 150000)]);
       if (validLesson(j)) { les = j; les.ai = true; les.level = S.level; await fillIPA(les.words.map(normWord)).catch(() => {}); }
-    } catch (e) { console.warn("Không sinh được bài:", e.message); if (e.name === "AbortError") e.message = "chờ quá lâu"; if (e.message !== "skip") toast("Gemini chưa soạn được bài (" + e.message + "). Dùng bài mẫu."); }
+    } catch (e) { console.warn("Không sinh được bài:", e.message); if (e.name === "AbortError") e.message = "chờ quá lâu"; if (e.message !== "skip") console.warn("AI chưa soạn được bài:", e.message); }
     cancelWait = null;
   }
   if (!les) les = pickBankLesson();
@@ -872,7 +872,7 @@ function speakBox(w, i) {
 // Bước 3: Tự đặt câu
 function step3() {
   const l = L(), ws = l.les.words.slice(0, 4), graded = Object.keys(l.sent).length;
-  return `<section class="panel"><h2>Tự đặt câu</h2><p class="muted">Viết một câu tiếng Anh với mỗi từ, càng gần với công việc và cuộc sống của bạn càng tốt. ${aiOn() ? "Gemini sẽ sửa lỗi và giải thích." : "Đang chấm cơ bản vì Gemini chưa hoạt động."}</p></section>
+  return `<section class="panel"><h2>Tự đặt câu</h2><p class="muted">Viết một câu tiếng Anh với mỗi từ, càng gần với công việc và cuộc sống của bạn càng tốt. ${aiOn() ? "AI sẽ sửa lỗi và giải thích." : "Đang chấm cơ bản vì AI đang nghỉ."}</p></section>
    ${ws.map((w, i) => { const r = l.sent[i]; return `<section class="panel"><div class="row between"><h3>${esc(w.w)} <span class="muted normal">· ${esc(w.vi)}</span></h3><button class="mini" data-a="speak" data-v="${esc(w.ex)}">Nghe ví dụ</button></div>
      <label class="sr" for="sent${i}">Câu với ${esc(w.w)}</label><textarea id="sent${i}" placeholder="Ví dụ gợi ý: ${esc(w.ex)}">${esc(r?.text || "")}</textarea>${sentFb(r)}</section>`; }).join("")}
    <div class="row sticky-actions"><button class="primary" data-a="grade3" id="g3">${graded ? "Chấm lại" : "Chấm câu"}</button>${graded ? `<button data-a="step" data-v="3">Sang bước dịch câu →</button>` : ""}</div>`;
@@ -1189,7 +1189,6 @@ function vHome() {
         ${!cur && nextLes ? `<p class="small"><span class="tag good">Đã soạn xong</span> ${nextLes.ai ? "Bài soạn riêng theo mục tiêu của bạn" : `Bài mẫu trình độ ${nextLes.level || S.level}${nextLes.review ? " · ôn lại" : ""}`}</p>` : !cur && INFLIGHT[S.sessions.length] ? `<p class="small muted"><span class="spin"></span> Gemini đang soạn sẵn buổi này...</p>` : ""}
         <ol class="steps-mini">${STEPS.map((t, k) => `<li class="${cur && k < cur.step ? "done" : cur && k === cur.step ? "cur" : ""}">${stk(STEP_STK[k], 30, "", 0)}<span>${t}</span></li>`).join("")}</ol>
         <button class="primary big" data-a="startLesson">${cur ? "Học tiếp" : doneToday() ? "Học thêm buổi tiếp theo" : "Bắt đầu buổi học"}</button>`}
-     ${AI.on ? "" : `<p class="fb small">Gemini chưa hoạt động (${esc(AI.msg)}). App dùng bài học mẫu và chấm điểm cơ bản.</p>`}
      </div></section>
     <section class="tiles">
       <div class="tile hue-coral">${stk("flame", 44)}<b>${st}</b><span>ngày học liên tiếp</span></div>
@@ -1391,7 +1390,7 @@ function drawPop(word, d, loading) {
    ${d ? `<p class="meaning sm">${esc(d.meaning)}${d.meaningEn ? ' <span class="muted small">(định nghĩa tiếng Anh)</span>' : ""}</p>` : ""}
    ${(d?.examples || []).filter(x => x.en).map(x => `<div class="ex">${esc(x.en)}${x.vi ? `<br><span class="muted">${esc(x.vi)}</span>` : ""}</div>`).join("")}
    ${d?.collocations?.length ? `<p class="muted small">Hay đi với: ${d.collocations.map(esc).join(" · ")}</p>` : ""}
-   ${loading ? `<p class="muted small"><span class="spin"></span> Đang tra...</p>` : ""}${!d && !loading ? `<p class="muted">Chưa tra được từ này${AI.on ? (POPERR ? ` (${esc(POPERR)})` : "") : " vì Gemini chưa hoạt động"}. Thử nút Dịch hoặc Cambridge bên dưới.</p>` : ""}
+   ${loading ? `<p class="muted small"><span class="spin"></span> Đang tra...</p>` : ""}${!d && !loading ? `<p class="muted">Chưa tra được từ này${AI.on ? (POPERR ? ` (${esc(POPERR)})` : "") : " vì AI đang nghỉ"}. Thử nút Dịch hoặc Cambridge bên dưới.</p>` : ""}
    <div class="row"><button class="mini" data-a="speak" data-v="${esc(hw)}">🔊 Nghe</button>
     ${d ? `<button class="mini ${inCards ? "" : "primary"}" data-a="addLooked" data-v="${esc(word.toLowerCase())}" ${inCards ? "disabled" : ""}>${inCards ? "Đã có trong flashcard" : "+ Thêm vào flashcard"}</button>` : ""}
     <a class="mini btn" target="_blank" rel="noopener" href="https://dictionary.cambridge.org/dictionary/english-vietnamese/${encodeURIComponent(hw.toLowerCase())}">Cambridge ↗</a>
@@ -1879,7 +1878,7 @@ function renderHeader() {
   const tabs = [["home", "Trang chủ"], ["path", "Lộ trình"], ["review", "Ôn tập"], ["chat", "Cộng đồng"], ["history", "Lịch sử"]];
   const due = dueCards().length, name = displayName() || ME?.email || "Bạn";
   const active = view === "settings" ? "" : view;
-  h.innerHTML = `<div class="hin"><a href="#" class="brand" data-a="go" data-v="home"><span class="logo">${mascot("happy", 40)}</span><span><b>Lộ Trình</b><small>Tiếng Anh cá nhân hóa</small></span></a>
+  h.innerHTML = `<div class="hin"><a href="#" class="brand" data-a="go" data-v="home"><img class="logo" src="/logo.png?v=3" alt="" width="40" height="40"><span><b>Lộ Trình</b><small>Tiếng Anh cá nhân hóa</small></span></a>
     ${focus ? "" : `<nav class="tabs-top" aria-label="Điều hướng">${tabs.map(([k, t]) => `<a href="#" class="${active === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : k === "chat" && CH.unread ? `<span class="badge">${CH.unread}</span>` : ""}</a>`).join("")}</nav>`}
     <div class="tools">${S.level ? `<span class="lvl" title="Trình độ hiện tại">${S.level}</span>` : ""}
      <div class="usermenu"><button class="avatar" data-a="menu" aria-label="Tài khoản ${esc(ME?.email || "")}">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc(name[0].toUpperCase())}</button>
