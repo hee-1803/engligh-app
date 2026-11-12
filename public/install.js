@@ -35,7 +35,7 @@
   function banner(text, sub, btn, onGo) {
     if (document.querySelector(".ins")) return;
     const d = document.createElement("div"); d.className = "ins"; d.setAttribute("role", "dialog");
-    d.innerHTML = `<img src="/icon-192.png?v=5" alt=""><div class="g"><b>${text}</b><small>${sub}</small></div><button class="go">${btn}</button><button class="x" aria-label="${T("Đóng", "Close")}">✕</button>`;
+    d.innerHTML = `<img src="/icon-192.png?v=6" alt=""><div class="g"><b>${text}</b><small>${sub}</small></div><button class="go">${btn}</button><button class="x" aria-label="${T("Đóng", "Close")}">✕</button>`;
     d.querySelector(".go").onclick = onGo; d.querySelector(".x").onclick = () => hide(7);
     document.body.appendChild(d);
   }

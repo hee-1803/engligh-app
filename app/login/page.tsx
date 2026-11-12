@@ -110,7 +110,7 @@ export default function LoginPage() {
       <section className="login-form">
         <div className="login-card">
           <div className="row nowrap">
-            {/* eslint-disable-next-line @next/next/no-img-element */}<img src="/logo.png?v=5" alt="" width={60} height={60} className="logo-lg" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}<img src="/logo.png?v=6" alt="" width={60} height={60} className="logo-lg" />
             <div>
               <h2>{L("Chào mừng bạn!", "Welcome!")}</h2>
               <p className="muted small">{L("Đăng nhập để lưu tiến độ học trên mọi thiết bị.", "Log in to save your progress across all your devices.")}</p>

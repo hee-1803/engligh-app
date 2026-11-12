@@ -8,7 +8,7 @@ self.addEventListener("push", (e) => {
   try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data && e.data.text() }; }
   e.waitUntil(self.registration.showNotification(d.title || "SEED", {
     body: d.body || "Đến giờ học tiếng Anh rồi!",
-    icon: "/icon-192.png?v=5",
+    icon: "/icon-192.png?v=6",
     badge: "/icon-badge.png?v=5",
     tag: "nhac-hoc",
     renotify: true,

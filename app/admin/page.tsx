@@ -100,7 +100,7 @@ export default function AdminPage() {
   return (
     <main className="adm">
       <header className="adm-head">
-        <div className="row nowrap">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/logo.png?v=5" alt="" width={44} height={44} className="logo-lg" />
+        <div className="row nowrap">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/logo.png?v=6" alt="" width={44} height={44} className="logo-lg" />
           <div><p className="eyebrow">SEED · Quản trị</p><h1>Trang quản trị</h1></div></div>
         <div className="row"><button className="mini" disabled={reloading} onClick={async () => { setReloading(true); await Promise.all([load(), loadReps(), loadFb()]); setRk((k) => k + 1); setReloading(false); setDone(true); setTimeout(() => setDone(false), 1800); }}>{reloading ? "⏳ Đang tải…" : done ? "✓ Đã tải lại" : "↻ Tải lại"}</button><a className="btn mini" href="/">← Về app</a></div>
       </header>
