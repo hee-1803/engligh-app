@@ -668,10 +668,10 @@ details.panel.help { padding: 16px 20px } .setlist + .setlist, .account + .setli
 /* ---------- Màn hình mở app: 2 chú dê chạy từng bước quanh vòng elip ---------- */
 .boot { width: 100%; min-height: 78vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; grid-column: 1 / -1 }
 #app > div:has(> .boot) { width: 100%; grid-column: 1 / -1 }
-.boot .gtrack { position: relative; width: 300px; height: 200px }
+.boot .gtrack { position: relative; width: 320px; height: 260px }
 .boot .lane { position: absolute; left: 30px; top: 55px; width: 240px; height: 110px; border-radius: 50%; border: 3px dashed color-mix(in srgb, #57a13e 35%, transparent); background: radial-gradient(ellipse, color-mix(in srgb, #9fdc9a 22%, transparent), transparent 70%) }
-.boot .runner { position: absolute; left: 0; top: 0; width: 92px; height: 72px; offset-anchor: 50% 92%;
-  offset-path: path("M30,110 A120,55 0 1,0 270,110 A120,55 0 1,0 30,110"); offset-rotate: 0deg; animation: lap 3.4s linear infinite }
+.boot .runner { position: absolute; left: 0; top: 0; width: 104px; height: 108px; offset-anchor: 50% 92%;
+  offset-path: path("M45,180 A115,48 0 1,0 275,180 A115,48 0 1,0 45,180"); offset-rotate: 0deg; animation: lap 3.4s linear infinite }
 .boot .r2 { animation-delay: -1.25s }
 .boot .depth { width: 100%; height: 100%; position: relative; animation: depth 3.4s linear infinite; animation-delay: inherit }
 .boot .flip { width: 100%; height: 100%; position: relative; animation: face 3.4s steps(1) infinite; animation-delay: inherit }
@@ -698,3 +698,15 @@ details.panel.help { padding: 16px 20px } .setlist + .setlist, .account + .setli
 .boot-dots { display: flex; gap: 6px } .boot-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); opacity: .3; animation: bdot 1s infinite }
 .boot-dots i:nth-child(2) { animation-delay: .15s } .boot-dots i:nth-child(3) { animation-delay: .3s } @keyframes bdot { 50% { opacity: 1; transform: translateY(-4px) } }
 @media (prefers-reduced-motion: reduce) { .boot .runner, .boot .depth, .boot .flip { animation-duration: 12s } .boot .dust, .boot .note { display: none } }
+
+/* Dê dùng hình vẽ gốc: nhún phi nước đại (bật lên, chúi người, đáp xuống) thay cho cử động chân */
+.boot .gimg { width: 100%; height: auto; display: block; transform-origin: 50% 85%; animation: gallop .42s cubic-bezier(.4,0,.6,1) infinite; filter: drop-shadow(0 6px 5px rgba(90,60,30,.16)) }
+.boot .r2 .gimg { animation-delay: -.2s }
+@keyframes gallop {
+  0% { transform: translateY(0) rotate(4deg) scale(1.03, .96) }
+  30% { transform: translateY(-14px) rotate(-6deg) scale(.98, 1.03) }
+  55% { transform: translateY(-16px) rotate(-2deg) scale(1, 1) }
+  80% { transform: translateY(-4px) rotate(5deg) scale(1.02, .98) }
+  100% { transform: translateY(0) rotate(4deg) scale(1.03, .96) } }
+.boot .dust { bottom: 4px; left: 6px; animation-duration: .42s }
+.boot .gtrack::after { content: ""; position: absolute; left: 55px; right: 55px; top: 170px; height: 22px; border-radius: 50%; background: radial-gradient(ellipse, rgba(87,161,62,.12), transparent 70%) }
