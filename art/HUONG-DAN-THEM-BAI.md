@@ -1,5 +1,17 @@
 # Hướng dẫn thêm bài vào kho SEED
 
+## Cách chính: thêm trong trang quản trị (không cần sửa code, không cần deploy)
+1. Chạy `supabase/lessons.sql` một lần trong Supabase → SQL Editor.
+2. Vào **/admin → Kho bài**, bấm **Nhập kho bài có sẵn** (một lần) để đưa các bài hiện có vào database.
+3. Thêm bài: **+ Thêm bài** (tự soạn) hoặc nhập chủ đề rồi bấm **✨ AI soạn nháp**.
+4. **Kiểm tra** → sửa lỗi ❌ (sai cấu trúc, trùng tên, trùng từ) → **Lưu nháp**.
+5. **👀 Xem thử như người học**: mở bài trong app, học thử đủ 6 bước, không lưu tiến độ.
+6. **Phát hành**: người học thấy bài ở lần mở app tiếp theo. Bài lỗi hoặc trùng thì không phát hành được.
+7. Muốn gỡ bài: **Ẩn** (không xoá, có thể phát hành lại).
+
+---
+## Cách dự phòng: sửa file (dành cho lập trình viên)
+
 ## 1. Thêm vào đâu
 | Trình độ | File | Danh sách |
 |---|---|---|

@@ -447,7 +447,18 @@ function migrate(d) {
 // Lưu tiến độ ngay khi có thay đổi (0,5 giây sau), không cần bấm "Lưu & thoát".
 // Mỗi bản lưu có số thứ tự rev: điện thoại đang giữ bản cũ sẽ không ghi đè bản mới từ máy tính.
 let BASE = 0, SAVING = false, DIRTY = false;
-function save() { if (["lesson", "quiz", "flip"].includes(view)) S.lastActive = today(); DIRTY = true; clearTimeout(saveTimer); saveTimer = setTimeout(pushState, 500); }
+// Chế độ XEM THỬ bài (quản trị viên mở /?preview=ID): học thử như người học nhưng không lưu gì
+let PREVIEW = false;
+async function startPreview(id) {
+  try { const r = await timeoutFetch("/api/admin/lessons?id=" + encodeURIComponent(id), {}, 10000); const row = await r.json(); if (!r.ok) throw new Error(row.error);
+    PREVIEW = true; const les = {...row.data, level:row.level, topic:row.topic, topic_en:row.topic_en, preview:true};
+    if (les.topic_en) EN[les.topic] = les.topic_en; const ge = les.grammar?.name_en; if (ge) EN[les.grammar.name] = ge;
+    const items = [...les.words.slice(0, 2).map(w => meaningQ(w, les.words)), ...(les.grammar?.quiz || []).slice(0, 2).map(g => gramQ(g))];
+    S.current = {idx:-1, course:"preview", les, step:0, warmItems:items, prevTopic:"", vi:0, sent:{}, trans:{}, chat:[], tasksDone:[], rpEval:null, scores:{}, started:Date.now()};
+    view = "lesson"; restoreLessonQuiz(); render(); toast(LANG === "en" ? "Preview mode: nothing is saved" : "Chế độ xem thử: không lưu tiến độ");
+  } catch (e) { toast((LANG === "en" ? "Can't open preview: " : "Không mở được bản xem thử: ") + e.message); }
+}
+function save() { if (PREVIEW) return; if (["lesson", "quiz", "flip"].includes(view)) S.lastActive = today(); DIRTY = true; clearTimeout(saveTimer); saveTimer = setTimeout(pushState, 500); }
 async function pushState(keepalive = false) {
   clearTimeout(saveTimer); saveTimer = null;
   if (SAVING) { saveTimer = setTimeout(pushState, 400); return; }
@@ -1529,12 +1540,12 @@ const ACT = {
   svWeak: v => { SV.weak = SV.weak.includes(v) ? SV.weak.filter(x => x !== v) : [...SV.weak, v]; render(); },
   svSubmit: () => { S.profile = {...SV}; save(); SV = null; view = S.level ? "settings" : "home"; render(); if (S.level) toast(_t("Đã lưu mục tiêu. Các buổi học tới sẽ theo lĩnh vực mới.")); },
   editGoal: () => { SV = newSv(S.profile); view = "survey"; render(); },
-  startLesson, startUnit, exitLesson: () => { save(); Q = null; view = "home"; render(); },
+  startLesson, startUnit, exitLesson: () => { if (PREVIEW) return location.href = "/admin#lessons"; save(); Q = null; view = "home"; render(); },
   step: v => setStep(Number(v)),
   vnext: () => { const l = L(); l.vi++; if (l.vi === l.les.words.length) l.les.words.forEach(w => addCard(w, "lesson")); if (l.vi > l.les.words.length) Q = makeQuiz("vcheck", vcheckItems(), true); save(); render(); },
   vprev: () => { const l = L(); l.vi = Math.max(0, l.vi - 1); render(); },
   grade3, grade4, rpSend, rpHint, rpEnd, rpAgain: () => { L().rpEval = null; render(); },
-  finishLesson: v => finishLesson(v),
+  finishLesson: v => PREVIEW ? (location.href = "/admin#lessons") : finishLesson(v),
   nextCourse: () => { S.courses.push({...S.path, end:today()}); checkBadges(); S.level = S.path.to; S.difficulty = 0; buildPath(); view = "home"; render(); toast(_t("Bắt đầu khóa mới!")); },
   rtab: v => { UI.rtab = v; render(); },
   startFlip: v => { const set = v === "hard" ? hardCards() : v === "all" ? shuffle(cardList()).slice(0, 20) : dueCards();
@@ -1856,8 +1867,12 @@ function render() {
   applyPrefs();
   const loadJs = (src, ok) => ok ? Promise.resolve() : new Promise(r => { const sc = document.createElement("script"); sc.src = src; sc.onload = r; sc.onerror = r; document.head.appendChild(sc); });
   await Promise.all([loadJs("/stickers.js?v=1", window.STICKERS), loadJs("/lessonbank.js?v=2", window.LESSON_BANK)]);
+  // Kho bài trong database (thêm/sửa trong trang quản trị): bài cùng tên thay bản trong file, bài mới nối thêm vào cuối trình độ
+  try { const r = await timeoutFetch("/api/lessons", {}, 6000); if (r.ok) { const d = await r.json(); const LB = window.LESSON_BANK = window.LESSON_BANK || {};
+    for (const row of d.lessons || []) { const les = {...row.data, level:row.level, topic:row.topic, topic_en:row.topic_en || row.data.topic_en, dbId:row.id};
+      const list = LB[row.level] = LB[row.level] || []; const i = list.findIndex(x => x.topic === les.topic); if (i >= 0) list[i] = les; else list.push(les); } } } catch (e) {}
   // Bài mới trong kho có thể kèm tên tiếng Anh (topic_en, grammar_en): nạp vào từ điển hiển thị
-  try { Object.values(window.LESSON_BANK || {}).flat().forEach(l => { if (l.topic_en && EN[l.topic] === undefined) EN[l.topic] = l.topic_en; if (l.grammar_en && l.grammar && EN[l.grammar.name] === undefined) EN[l.grammar.name] = l.grammar_en; }); } catch (e) {}
+  try { Object.values(window.LESSON_BANK || {}).flat().forEach(l => { if (l.topic_en && EN[l.topic] === undefined) EN[l.topic] = l.topic_en; const ge = l.grammar_en || l.grammar?.name_en; if (ge && l.grammar && EN[l.grammar.name] === undefined) EN[l.grammar.name] = ge; }); } catch (e) {}
   if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
   swReg().then(checkPush).then(() => { if (view === "settings") render(); });
   const app = $("#app");
@@ -1866,6 +1881,7 @@ function render() {
   const meP = fetch("/api/me").then(r => r.ok ? r.json() : null).catch(() => null);
   S = await loadState(); BASE = Number(S.rev || 0); try { if ((S.profile?.lang === "vi" || S.profile?.lang === "en") && !localStorage.getItem("ep_lang") && S.profile.lang !== LANG) { localStorage.setItem("ep_lang", S.profile.lang); return location.reload(); } } catch (e) {}
   if (S.profile && S.profile.uiLang !== LANG) { S.profile.uiLang = LANG; save(); } ME = await meP;
+  const pvId = new URLSearchParams(location.search).get("preview"); if (pvId && ME?.admin) { setTimeout(() => startPreview(pvId), 50); }
   if (new URLSearchParams(location.search).get("view") === "chat" && S.path) { view = "chat"; history.replaceState(null, "", "/"); setTimeout(() => chPoll(true), 300); } try { applyFestive(); } catch (e) {} setInterval(() => { try { applyFestive(); } catch (e) {} }, 30 * 60e3); render(); remindLoop(); setInterval(remindLoop, 60e3);
   // Kiểm tra Gemini chạy ngầm, không chặn giao diện
   checkAI().then(() => { if (!["lesson", "quiz", "flip"].includes(view)) render(); setTimeout(prefetchNext, 1500); });

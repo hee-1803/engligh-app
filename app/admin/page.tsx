@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import "../englishpath.css";
+import LessonsAdmin from "./lessons";
 
 type U = { id: string; email: string; name: string; provider: string; joined: string; lastSignIn: string; level: string; goal: string;
   sessions: number; lastStudy: string; today: boolean; week: boolean; cards: number; push: number };
@@ -117,6 +118,8 @@ export default function AdminPage() {
               <td><button className="mini" disabled={!u.push} onClick={() => { setTo(u); setMsg(""); document.getElementById("adm-send")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>{to !== "all" && to?.id === u.id ? "✓ Đã chọn" : "Chọn gửi"}</button></td>
             </tr>))}</tbody></table></div>
       </section>
+
+      <LessonsAdmin />
 
       <section className="panel">
         <div className="row between"><h3>Phản hồi từ người dùng ({fbs?.filter((f) => f.status !== "done").length ?? "…"} mới)</h3><button className="mini" onClick={loadFb}>↻</button></div>
