@@ -1835,7 +1835,7 @@ function render() {
   if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
   swReg().then(checkPush).then(() => { if (view === "settings") render(); });
   const app = $("#app");
-  app.innerHTML = `${_t("<div class=\"wrap\"><section class=\"panel center\"><p><span class=\"spin\"></span> Đang tải tiến độ của bạn...</p></section></div>")}`;
+  if (!app.querySelector(".boot")) app.innerHTML = `<div class="boot" role="status"><div class="boot-ring"><img src="/loader-goats.png" alt="" width="240" height="240"><i class="puff p1"></i><i class="puff p2"></i><i class="puff p3"></i><i class="puff p4"></i><b class="note n1">♪</b><b class="note n2">♫</b><b class="note n3">♪</b><b class="note n4">♫</b></div><span class="boot-dots"><i></i><i></i><i></i></span></div>`;
   AI = {on:false, msg:_t("đang kiểm tra kết nối...")};
   const meP = fetch("/api/me").then(r => r.ok ? r.json() : null).catch(() => null);
   S = await loadState(); BASE = Number(S.rev || 0); try { if (S.profile?.lang && !localStorage.getItem("ep_lang") && S.profile.lang !== LANG) { localStorage.setItem("ep_lang", S.profile.lang); return location.reload(); } } catch (e) {} ME = await meP;
