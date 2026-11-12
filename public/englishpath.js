@@ -407,7 +407,7 @@ function migrate(d) {
 // Lưu tiến độ ngay khi có thay đổi (0,5 giây sau), không cần bấm "Lưu & thoát".
 // Mỗi bản lưu có số thứ tự rev: điện thoại đang giữ bản cũ sẽ không ghi đè bản mới từ máy tính.
 let BASE = 0, SAVING = false, DIRTY = false;
-function save() { DIRTY = true; clearTimeout(saveTimer); saveTimer = setTimeout(pushState, 500); }
+function save() { if (["lesson", "quiz", "flip"].includes(view)) S.lastActive = today(); DIRTY = true; clearTimeout(saveTimer); saveTimer = setTimeout(pushState, 500); }
 async function pushState(keepalive = false) {
   clearTimeout(saveTimer); saveTimer = null;
   if (SAVING) { saveTimer = setTimeout(pushState, 400); return; }
@@ -1304,7 +1304,7 @@ function vSettings() {
      <div class="bigavatar">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc((displayName() || ME?.email || "?")[0].toUpperCase())}</div>
      <div class="who"><b>${esc(displayName() || "Chưa đặt tên")}</b><span>${esc(ME?.email || "Không lấy được email")}</span>
       <span class="muted small">Đăng nhập bằng ${ME?.provider === "google" ? "Google" : "email"}${ME?.since ? ` · tham gia ${new Date(ME.since).toLocaleDateString("vi-VN")}` : ""}</span></div></div>
-     <div class="row"><a class="btn" href="/auth/signout">Đăng xuất</a><span class="muted small">Muốn dùng tài khoản khác: đăng xuất rồi chọn tài khoản khi đăng nhập lại.</span></div></section>
+     <div class="row"><button data-a="logout">Đăng xuất</button><span class="muted small">Muốn dùng tài khoản khác: đăng xuất rồi chọn tài khoản khi đăng nhập lại.</span></div></section>
    <section class="panel"><h3>Mục tiêu học</h3><p>${esc(focusName())}${S.profile.job ? ` · ${esc(S.profile.job)}` : ""}${subList().length ? `<br><span class="small">${subList().map(esc).join(" · ")}</span>` : ""}${S.profile.interest ? `<br><span class="muted">${esc(S.profile.interest)}</span>` : ""}</p>
     <p class="muted small">${S.profile.minutes} phút/ngày · Trình độ ${S.level} · Khóa ${S.path?.from} → ${S.path?.to}</p>
     <button data-a="editGoal">Sửa mục tiêu và lĩnh vực</button></section>
@@ -1478,7 +1478,17 @@ const isStandalone = () => matchMedia("(display-mode: standalone)").matches || n
 const pushSupported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 let PUSH = {on:false, checked:false};
 async function swReg() { if (!("serviceWorker" in navigator)) return null; try { return await navigator.serviceWorker.register("/sw.js"); } catch (e) { console.warn("SW", e); return null; } }
-async function checkPush() { try { const reg = await navigator.serviceWorker?.getRegistration(); const sub = await reg?.pushManager?.getSubscription(); PUSH = {on:!!sub && Notification.permission === "granted", checked:true}; } catch (e) { PUSH = {on:false, checked:true}; } }
+async function checkPush() { try { const reg = await navigator.serviceWorker?.getRegistration(); const sub = await reg?.pushManager?.getSubscription(); PUSH = {on:!!sub && Notification.permission === "granted", checked:true};
+  // Gắn lại thiết bị cho đúng tài khoản đang đăng nhập (khi đổi tài khoản trên cùng máy)
+  if (PUSH.on) fetch("/api/push", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({subscription:sub.toJSON()})}).catch(() => {});
+} catch (e) { PUSH = {on:false, checked:true}; } }
+// Đăng xuất: gỡ thiết bị khỏi tài khoản này để không còn bị nhắc thay cho tài khoản cũ
+async function logout() {
+  try { const reg = await navigator.serviceWorker?.getRegistration(); const sub = await reg?.pushManager?.getSubscription();
+    if (sub) await timeoutFetch("/api/push", {method:"DELETE", headers:{"Content-Type":"application/json"}, body:JSON.stringify({endpoint:sub.endpoint})}, 5000); } catch (e) {}
+  if (DIRTY || saveTimer) await pushState().catch(() => {});
+  location.href = "/auth/signout";
+}
 function b64ToBytes(b) { const p = "=".repeat((4 - b.length % 4) % 4), s = atob((b + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(s, c => c.charCodeAt(0)); }
 async function enablePush(btn) {
   if (isIOS() && !isStandalone()) return toast("Trên iPhone: mở app bằng Safari, bấm Chia sẻ → Thêm vào MH chính, rồi mở app từ biểu tượng ngoài màn hình để bật thông báo.");
@@ -1509,6 +1519,7 @@ async function testPush(btn) { btn.disabled = true; const r = await fetch("/api/
    HÀNH ĐỘNG (data-a)
    ===================================================================== */
 const ACT = {
+  logout: () => logout(),
   pushAsk: async (v, btn) => { S.profile.pushAsked = true; save(); if (v === "1") await enablePush(btn); else render(); },
   chAgree: () => { S.profile.chatOK = true; save(); chPoll(true); render(); },
   chTab: v => { CH.tab = v; CH.pair = null; CH.msgs = []; CH.last = 0; CH.menu = null; render(); chPoll(true); },
@@ -1872,7 +1883,7 @@ function renderHeader() {
     ${focus ? "" : `<nav class="tabs-top" aria-label="Điều hướng">${tabs.map(([k, t]) => `<a href="#" class="${active === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : k === "chat" && CH.unread ? `<span class="badge">${CH.unread}</span>` : ""}</a>`).join("")}</nav>`}
     <div class="tools">${S.level ? `<span class="lvl" title="Trình độ hiện tại">${S.level}</span>` : ""}
      <div class="usermenu"><button class="avatar" data-a="menu" aria-label="Tài khoản ${esc(ME?.email || "")}">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc(name[0].toUpperCase())}</button>
-     ${UI.menu ? `<div class="menu"><div class="who"><b>${esc(displayName() || "Tài khoản")}</b><span>${esc(ME?.email || "")}</span></div>${ME?.admin ? `<a href="/admin">🛠️ Quản trị</a>` : ""}${S.path ? `<a href="#" data-a="go" data-v="settings">Cài đặt</a>` : ""}<a href="/auth/signout">Đăng xuất</a></div>` : ""}</div></div></div>`;
+     ${UI.menu ? `<div class="menu"><div class="who"><b>${esc(displayName() || "Tài khoản")}</b><span>${esc(ME?.email || "")}</span></div>${ME?.admin ? `<a href="/admin">🛠️ Quản trị</a>` : ""}${S.path ? `<a href="#" data-a="go" data-v="settings">Cài đặt</a>` : ""}<a href="#" data-a="logout">Đăng xuất</a></div>` : ""}</div></div></div>`;
   const bn = $("#bnav");
   if (bn) { bn.hidden = focus; bn.innerHTML = focus ? "" : [...tabs, ["settings", "Cài đặt"]].map(([k, t]) => `<a href="#" class="${view === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : k === "chat" && CH.unread ? `<span class="badge">${CH.unread}</span>` : ""}</a>`).join(""); }
 }

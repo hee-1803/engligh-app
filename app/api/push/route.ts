@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendPush, reminderFor, type Sub } from "@/lib/push";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 async function getUser() {
   const supabase = await createClient();
@@ -33,7 +34,11 @@ export async function POST(req: Request) {
 
   const sub = body.subscription as Sub | undefined;
   if (!sub?.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) return NextResponse.json({ error: "Thiếu thông tin đăng ký" }, { status: 400 });
-  const { error } = await supabase.from("push_subscriptions").upsert(
+  // Một thiết bị chỉ thuộc về tài khoản đang đăng nhập: nếu trước đó thiết bị này gắn với tài khoản khác thì chuyển sang tài khoản này
+  // (tránh: học bằng tài khoản B nhưng vẫn bị nhắc vì thiết bị còn gắn với tài khoản A chưa học)
+  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase;
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) await db.from("push_subscriptions").delete().eq("endpoint", sub.endpoint).neq("user_id", user.id);
+  const { error } = await db.from("push_subscriptions").upsert(
     { user_id: user.id, endpoint: sub.endpoint, keys: sub.keys, user_agent: req.headers.get("user-agent")?.slice(0, 200) ?? null },
     { onConflict: "endpoint" }
   );
