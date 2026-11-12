@@ -425,6 +425,11 @@ let cancelWait = null; // bấm "Dùng bài mẫu" để thôi chờ Gemini
 const normWord = x => Array.isArray(x) ? {w:x[0], ipa:x[1]||"", pos:"", vi:x[2]||"", ex:x[3]||"", ex_vi:""} : x;
 function migrate(d) {
   const s = Object.assign(blank(), d || {});
+  // Gộp flashcard trùng (cũ lưu theo chữ thường đơn giản): giữ thẻ đã ôn nhiều hơn, cộng dồn số lần quên
+  if (s.cards && typeof cardKey === "function") { const m = {};
+    for (const [k, c] of Object.entries(s.cards)) { const nk = cardKey(c?.w?.w || k); const o = m[nk];
+      if (!o) m[nk] = c; else { const keep = (c.rep || 0) > (o.rep || 0) ? c : o, other = keep === c ? o : c; keep.lapses = (keep.lapses || 0) + (other.lapses || 0); keep.example = keep.example || other.example; keep.due = Math.min(keep.due || 0, other.due || 0) || keep.due; m[nk] = keep; } }
+    s.cards = m; }
   if (s.profile) {
     if (Array.isArray(s.profile.fields)) s.profile.fields = s.profile.fields.map(relabel);
     if (Array.isArray(s.profile.subs)) s.profile.subs = s.profile.subs.map(x => { const i = x.indexOf(": "); return i < 0 ? relabel(x) : relabel(x.slice(0, i)) + ": " + relabel(x.slice(i + 2)); });
@@ -524,14 +529,16 @@ const TEACHER = () => `${_t("Bạn là giáo viên tiếng Anh cho người Vi�
 /* =====================================================================
    SPACED REPETITION (SM-2)
    ===================================================================== */
+// Khoá flashcard: "To Introduce", "introduce " và "introduce." là cùng một thẻ (không bị trùng)
+const cardKey = x => String(x || "").normalize("NFC").toLowerCase().replace(/[^\p{L}\p{N}\s/'-]/gu, " ").replace(/\s+/g, " ").trim().replace(/^(to|a|an|the) (?=\S)/, "");
 function addCard(w, src, example) {
-  w = normWord(w); const k = w.w.toLowerCase();
+  w = normWord(w); const k = cardKey(w.w);
   if (!S.cards[k]) S.cards[k] = {w, ef:2.5, int:0, rep:0, lapses:0, due:Date.now(), src, added:today(), example:example || ""};
   else if (example) S.cards[k].example = example;
   return S.cards[k];
 }
 function review(word, q) { // q: 1 Quên · 3 Khó · 4 Nhớ · 5 Dễ
-  const c = S.cards[String(word).toLowerCase()]; if (!c) return;
+  const c = S.cards[cardKey(word)]; if (!c) return;
   if (q < 3) { c.rep = 0; c.int = 0; c.lapses++; c.due = Date.now() + 10 * 60e3; }
   else { c.rep++; c.int = c.rep === 1 ? 1 : c.rep === 2 ? 3 : Math.round(c.int * c.ef);
     if (q === 3) c.int = Math.max(1, Math.round(c.int * .6));
@@ -903,7 +910,7 @@ async function grade3() {
   if (!texts.some(Boolean)) { btn.disabled = false; btn.textContent = _t("Chấm câu"); return toast(_t("Hãy viết ít nhất một câu")); }
   await Promise.all(ws.map(async (w, i) => { if (!texts[i]) return; if (l.sent[i]?.text === texts[i]) return;
     const r = await gradeSentence(w.w, texts[i]); l.sent[i] = {text:texts[i], word:w.w, ...r};
-    if (r.score >= 7) addCard(w, "lesson", r.corrected || texts[i]); else { const c = S.cards[w.w.toLowerCase()]; if (c) c.due = Date.now(); } }));
+    if (r.score >= 7) addCard(w, "lesson", r.corrected || texts[i]); else { const c = S.cards[cardKey(w.w)]; if (c) c.due = Date.now(); } }));
   const v = Object.values(l.sent); l.scores.sentence = Math.round(avg(v.map(x => x.score)) * 10);
   save(); render();
 }
@@ -1064,7 +1071,7 @@ function finishUnit(q) {
   let adj;
   if (p >= 85) { S.difficulty = Math.min(1, S.difficulty + 1); adj = _t("Bạn nắm bài rất tốt. Các buổi tới sẽ khó hơn một chút."); }
   else if (p >= 60) { adj = _t("Bạn đang theo kịp lộ trình. Giữ nguyên nhịp độ."); }
-  else { S.difficulty = Math.max(-1, S.difficulty - 1); S.remedial = wrongWords.map(w => S.cards[w.toLowerCase()]?.w).filter(Boolean); adj = _t("Hệ thống đã thêm 1 buổi ôn tập vào lộ trình để củng cố các từ còn sai."); }
+  else { S.difficulty = Math.max(-1, S.difficulty - 1); S.remedial = wrongWords.map(w => S.cards[cardKey(w)]?.w).filter(Boolean); adj = _t("Hệ thống đã thêm 1 buổi ôn tập vào lộ trình để củng cố các từ còn sai."); }
   const t = {course:S.path.id, unit:q.unit, date:today(), score:p, skills:ss, wrong:wrongWords, dur:Math.round((Date.now() - q.start) / 60000), adj};
   S.tests.push(t); checkBadges(); save();
   Q = null; view = "unitResult"; UI.lastTest = t; render();
@@ -1333,7 +1340,7 @@ async function openWord(el) {
 }
 function drawPop(word, d, loading) {
   if (!POP) return;
-  const hw = d?.headword || word, inCards = !!S.cards[hw.toLowerCase()];
+  const hw = d?.headword || word, inCards = !!S.cards[cardKey(hw)];
   POP.innerHTML = `<div class="row between nowrap"><div><div class="word sm">${esc(hw)}</div><div class="ipa">${esc(d?.ipa || "")}${d?.pos ? ` · <span class="tag">${esc(d.pos)}</span>` : ""}${_t("</div></div>\n     <button class=\"mini\" data-a=\"closePop\" aria-label=\"Đóng\">✕</button></div>\n   ")}${d ? `<p class="meaning sm">${esc(d.meaning)}${d.meaningEn ? _t(" <span class=\"muted small\">(định nghĩa tiếng Anh)</span>") : ""}</p>` : ""}
    ${(d?.examples || []).filter(x => x.en).map(x => `<div class="ex">${esc(x.en)}${x.vi ? `<br><span class="muted">${esc(x.vi)}</span>` : ""}</div>`).join("")}
    ${d?.collocations?.length ? `${_t("<p class=\"muted small\">Hay đi với: ")}${d.collocations.map(esc).join(" · ")}</p>` : ""}
@@ -1376,7 +1383,7 @@ async function openVi(el) {
 }
 function drawViPop(syl, sent, d, loading) {
   if (!POP) return;
-  const inCards = d?.en && !!S.cards[d.en.toLowerCase()];
+  const inCards = d?.en && !!S.cards[cardKey(d.en)];
   POP.dataset.vi = d ? JSON.stringify(d) : "";
   POP.innerHTML = `${_t("<div class=\"row between nowrap\"><div><p class=\"eyebrow\">Tiếng Việt → Tiếng Anh</p><div class=\"word sm\">")}${esc(d?.word_vi || syl)}${_t("</div></div><button class=\"mini\" data-a=\"closePop\" aria-label=\"Đóng\">✕</button></div>\n   ")}${d ? `<div class="en-ans"><b>${esc(d.en)}</b> <button class="mini" data-a="speak" data-v="${esc(d.en)}" aria-label="${_t("Nghe")}">🔊</button></div>
      <div class="ipa">${esc(d.ipa || "")}${d.pos ? ` · <span class="tag">${esc(d.pos)}</span>` : ""}</div>
@@ -1848,7 +1855,9 @@ function render() {
 (async () => {
   applyPrefs();
   const loadJs = (src, ok) => ok ? Promise.resolve() : new Promise(r => { const sc = document.createElement("script"); sc.src = src; sc.onload = r; sc.onerror = r; document.head.appendChild(sc); });
-  await Promise.all([loadJs("/stickers.js?v=1", window.STICKERS), loadJs("/lessonbank.js?v=1", window.LESSON_BANK)]);
+  await Promise.all([loadJs("/stickers.js?v=1", window.STICKERS), loadJs("/lessonbank.js?v=2", window.LESSON_BANK)]);
+  // Bài mới trong kho có thể kèm tên tiếng Anh (topic_en, grammar_en): nạp vào từ điển hiển thị
+  try { Object.values(window.LESSON_BANK || {}).flat().forEach(l => { if (l.topic_en && EN[l.topic] === undefined) EN[l.topic] = l.topic_en; if (l.grammar_en && l.grammar && EN[l.grammar.name] === undefined) EN[l.grammar.name] = l.grammar_en; }); } catch (e) {}
   if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
   swReg().then(checkPush).then(() => { if (view === "settings") render(); });
   const app = $("#app");
