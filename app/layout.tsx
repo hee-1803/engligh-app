@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     // suppressHydrationWarning: app tự gắn cỡ chữ / giao diện sáng-tối lên thẻ <html>
     <html lang="vi" suppressHydrationWarning>
-      <body>{children}<Script src="/install.js?v=2" strategy="afterInteractive" /></body>
+      <body>{children}<Script src="/install.js?v=3" strategy="afterInteractive" /></body>
     </html>
   );
 }

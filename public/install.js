@@ -56,8 +56,16 @@
   addEventListener("appinstalled", () => hide(3650));
 
   // 2) Mở trong Zalo / Facebook: phải chuyển sang trình duyệt
-  if (inApp && mobile) return setTimeout(() => banner(T("Mở bằng trình duyệt để cài app", "Open in your browser to install"), T(ios ? "Bấm ⋯ rồi chọn Mở trong Safari" : "Bấm ⋮ rồi chọn Mở bằng trình duyệt", ios ? "Tap ⋯ then Open in Safari" : "Tap ⋮ then Open in browser"),
-    T("Xem cách", "How"), () => sheet(T("Mở SEED bằng trình duyệt", "Open SEED in your browser"), [T(`Bấm nút <b>⋯</b> hoặc <b>⋮</b> ở góc trên`, `Tap <b>⋯</b> or <b>⋮</b> in the top corner`), T(`Chọn <b>${ios ? "Mở trong Safari" : "Mở bằng trình duyệt"}</b>`, `Choose <b>${ios ? "Open in Safari" : "Open in browser"}</b>`), T("Ở trình duyệt, app sẽ hiện nút cài đặt", "The browser will then offer to install the app")])), 2500);
+  if (inApp && mobile) {
+    const guide = () => sheet(T("Mở SEED bằng trình duyệt", "Open SEED in your browser"), [T(`Bấm nút <b>⋯</b> hoặc <b>⋮</b> ở góc trên`, `Tap <b>⋯</b> or <b>⋮</b> in the top corner`), T(`Chọn <b>${ios ? "Mở trong Safari" : "Mở bằng trình duyệt"}</b>`, `Choose <b>${ios ? "Open in Safari" : "Open in browser"}</b>`), T("Ở trình duyệt, app sẽ hiện nút cài đặt", "The browser will then offer to install the app")]);
+    // Bấm 1 lần: tự nhảy sang Safari / Chrome. Nếu app chặn, mới hiện hướng dẫn.
+    const jump = () => {
+      const u = location.href;
+      location.href = ios ? "x-safari-" + u : "intent://" + u.replace(/^https?:\/\//, "") + "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(u) + ";end";
+      setTimeout(() => { if (!document.hidden) guide(); }, 1600);
+    };
+    return setTimeout(() => banner(T("Mở bằng " + (ios ? "Safari" : "Chrome") + " để cài app", "Open in " + (ios ? "Safari" : "Chrome") + " to install"), T("Bấm Mở, cài 1 chạm", "Tap Open to continue"), T("Mở", "Open"), jump), 1500);
+  }
 
   // 3) iPhone / iPad (Safari): hướng dẫn 2 bước có hình, mũi tên chỉ xuống thanh công cụ
   if (ios) setTimeout(() => banner(T("Thêm SEED vào màn hình chính", "Add SEED to your home screen"), T("Chỉ 2 bước, mở nhanh như app", "Just 2 steps, opens like an app"), T("Thêm", "Add"),
