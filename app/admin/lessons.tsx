@@ -155,7 +155,7 @@ export default function LessonsAdmin() {
           <div className="row sticky-actions">
             <button onClick={check} disabled={!!busy}>{busy === "check" ? "Đang kiểm tra..." : "Kiểm tra"}</button>
             <button onClick={() => save("draft")} disabled={!!busy}>Lưu nháp</button>
-            <button disabled={!ed.id} title={ed.id ? "" : "Lưu nháp trước"} onClick={() => window.open(`/?preview=${ed.id}`, "_blank")}>👀 Xem thử như người học</button>
+            {ed.id ? <a className="btn" href={`/?preview=${encodeURIComponent(String(ed.id))}`}>👀 Xem thử như người học</a> : <button disabled title="Lưu nháp trước">👀 Xem thử như người học</button>}
             <button className="primary" onClick={() => save("published")} disabled={!!busy}>Phát hành</button>
           </div>
         </div>)}
@@ -165,7 +165,7 @@ export default function LessonsAdmin() {
       <div className="adm-table"><table><thead><tr><th>#</th><th>Trình độ</th><th>Bài</th><th>Trạng thái</th><th>Nguồn</th><th /></tr></thead><tbody>
         {shown.map((r) => <tr key={r.id}><td className="muted">{String(r.id).slice(0, 6)}</td><td><span className="tag">{r.level}</span></td><td><b>{r.topic}</b><br /><span className="muted small">{r.topic_en}</span></td>
           <td><span className={`tag ${ST[r.status]?.[1]}`}>{ST[r.status]?.[0]}</span></td><td className="small">{({ file: "Kho có sẵn", admin: "Tự soạn", ai: "AI" } as Record<string, string>)[r.source] || r.source}</td>
-          <td className="row nowrap"><button className="mini" onClick={() => open(r.id)}>Sửa</button><button className="mini" onClick={() => window.open(`/?preview=${r.id}`, "_blank")}>👀</button>
+          <td className="row nowrap"><button className="mini" onClick={() => open(r.id)}>Sửa</button><a className="btn mini" href={`/?preview=${encodeURIComponent(String(r.id))}`}>👀</a>
             {r.status !== "published" ? <button className="mini" onClick={() => setStatus(r.id, "published")}>Phát hành</button> : <button className="mini danger" onClick={() => setStatus(r.id, "hidden")}>Ẩn</button>}</td></tr>)}
       </tbody></table></div>
       {pages > 1 && <div className="pager"><button className="mini" disabled={cur === 0} onClick={() => setPgN(cur - 1)}>‹ Trước</button>
