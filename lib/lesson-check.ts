@@ -51,7 +51,7 @@ export function validate(l: Lesson): string[] {
 }
 
 // So với các bài khác: trả về lỗi (chặn) và cảnh báo (cho qua)
-export function duplicates(l: Lesson, others: { id: number; level: string; topic: string; topic_en?: string; data: Lesson }[]) {
+export function duplicates(l: Lesson, others: { id: number | string; level: string; topic: string; topic_en?: string; data: Lesson }[]) {
   const errors: string[] = [], warns: string[] = [];
   const mine = new Set((l.words || []).map((w) => wkey(w.w)));
   for (const o of others) {

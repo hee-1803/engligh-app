@@ -15,18 +15,18 @@ async function guard() {
   if (!a.ok) return { deny: NextResponse.json({ error: a.configured ? "Bạn không có quyền quản trị" : "Chưa đặt ADMIN_EMAILS" }, { status: 403 }) };
   return { email: a.user?.email || "" };
 }
-type Row = { id: number; level: string; topic: string; topic_en?: string; data: Lesson; status: string; sort: number; source: string; updated_at: string };
+type Row = { id: number | string; level: string; topic: string; topic_en?: string; data: Lesson; status: string; sort: number; source: string; updated_at: string };
 
 export async function GET(req: Request) {
   const g = await guard(); if (g.deny) return g.deny;
   const db = createAdminClient(), id = new URL(req.url).searchParams.get("id");
-  if (id) { const { data } = await db.from("lessons").select("*").eq("id", Number(id)).maybeSingle(); return data ? NextResponse.json(data) : NextResponse.json({ error: "Không tìm thấy" }, { status: 404 }); }
+  if (id) { const { data } = await db.from("lessons").select("*").eq("id", id).maybeSingle(); return data ? NextResponse.json(data) : NextResponse.json({ error: "Không tìm thấy" }, { status: 404 }); }
   const { data, error } = await db.from("lessons").select("id, level, topic, topic_en, status, sort, source, updated_at").order("level").order("sort").order("id");
   if (error) return NextResponse.json({ error: error.message.includes("lessons") ? "Chưa tạo bảng lessons (chạy supabase/lessons.sql)" : error.message }, { status: 500 });
   return NextResponse.json({ lessons: data });
 }
 
-async function check(db: ReturnType<typeof createAdminClient>, l: Lesson, id?: number) {
+async function check(db: ReturnType<typeof createAdminClient>, l: Lesson, id?: number | string) {
   const errors = validate(l);
   const { data } = await db.from("lessons").select("id, level, topic, topic_en, data").neq("status", "hidden");
   const d = duplicates(l, ((data || []) as Row[]).filter((o) => o.id !== id));

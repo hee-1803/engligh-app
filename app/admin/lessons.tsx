@@ -11,7 +11,7 @@ type Lesson = {
   translations: Tr[];
   roleplay: { ai_role: string; user_role: string; setting: string; tasks: string[]; opening: string };
 };
-type Row = { id: number; level: string; topic: string; topic_en?: string; status: string; sort: number; source: string; updated_at: string };
+type Row = { id: number | string; level: string; topic: string; topic_en?: string; status: string; sort: number; source: string; updated_at: string };
 const LEVELS = ["A0", "A1", "A2", "B1", "B2", "C1"];
 const ST: Record<string, [string, string]> = { draft: ["Nháp", ""], published: ["Đã phát hành", "good"], hidden: ["Đã ẩn", "bad"] };
 
@@ -36,7 +36,7 @@ export default function LessonsAdmin() {
   const [lv, setLv] = useState("all");
   const [st, setSt] = useState("all");
   const [pgN, setPgN] = useState(0);
-  const [ed, setEd] = useState<{ id?: number; l: Lesson; src?: string } | null>(null);
+  const [ed, setEd] = useState<{ id?: number | string; l: Lesson; src?: string } | null>(null);
   const [res, setRes] = useState<{ errors: string[]; warns: string[] } | null>(null);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState("");
@@ -47,7 +47,7 @@ export default function LessonsAdmin() {
 
   const set = (f: (l: Lesson) => void) => setEd((e) => { if (!e) return e; const l = structuredClone(e.l); f(l); return { ...e, l }; });
 
-  async function open(id: number) { setBusy("open"); try { const j = await api(undefined, "?id=" + id); setEd({ id, l: { ...blank(j.level), ...j.data, level: j.level, topic: j.topic, topic_en: j.topic_en || j.data.topic_en || "" } }); setRes(null); setMsg(""); scrollTo({ top: 0 }); } catch (e) { setMsg("✗ " + (e as Error).message); } setBusy(""); }
+  async function open(id: number | string) { setBusy("open"); try { const j = await api(undefined, "?id=" + id); setEd({ id, l: { ...blank(j.level), ...j.data, level: j.level, topic: j.topic, topic_en: j.topic_en || j.data.topic_en || "" } }); setRes(null); setMsg(""); scrollTo({ top: 0 }); } catch (e) { setMsg("✗ " + (e as Error).message); } setBusy(""); }
   async function check() { if (!ed) return; setBusy("check"); try { setRes(await api({ action: "check", lesson: ed.l, id: ed.id })); } catch (e) { setMsg("✗ " + (e as Error).message); } setBusy(""); }
   async function save(status: "draft" | "published") {
     if (!ed) return; setBusy(status);
@@ -56,7 +56,7 @@ export default function LessonsAdmin() {
     } catch (e) { setMsg("✗ " + (e as Error).message); }
     setBusy("");
   }
-  async function setStatus(id: number, status: string) { try { const j = await api({ action: "status", id, status }); setMsg(j.error ? "✗ " + j.error + (j.errors ? ": " + j.errors.join("; ") : "") : "✓ Đã cập nhật"); load(); } catch (e) { setMsg("✗ " + (e as Error).message); } }
+  async function setStatus(id: number | string, status: string) { try { const j = await api({ action: "status", id, status }); setMsg(j.error ? "✗ " + j.error + (j.errors ? ": " + j.errors.join("; ") : "") : "✓ Đã cập nhật"); load(); } catch (e) { setMsg("✗ " + (e as Error).message); } }
   async function importFile() {
     setBusy("import");
     try {
@@ -163,7 +163,7 @@ export default function LessonsAdmin() {
       <div className="row"><select value={lv} onChange={(e) => { setLv(e.target.value); setPgN(0); }}><option value="all">Mọi trình độ</option>{LEVELS.map((k) => <option key={k}>{k}</option>)}</select>
         <select value={st} onChange={(e) => { setSt(e.target.value); setPgN(0); }}><option value="all">Mọi trạng thái</option><option value="draft">Nháp</option><option value="published">Đã phát hành</option><option value="hidden">Đã ẩn</option></select></div>
       <div className="adm-table"><table><thead><tr><th>#</th><th>Trình độ</th><th>Bài</th><th>Trạng thái</th><th>Nguồn</th><th /></tr></thead><tbody>
-        {shown.map((r) => <tr key={r.id}><td>{r.id}</td><td><span className="tag">{r.level}</span></td><td><b>{r.topic}</b><br /><span className="muted small">{r.topic_en}</span></td>
+        {shown.map((r) => <tr key={r.id}><td className="muted">{String(r.id).slice(0, 6)}</td><td><span className="tag">{r.level}</span></td><td><b>{r.topic}</b><br /><span className="muted small">{r.topic_en}</span></td>
           <td><span className={`tag ${ST[r.status]?.[1]}`}>{ST[r.status]?.[0]}</span></td><td className="small">{({ file: "Kho có sẵn", admin: "Tự soạn", ai: "AI" } as Record<string, string>)[r.source] || r.source}</td>
           <td className="row nowrap"><button className="mini" onClick={() => open(r.id)}>Sửa</button><button className="mini" onClick={() => window.open(`/?preview=${r.id}`, "_blank")}>👀</button>
             {r.status !== "published" ? <button className="mini" onClick={() => setStatus(r.id, "published")}>Phát hành</button> : <button className="mini danger" onClick={() => setStatus(r.id, "hidden")}>Ẩn</button>}</td></tr>)}
