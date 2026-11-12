@@ -80,7 +80,7 @@ export default function LoginPage() {
   return (
     <main className="login">
       <section className="login-art">
-        <p className="eyebrow">Lộ Trình Tiếng Anh</p>
+        <p className="eyebrow">SEED</p>
         <h1>Mỗi ngày 30 phút, nói tiếng Anh tự tin hơn</h1>
         <div className="login-stage" aria-hidden="true">
           <Mascot mood="cheer" size={170} className="bob" />
@@ -101,7 +101,7 @@ export default function LoginPage() {
       <section className="login-form">
         <div className="login-card">
           <div className="row nowrap">
-            {/* eslint-disable-next-line @next/next/no-img-element */}<img src="/logo.png?v=3" alt="" width={60} height={60} className="logo-lg" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}<img src="/logo.png?v=5" alt="" width={60} height={60} className="logo-lg" />
             <div>
               <h2>Chào mừng bạn!</h2>
               <p className="muted small">Đăng nhập để lưu tiến độ học trên mọi thiết bị.</p>

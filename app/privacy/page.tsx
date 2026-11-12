@@ -1,11 +1,11 @@
 import Legal, { CONTACT } from "../legal";
 
-export const metadata = { title: "Chính sách quyền riêng tư · Lộ Trình Tiếng Anh" };
+export const metadata = { title: "Chính sách quyền riêng tư · SEED" };
 
 export default function Privacy() {
   return (
     <Legal title="Chính sách quyền riêng tư" updated="10/11/2026">
-      <p>Lộ Trình Tiếng Anh (&quot;ứng dụng&quot;) là ứng dụng học tiếng Anh cá nhân hóa. Trang này giải thích ứng dụng thu thập dữ liệu gì, dùng để làm gì và bạn có quyền gì.</p>
+      <p>SEED (&quot;ứng dụng&quot;) là ứng dụng học tiếng Anh cá nhân hóa. Trang này giải thích ứng dụng thu thập dữ liệu gì, dùng để làm gì và bạn có quyền gì.</p>
 
       <h2>1. Dữ liệu chúng tôi thu thập</h2>
       <ul>

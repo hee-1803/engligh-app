@@ -5,10 +5,10 @@ self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener("push", (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data && e.data.text() }; }
-  e.waitUntil(self.registration.showNotification(d.title || "Lộ Trình Tiếng Anh", {
+  e.waitUntil(self.registration.showNotification(d.title || "SEED", {
     body: d.body || "Đến giờ học tiếng Anh rồi!",
-    icon: "/icon-192.png?v=3",
-    badge: "/icon-badge.png?v=3",
+    icon: "/icon-192.png?v=5",
+    badge: "/icon-badge.png?v=5",
     tag: "nhac-hoc",
     renotify: true,
     data: { url: d.url || "/" },

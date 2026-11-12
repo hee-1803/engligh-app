@@ -79,7 +79,7 @@ export default function AdminPage() {
 
   return (
     <main className="adm">
-      <div className="row between"><div><p className="eyebrow">Lộ Trình · Quản trị</p><h1>Trang quản trị</h1></div>
+      <div className="row between"><div><p className="eyebrow">SEED · Quản trị</p><h1>Trang quản trị</h1></div>
         <div className="row"><button onClick={load}>↻ Tải lại</button><a className="btn" href="/">← Về app</a></div></div>
 
       <div className="adm-stats">{cards.map(([t, n, sub]) => <div key={t} className="panel"><span className="muted small">{t}</span><b>{n}</b>{sub && <span className="muted small">{sub}</span>}</div>)}</div>

@@ -1,4 +1,4 @@
-# Bộ nhãn dán (SVG 64x64) và linh vật "Lô". Chạy file này để sinh ra:
+# Bộ nhãn dán (SVG 64x64) và linh vật dê của SEED. Chạy file này để sinh ra:
 #   public/stickers.js  (dùng trong app)   ·  lib/stickers.ts (dùng ở trang đăng nhập)
 import json, os
 
@@ -30,31 +30,45 @@ S["pill"] = svg('<rect x="8" y="22" width="48" height="22" rx="11" transform="ro
 S["suitcase"] = svg('<rect x="12" y="16" width="40" height="40" rx="7" fill="#4fd1a5"/><path d="M24 16 V10 H40 V16" fill="none"/><path d="M22 24 V48 M42 24 V48" stroke="#fff" stroke-width="3"/><circle cx="20" cy="58" r="3" fill="'+O+'"/><circle cx="44" cy="58" r="3" fill="'+O+'"/>')
 S["sparkle"] = svg('<path d="M32 6 Q35 28 58 32 Q35 36 32 58 Q29 36 6 32 Q29 28 32 6 Z" fill="#ffc94a"/><path d="M52 8 Q53 14 58 15 Q53 16 52 22 Q51 16 46 15 Q51 14 52 8 Z" fill="#ff9ec7" stroke-width="2"/>')
 
-# Linh vật "Lô": giọt nước xanh mòng két, bụng sáng, lá vàng trên đầu
+# Linh vật của SEED: chú dê nhỏ sừng dài cong, có mầm cây giữa hai sừng, khăn quàng xanh lá
 def mascot(mood):
     eyes = {
-      "happy": '<path d="M44 58 Q48 53 52 58 M68 58 Q72 53 76 58" fill="none" stroke-width="3.5"/>',
-      "cheer": '<circle cx="48" cy="57" r="4.5" fill="'+O+'" stroke="none"/><circle cx="72" cy="57" r="4.5" fill="'+O+'" stroke="none"/><circle cx="49.5" cy="55.5" r="1.5" fill="#fff" stroke="none"/><circle cx="73.5" cy="55.5" r="1.5" fill="#fff" stroke="none"/>',
-      "think": '<circle cx="48" cy="57" r="4" fill="'+O+'" stroke="none"/><path d="M68 57 H76" stroke-width="3.5"/>',
+      "happy": '<path d="M45 60 Q49 55 53 60 M67 60 Q71 55 75 60" fill="none" stroke-width="3.5"/>',
+      "cheer": '<ellipse cx="49" cy="59" rx="4.5" ry="5.5" fill="'+O+'" stroke="none"/><ellipse cx="71" cy="59" rx="4.5" ry="5.5" fill="'+O+'" stroke="none"/><circle cx="50.5" cy="57" r="1.7" fill="#fff" stroke="none"/><circle cx="72.5" cy="57" r="1.7" fill="#fff" stroke="none"/>',
+      "think": '<ellipse cx="49" cy="59" rx="4" ry="5" fill="'+O+'" stroke="none"/><path d="M67 59 H75" stroke-width="3.5"/>',
     }[mood]
     mouth = {
-      "happy": '<path d="M52 68 Q60 76 68 68" fill="#ff7a59" stroke-width="3"/>',
-      "cheer": '<path d="M50 66 Q60 82 70 66 Z" fill="#ff7a59" stroke-width="3"/>',
-      "think": '<path d="M55 71 Q60 69 65 71" fill="none" stroke-width="3"/>',
+      "happy": '<path d="M60 72 V75 M54 76 Q57 79 60 75 Q63 79 66 76" fill="none" stroke-width="2.8"/>',
+      "cheer": '<path d="M60 72 V75"/><path d="M53 76 Q60 86 67 76 Z" fill="#ff7a8a" stroke-width="2.8"/>',
+      "think": '<path d="M60 72 V75 M55 78 Q60 76 65 78" fill="none" stroke-width="2.8"/>',
     }[mood]
     arms = {
-      "happy": '<path d="M24 74 Q16 80 20 88" fill="none" stroke-width="4"/><path d="M96 74 Q104 80 100 88" fill="none" stroke-width="4"/>',
-      "cheer": '<path d="M26 66 Q14 56 16 42" fill="none" stroke-width="4"/><path d="M94 66 Q106 56 104 42" fill="none" stroke-width="4"/><circle cx="16" cy="40" r="4" fill="#ffc94a"/><circle cx="104" cy="40" r="4" fill="#ffc94a"/>',
-      "think": '<path d="M24 74 Q16 80 20 88" fill="none" stroke-width="4"/><path d="M92 76 Q84 82 74 76" fill="none" stroke-width="4"/>',
+      "happy": '<path d="M36 92 Q28 96 30 104" fill="none" stroke-width="4"/><path d="M84 92 Q92 96 90 104" fill="none" stroke-width="4"/>',
+      "cheer": '<path d="M36 90 Q24 82 24 70" fill="none" stroke-width="4"/><path d="M84 90 Q96 82 96 70" fill="none" stroke-width="4"/><circle cx="24" cy="68" r="4" fill="#5c4a3d"/><circle cx="96" cy="68" r="4" fill="#5c4a3d"/>',
+      "think": '<path d="M36 92 Q28 96 30 104" fill="none" stroke-width="4"/><path d="M84 94 Q80 88 70 86" fill="none" stroke-width="4"/>',
     }[mood]
-    extra = '<g stroke-width="2.5"><circle cx="100" cy="22" r="10" fill="#fff"/><path d="M97 19 Q100 15 103 19 Q103 22 100 23 V25" fill="none"/><circle cx="100" cy="28" r="0.8" fill="'+O+'"/></g>' if mood == "think" else ''
+    extra = '<g stroke-width="2.5"><circle cx="104" cy="22" r="10" fill="#fff"/><path d="M101 19 Q104 15 107 19 Q107 22 104 23 V25" fill="none"/><circle cx="104" cy="28" r="0.8" fill="'+O+'"/></g>' if mood == "think" else ''
     return svg(
-      '<path d="M60 20 Q64 8 76 6 Q74 18 60 20 Z" fill="#ffc94a" stroke-width="3"/><path d="M60 20 V26" fill="none"/>'
-      '<path d="M60 26 Q92 26 98 64 Q102 104 60 106 Q18 104 22 64 Q28 26 60 26 Z" fill="#2bb3a3"/>'
-      '<path d="M60 64 Q84 64 84 88 Q82 102 60 102 Q38 102 36 88 Q36 64 60 64 Z" fill="#c9f2ea" stroke="none"/>'
-      '<circle cx="40" cy="68" r="5" fill="#ff9ec7" stroke="none" opacity=".8"/><circle cx="80" cy="68" r="5" fill="#ff9ec7" stroke="none" opacity=".8"/>'
-      + eyes + mouth + arms + extra +
-      '<path d="M46 104 Q46 112 40 112 M74 104 Q74 112 80 112" fill="none" stroke-width="4"/>', vb="0 0 120 120")
+      ''
+      # sừng xoắn tròn hai bên (có vân)
+      + '<path d="M44 38 Q30 18 18 26 Q8 34 14 46 Q20 54 28 48 Q32 42 26 38 Q22 36 20 40" fill="#c9a27a" stroke-width="3"/>'
+      + '<path d="M76 38 Q90 18 102 26 Q112 34 106 46 Q100 54 92 48 Q88 42 94 38 Q98 36 100 40" fill="#c9a27a" stroke-width="3"/>'
+      + '<path d="M24 26 l2 6 M14 36 l6 2 M96 26 l-2 6 M106 36 l-6 2" stroke-width="2" opacity=".5"/>'
+      # mầm cây giữa hai sừng
+      + '<path d="M60 30 V20" fill="none" stroke="#2e8b57" stroke-width="3"/><path d="M60 22 Q50 12 44 16 Q50 26 60 22 Z" fill="#6fd26a" stroke-width="2.5"/><path d="M60 20 Q70 8 77 12 Q71 23 60 20 Z" fill="#8fe36a" stroke-width="2.5"/>'
+      # tai cụp
+      + '<path d="M34 50 Q14 50 10 62 Q24 66 36 58 Z" fill="#f6dd8f"/><path d="M86 50 Q106 50 110 62 Q96 66 84 58 Z" fill="#f6dd8f"/><path d="M30 55 Q20 57 17 61 M90 55 Q100 57 103 61" fill="none" stroke="#f2a7b5" stroke-width="3"/>'
+      # thân + đầu
+      + '<path d="M60 84 Q90 84 92 104 Q90 116 60 116 Q30 116 28 104 Q30 84 60 84 Z" fill="#f6dd8f"/>'
+      + '<path d="M60 30 Q88 30 88 60 Q88 86 60 88 Q32 86 32 60 Q32 30 60 30 Z" fill="#fbeaa8"/>'
+      # mõm, mũi, má
+      + '<path d="M47 70 Q47 62 60 62 Q73 62 73 70 Q73 82 60 83 Q47 82 47 70 Z" fill="#fff3cf" stroke="none"/><path d="M56 67 Q60 65 64 67 Q63 71 60 72 Q57 71 56 67 Z" fill="#7a5c4f" stroke-width="2"/>'
+      + '<circle cx="40" cy="68" r="5" fill="#ffb3c1" stroke="none" opacity=".8"/><circle cx="80" cy="68" r="5" fill="#ffb3c1" stroke="none" opacity=".8"/>'
+      # chòm râu + khăn quàng xanh lá
+      + '<path d="M56 86 Q60 98 64 86" fill="#e9dccb" stroke-width="2.5"/>'
+      + '<path d="M36 84 Q60 94 84 84 L84 90 Q60 100 36 90 Z" fill="#3fae7a" stroke-width="2.5"/><path d="M74 90 L80 104 L70 101 Z" fill="#3fae7a" stroke-width="2.5"/>'
+      + eyes + '<g fill="none" stroke-width="2.2"><circle cx="49" cy="59" r="9"/><circle cx="71" cy="59" r="9"/><path d="M58 58 Q60 56 62 58"/></g>' + mouth + arms + extra
+      + '<path d="M48 114 V118 M72 114 V118" stroke-width="5"/>', vb="0 0 120 120")
 
 M = {k: mascot(k) for k in ["happy", "cheer", "think"]}
 here = os.path.dirname(os.path.abspath(__file__)); root = os.path.dirname(here)

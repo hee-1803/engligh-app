@@ -1,4 +1,4 @@
-/* Lộ Trình Tiếng Anh — ứng dụng học tiếng Anh cá nhân hóa
+/* SEED — ứng dụng học tiếng Anh cá nhân hóa
    Dữ liệu: /api/state (Supabase). AI: /api/ai (Gemini qua server). */
 (() => {
 "use strict";
@@ -1300,7 +1300,7 @@ function vHistory() {
 const APP_VERSION = "1.0";
 const SET_PAGES = {
   goal:["🎯", "Mục tiêu học"], remind:["🔔", "Nhắc học & thông báo"], look:["🎨", "Giao diện & ngày sinh"], voice:["🔊", "Giọng đọc & micro"],
-  help:["📖", "Hướng dẫn sử dụng"], feedback:["💬", "Gửi phản hồi"], about:["🌱", "Về Lộ Trình & người sáng lập"], data:["🗂️", "Dữ liệu"],
+  help:["📖", "Hướng dẫn sử dụng"], feedback:["💬", "Gửi phản hồi"], about:["🌱", "Về SEED & người sáng lập"], data:["🗂️", "Dữ liệu"],
 };
 function setRow(k, value = "") { const [ic, t] = SET_PAGES[k]; return `<button class="setitem" data-a="setPage" data-v="${k}"><span class="si-ic">${ic}</span><span class="si-t">${t}</span><span class="si-v">${value}</span><span class="si-go">›</span></button>`; }
 function vSettings() {
@@ -1314,7 +1314,7 @@ function vSettings() {
    <div class="setlist">${setRow("goal", esc(focusName()))}${setRow("remind", rc.on ? (PUSH.on ? rc.start : "Chưa bật trên máy này") : "Đang tắt")}${setRow("look", esc(FEST[festiveTheme()]?.name || "Mặc định"))}${setRow("voice")}</div>
    <div class="setlist">${setRow("help")}${setRow("feedback")}${setRow("about")}</div>
    <div class="setlist">${setRow("data")}<button class="setitem" data-a="logout"><span class="si-ic">🚪</span><span class="si-t danger-t">Đăng xuất</span><span class="si-v"></span><span class="si-go"></span></button></div>
-   <p class="muted small center">Lộ Trình · phiên bản ${APP_VERSION} · <a href="/privacy">Quyền riêng tư</a></p></div>`;
+   <p class="muted small center">SEED · phiên bản ${APP_VERSION} · <a href="/privacy">Quyền riêng tư</a></p></div>`;
 }
 function setPage(pg) {
   const fs = pref("ep_fs") || "m", th = pref("ep_theme") || "auto", rc = remindCfg();
@@ -1344,25 +1344,25 @@ function setPage(pg) {
     ${UI.rec === "test" ? `<p class="live" id="live">Hãy nói một câu tiếng Anh...</p>` : ""}</section>`;
   if (pg === "help") return HELP.map(([q, a], i) => `<details class="panel help" ${i === 0 ? "open" : ""}><summary>${q}</summary><div class="small">${a}</div></details>`).join("");
   if (pg === "feedback") return `<section class="panel">
-    <p>Bạn thấy Lộ Trình thế nào? Mọi góp ý đều được đọc và dùng để làm app tốt hơn 💚</p>
+    <p>Bạn thấy SEED thế nào? Mọi góp ý đều được đọc và dùng để làm app tốt hơn 💚</p>
     <div class="setrow"><span>Loại</span>${seg([["idea", "💡 Góp ý"], ["bug", "🐞 Báo lỗi"], ["love", "💚 Khen"], ["other", "Khác"]], UI.fbKind || "idea", "fbKind")}</div>
     <div class="setrow"><span>Đánh giá</span><div class="row stars">${[1, 2, 3, 4, 5].map(n => `<button class="star ${n <= (UI.fbRate || 0) ? "on" : ""}" data-a="fbRate" data-v="${n}" aria-label="${n} sao">★</button>`).join("")}</div></div>
     <label for="fbMsg">Nội dung</label><textarea id="fbMsg" rows="5" maxlength="2000" placeholder="Bạn thích điều gì, gặp lỗi ở đâu, muốn có thêm tính năng gì..."></textarea>
     <button class="primary" data-a="fbSend" ${UI.fbBusy ? "disabled" : ""}>${UI.fbBusy ? "Đang gửi..." : "Gửi phản hồi"}</button></section>`;
   if (pg === "about") return `<section class="panel about center">
-    <img src="/logo.png?v=3" alt="" width="96" height="96" class="logo-lg"><h2>Lộ Trình</h2><p class="muted">Học tiếng Anh theo đúng mục tiêu của bạn, mỗi ngày một chút.</p></section>
+    <img src="/logo-full.png?v=5" alt="SEED" width="240" height="240" class="logo-lg"><h2>SEED</h2><p class="muted">Học tiếng Anh theo đúng mục tiêu của bạn, mỗi ngày một chút.</p></section>
    <section class="panel founder"><p class="eyebrow">Người sáng lập</p><h3>${esc(FOUNDER.name)}</h3>
     <p>${FOUNDER.bio}</p>
     <div class="row">${FOUNDER.loves.map(t => `<span class="tag">${t}</span>`).join("")}</div>
     <blockquote>“${FOUNDER.quote}”</blockquote></section>
-   <section class="panel"><p class="small muted">Phiên bản ${APP_VERSION} · Sinh nhật Lộ Trình cùng ngày với người sáng lập (18/3).<br><a href="/privacy">Chính sách quyền riêng tư</a> · <a href="/data-deletion">Xoá dữ liệu</a></p></section>`;
+   <section class="panel"><p class="small muted">Phiên bản ${APP_VERSION} · Sinh nhật SEED cùng ngày với người sáng lập (18/3).<br><a href="/privacy">Chính sách quyền riêng tư</a> · <a href="/data-deletion">Xoá dữ liệu</a></p></section>`;
   if (pg === "data") return `<section class="panel"><p>Xoá toàn bộ tiến độ học để bắt đầu lại từ đầu. Không thể hoàn tác.</p><button class="danger" data-a="reset" id="resetBtn">Xóa tiến độ và làm lại</button></section>`;
   return "";
 }
 // Thông tin người sáng lập (sửa tại đây)
 const FOUNDER = {
   name: "Hồ Quốc Huy",
-  bio: "Một người yêu cái đẹp: yêu thiên nhiên, cây cối, những bức tranh và từng nốt nhạc, và yêu con người. Lộ Trình được tạo ra từ mong muốn giúp mỗi người học tiếng Anh nhẹ nhàng như chăm một mầm cây: mỗi ngày tưới một chút, rồi đến lúc sẽ nở hoa.",
+  bio: "Một người yêu cái đẹp: yêu thiên nhiên, cây cối, những bức tranh và từng nốt nhạc, và yêu con người. SEED được tạo ra từ mong muốn giúp mỗi người học tiếng Anh nhẹ nhàng như chăm một mầm cây: mỗi ngày tưới một chút, rồi đến lúc sẽ nở hoa.",
   loves: ["🌿 Thiên nhiên", "🎨 Hội hoạ", "🎵 Âm nhạc", "🎻 Nhạc cụ", "💚 Con người"],
   quote: "Ngôn ngữ cũng như âm nhạc: không cần hoàn hảo, chỉ cần mỗi ngày được cất lên.",
 };
@@ -1913,7 +1913,7 @@ function renderHeader() {
   const tabs = [["home", "Trang chủ"], ["path", "Lộ trình"], ["review", "Ôn tập"], ["chat", "Cộng đồng"], ["history", "Lịch sử"]];
   const due = dueCards().length, name = displayName() || ME?.email || "Bạn";
   const active = view === "settings" ? "" : view;
-  h.innerHTML = `<div class="hin"><a href="#" class="brand" data-a="go" data-v="home"><img class="logo" src="/logo.png?v=3" alt="" width="40" height="40"><span><b>Lộ Trình</b><small>Tiếng Anh cá nhân hóa</small></span></a>
+  h.innerHTML = `<div class="hin"><a href="#" class="brand" data-a="go" data-v="home"><img class="logo" src="/logo.png?v=5" alt="" width="40" height="40"><span><b>SEED</b><small>Tiếng Anh cá nhân hóa</small></span></a>
     ${focus ? "" : `<nav class="tabs-top" aria-label="Điều hướng">${tabs.map(([k, t]) => `<a href="#" class="${active === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : k === "chat" && CH.unread ? `<span class="badge">${CH.unread}</span>` : ""}</a>`).join("")}</nav>`}
     <div class="tools">${S.level ? `<span class="lvl" title="Trình độ hiện tại">${S.level}</span>` : ""}
      <div class="usermenu"><button class="avatar" data-a="menu" aria-label="Tài khoản ${esc(ME?.email || "")}">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc(name[0].toUpperCase())}</button>

@@ -6,7 +6,7 @@ export const PROVIDERS: Provider[] = [
     model: process.env.GROQ_MODEL || "openai/gpt-oss-120b" },
   { name: "OpenRouter", url: "https://openrouter.ai/api/v1/chat/completions", key: process.env.OPENROUTER_API_KEY,
     model: process.env.OPENROUTER_MODEL || "openrouter/free",
-    headers: { "X-Title": "Lo Trinh Tieng Anh" } },
+    headers: { "X-Title": "SEED English" } },
 ].filter((p) => p.key);
 
 // Model miễn phí hay bị đổi tên/ngừng: khi model đang dùng báo 404, tự tìm model khác còn dùng được
