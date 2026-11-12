@@ -75,6 +75,28 @@ const SPICY: Record<string, [string, string][]> = {
   ],
 };
 
+// Bản tiếng Anh (giao diện mặc định là tiếng Anh): viết lại cho tự nhiên, không dịch từng chữ
+const SPICY_EN: Record<string, [string, string][]> = {
+  cards: [
+    ["📇 Your flashcards are fossilising!", "Your flashcards have been waiting so long they're growing moss. How will those words ever stick?"],
+    ["🃏 Your words are gathering dust", "{due} flashcards are waiting for you. Has your brain slipped back to A0 lately?"],
+  ],
+  unfinished: [
+    ["🛑 You broke the 6-step chain!", "Quit halfway through a lesson to scroll TikTok? Finish today's 6 steps, no slacking!"],
+  ],
+  test: [
+    ["🫣 Life without subtitles", "Your future's as blurry as English without subtitles. Take today's test and see clearly!"],
+  ],
+  any: [
+    ["🤖 The AI thinks you've gone soft!", "Your AI role-play partner is all set up and you're ignoring it? Go spar with it in English before the robots start looking down on you!"],
+    ["✈️ Still stuck on \"I'm fine, thank you\"?", "Don't let your vocabulary stop at a primary-school textbook. Open the app and grab some survival words!"],
+    ["📉 Planning to stay at {level} forever?", "A 3-month course turns into 3 years if you keep skipping. Open the app and level up!"],
+    ["🗣️ Your English needs a rescue", "Pronunciation like that sends people running. Come practise and save your listeners' ears!"],
+    ["🕸️ Cobwebs are forming in here!", "You've swiped your screen to the bone, yet you can't tap this app's icon even once?"],
+    ["🛑 The app wants to resign!", "Serving such a lazy owner is too much to bear. Come study and convince me to stay."],
+    ["🕯️ Did you install me just to admire me?", "Open me up and learn a few words so I don't feel so lonely!"],
+  ],
+};
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function reminderFor(data: any) {
   const sessions: { date: string; course?: string; remedial?: boolean }[] = data?.sessions || [];
@@ -85,6 +107,8 @@ export function reminderFor(data: any) {
   const testDue = done > 0 && done % 5 === 0 && (data?.tests || []).filter((t: { course?: string }) => t.course === courseId).length < done / 5;
   // Đúng ngày sinh nhật: lời nhắc chúc mừng thay vì "chê"
   const bd = String(data?.profile?.birthday || "").slice(-5);
+  const en = (data?.profile?.lang || "en") === "en", nm = data?.profile?.name || "";
+  if (en && bd && bd === todayVN().slice(5)) return { title: `🎂 Happy birthday${nm ? " " + nm : ""}!`, body: "Today is all about you. Open the app for a little surprise, then enjoy a light lesson. Happy birthday! 🎉", url: "/" };
   if (bd && bd === todayVN().slice(5)) {
     return { title: `🎂 Chúc mừng sinh nhật${data?.profile?.name ? " " + data.profile.name : ""}!`,
       body: "Hôm nay là ngày của bạn. Mở app xem món quà nhỏ, rồi học một bài thật nhẹ nhàng nhé. Happy birthday! 🎉", url: "/" };
@@ -92,12 +116,18 @@ export function reminderFor(data: any) {
   if (data?.profile?.remindTone !== "soft") {
     const unfinished = !!(data?.current && data.current.step > 0);
     // Ưu tiên lời nhắc đúng tình trạng (khoảng 60%), còn lại lấy câu chung cho đỡ nhàm
-    const pool = [...(unfinished ? SPICY.unfinished : []), ...(testDue ? SPICY.test : []), ...(due >= 5 ? SPICY.cards : [])];
-    const list = pool.length && Math.random() < 0.6 ? pool : SPICY.any;
+    const SP = en ? SPICY_EN : SPICY;
+    const pool2 = [...(unfinished ? SP.unfinished : []), ...(testDue ? SP.test : []), ...(due >= 5 ? SP.cards : [])];
+    const list = pool2.length && Math.random() < 0.6 ? pool2 : SP.any;
     const [t, b] = list[Math.floor(Math.random() * list.length)];
     const fill = (x: string) => x.replace("{due}", String(due)).replace("{level}", data?.level || "A0");
     return { title: fill(t), body: fill(b), url: "/" };
   }
+  if (en) return {
+    title: "You haven't studied English today",
+    body: `${nm ? nm + ", " : ""}${testDue ? "your unit test is waiting" : `lesson ${done + 1} is ready`}${due ? `, plus ${due} flashcards to review` : ""}. It only takes ${data?.profile?.minutes || 30} minutes!`,
+    url: "/",
+  };
   return {
     title: "Hôm nay bạn chưa học tiếng Anh",
     body: `${name}${testDue ? "bài kiểm tra định kỳ đang chờ bạn" : `buổi ${done + 1} đã sẵn sàng`}${due ? `, và ${due} thẻ flashcard cần ôn` : ""}. Chỉ cần ${data?.profile?.minutes || 30} phút!`,

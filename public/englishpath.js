@@ -3,57 +3,70 @@
 (() => {
 "use strict";
 
+/* ===================== NGÔN NGỮ GIAO DIỆN =====================
+   Mặc định tiếng Anh. Cài đặt → Language → Tiếng Việt để đổi (lưu theo máy, tải lại trang).
+   Nội dung học (nghĩa tiếng Việt của từ, câu dịch) giữ nguyên. */
+const LANG = (() => { try { return localStorage.getItem("ep_lang") || "en"; } catch (e) { return "en"; } })();
+const EN = {"Chưa đăng nhập": "You're not logged in", "Không vào được phòng này": "You can't enter this room", "Cuộc trò chuyện này đã kết thúc": "This chat has ended", "Không gửi được tin nhắn": "Couldn't send the message", "Bạn gửi hơi nhanh, nghỉ một chút rồi gửi tiếp nhé.": "You're sending messages a bit fast. Take a short break and try again.", "Chờ 2 giây giữa hai tin nhắn nhé.": "Please wait 2 seconds between messages.", "Định dạng ghi âm không hỗ trợ": "This recording format isn't supported", "Đoạn ghi âm quá dài (tối đa khoảng 60 giây)": "The recording is too long (about 60 seconds max)", "Tin nhắn trống": "The message is empty", "Để giữ ẩn danh và an toàn, không gửi số điện thoại, email, đường link hay tài khoản mạng xã hội.": "To keep everyone anonymous and safe, don't send phone numbers, emails, links or social media accounts.", "Tin nhắn có từ ngữ không phù hợp. Hãy trò chuyện lịch sự nhé.": "Your message contains inappropriate language. Please keep it polite.", "Chỉ thu hồi được tin nhắn của chính bạn": "You can only unsend your own messages", "Bạn đang bị tạm khoá trò chuyện do bị báo cáo vi phạm.": "You're temporarily banned from chat because of reports against you.", "Không tìm thấy cuộc trò chuyện": "Chat not found", "Không tìm thấy tin nhắn": "Message not found", "Đây là tin nhắn của bạn": "This is your own message", "Không tìm thấy": "Not found", "Yêu cầu không hợp lệ": "Invalid request", "Phản hồi trống": "Your feedback is empty", "Bạn đã gửi nhiều phản hồi, thử lại sau ít phút nhé": "You've sent a lot of feedback. Please try again in a few minutes", "Máy chủ chưa cấu hình SUPABASE_SERVICE_ROLE_KEY": "The server isn't fully set up yet (SUPABASE_SERVICE_ROLE_KEY)", "Thiết bị này chưa bật thông báo": "Notifications aren't on for this device", "Bạn đã gửi tin nhắn giọng nói": "You sent a voice message", "Đã thu hồi một tin nhắn": "A message was unsent", "(tin đã ẩn)": "(message hidden)", "🎤 Tin nhắn giọng nói": "🎤 Voice message", "Bạn: ": "You: ","Nghe":"Listening","Mới bắt đầu":"Beginner","Sơ cấp":"Elementary","Sơ trung cấp":"Pre-intermediate","Trung cấp":"Intermediate","Trung cao cấp":"Upper-intermediate","Cao cấp":"Advanced","Giao tiếp":"Everyday conversation","Công việc":"Work","Du lịch":"Travel","Thi cử":"Exams","Họp nhóm, báo cáo tiến độ":"Team meetings and progress updates","Viết email công việc":"Writing work emails","Thuyết trình":"Presentations","Họp online với khách hàng, đối tác":"Online meetings with clients and partners","Đàm phán":"Negotiation","Small talk với đồng nghiệp nước ngoài":"Small talk with international colleagues","Phỏng vấn xin việc":"Job interviews","Đọc tài liệu chuyên ngành":"Reading industry documents","Đời sống hằng ngày":"Daily life","Chào hỏi, làm quen":"Greetings and introductions","Mua sắm, đi chợ":"Shopping and groceries","Gọi món ở quán ăn":"Ordering at a restaurant","Hỏi đường, đi lại":"Asking for directions and getting around","Gọi điện thoại":"Phone calls","Đi khám bệnh, mua thuốc":"Seeing a doctor, buying medicine","Ngân hàng, bưu điện":"Banks and post offices","Thuê nhà, nói chuyện với hàng xóm":"Renting a home, talking to neighbours","Giao tiếp khi du lịch":"Travel conversations","Sân bay, máy bay":"Airports and flights","Khách sạn":"Hotels","Taxi, tàu xe":"Taxis, trains and buses","Nhà hàng":"Restaurants","Tham quan, mua vé":"Sightseeing and buying tickets","Mua sắm, trả giá":"Shopping and bargaining","Xử lý sự cố (mất đồ, ốm)":"Handling problems (lost items, illness)","Kết bạn, mạng xã hội":"Making friends, social media","Nói về sở thích":"Talking about hobbies","Nhắn tin, bình luận":"Texting and commenting","Chia sẻ quan điểm":"Sharing opinions","Gọi video với bạn nước ngoài":"Video calls with friends abroad","Gia đình, nuôi dạy con":"Family and parenting","Nói chuyện với con bằng tiếng Anh":"Speaking English with your child","Đọc truyện cho con":"Reading stories to your child","Sinh hoạt hằng ngày ở nhà":"Daily routines at home","Trao đổi với giáo viên trường quốc tế":"Talking with international school teachers","Hẹn hò, tình cảm":"Dating and relationships","Làm quen, mời đi chơi":"Getting to know someone, asking them out","Nhắn tin":"Texting","Bày tỏ cảm xúc":"Expressing feelings","Gặp gia đình người yêu":"Meeting your partner's family","Nói trước đám đông":"Public speaking","Phát biểu, chúc mừng":"Speeches and toasts","Nêu ý kiến, tranh luận":"Giving opinions and debating","Dẫn chương trình":"Hosting events","IT, phần mềm":"IT and software","Viết bug report, ticket":"Writing bug reports and tickets","Giải thích vấn đề kỹ thuật":"Explaining technical issues","Làm việc với khách hàng nước ngoài (outsourcing)":"Working with overseas clients (outsourcing)","Viết tài liệu kỹ thuật":"Writing technical documentation","Giới thiệu sản phẩm":"Presenting products","Gọi điện cho khách hàng mới":"Cold-calling new clients","Đàm phán giá":"Negotiating prices","Chốt hợp đồng":"Closing deals","Chăm sóc khách hàng sau bán":"After-sales customer care","Brainstorm ý tưởng":"Brainstorming ideas","Viết content":"Writing content","Báo cáo chiến dịch":"Campaign reports","Làm việc với agency":"Working with agencies","Phân tích số liệu":"Data analysis","Tài chính, ngân hàng":"Finance and banking","Tư vấn khách hàng":"Advising clients","Giải thích sản phẩm tài chính":"Explaining financial products","Báo cáo tài chính":"Financial reports","Làm việc với kiểm toán":"Working with auditors","Y tế, dược":"Healthcare and pharmacy","Hỏi bệnh sử":"Taking a medical history","Giải thích chẩn đoán":"Explaining a diagnosis","Hướng dẫn dùng thuốc":"Explaining how to take medicine","Trao đổi với đồng nghiệp":"Talking with colleagues","Đọc tài liệu y khoa":"Reading medical literature","Khách sạn, nhà hàng":"Hotels and restaurants","Đón khách, check-in":"Welcoming guests, check-in","Giới thiệu dịch vụ":"Introducing services","Nhận order, giới thiệu món":"Taking orders, recommending dishes","Xử lý phàn nàn":"Handling complaints","Đặt phòng qua điện thoại":"Taking bookings by phone","Kỹ thuật, sản xuất":"Engineering and manufacturing","Hướng dẫn vận hành máy":"Explaining how to operate machines","An toàn lao động":"Workplace safety","Báo cáo sự cố":"Reporting incidents","Làm việc với chuyên gia nước ngoài":"Working with foreign experts","Giáo dục":"Education","Giảng dạy trên lớp":"Teaching in class","Trao đổi với phụ huynh":"Talking with parents","Họp chuyên môn":"Department meetings","Viết nhận xét học sinh":"Writing student reports","Xuất nhập khẩu, logistics":"Import-export and logistics","Theo dõi đơn hàng":"Tracking orders","Làm việc với forwarder":"Working with forwarders","Chứng từ, hải quan":"Documents and customs","Xử lý giao hàng trễ":"Handling late deliveries","Chăm sóc khách hàng":"Customer service","Trả lời điện thoại":"Answering the phone","Chat với khách":"Chatting with customers","Xử lý khiếu nại":"Handling complaints","Hướng dẫn sử dụng sản phẩm":"Explaining how to use a product","Văn phòng, hành chính, nhân sự":"Office, admin and HR","Lên lịch họp":"Scheduling meetings","Tiếp khách":"Receiving visitors","Tuyển dụng, phỏng vấn ứng viên":"Recruiting and interviewing candidates","Soạn thông báo nội bộ":"Writing internal announcements","Du lịch tự túc":"Independent travel","Khách sạn, homestay":"Hotels and homestays","Phương tiện công cộng":"Public transport","Ăn uống":"Eating out","Mua sắm":"Shopping","Xử lý sự cố":"Handling problems","Đi công tác":"Business trips","Sân bay, khách sạn":"Airports and hotels","Gặp đối tác":"Meeting partners","Dự hội thảo":"Attending conferences","Ăn tối tiếp khách":"Business dinners","Báo cáo chuyến công tác":"Trip reports","Du học":"Studying abroad","Phỏng vấn visa":"Visa interviews","Thủ tục nhập học":"Enrolment procedures","Thảo luận trên lớp":"Class discussions","Ở ký túc xá, ở ghép":"Dorms and flatshares","Đi làm thêm":"Part-time jobs","Định cư ở nước ngoài":"Living abroad","Thuê nhà":"Renting a home","Mở tài khoản ngân hàng":"Opening a bank account","Đi khám bệnh":"Seeing a doctor","Xin việc":"Job hunting","Giấy tờ hành chính":"Paperwork","Hàng xóm, cộng đồng":"Neighbours and community","Đọc":"Reading","Viết":"Writing","Nói":"Speaking","Việc chung ở công sở":"General office tasks","Ví dụ: hay nói chuyện với bạn bè nước ngoài qua mạng":"E.g. I often chat with friends abroad online","Ví dụ: tôi làm QA, thường họp và viết email với khách hàng Mỹ":"E.g. I work in QA and often have meetings and write emails with US clients","Ví dụ: đi Nhật và Hàn tháng 3 năm sau, tự đặt phòng và đi tàu":"E.g. going to Japan and Korea next March, booking hotels and taking trains on my own","Ví dụ: IELTS 6.5, cần nhất là Speaking":"E.g. IELTS 6.5, Speaking matters most","Ôn bài cũ":"Review","Từ vựng mới":"New words","Tự đặt câu":"Your sentences","Dịch câu":"Translation","Tổng kết":"Summary","Từ vựng":"Vocabulary","Ngữ pháp":"Grammar","Chính tả":"Spelling","Dịch":"Translation","Bước đầu tiên":"First step","Hoàn thành buổi học đầu tiên":"Finish your first lesson","Lửa nhỏ":"Little flame","Học 3 ngày liên tiếp":"Study 3 days in a row","Lửa bùng cháy":"Blazing fire","Học 7 ngày liên tiếp":"Study 7 days in a row","Tròn một tuần":"A full week","Hoàn thành 5 buổi học":"Finish 5 lessons","Điểm tuyệt đối":"Perfect score","Đạt từ 90 điểm trong một buổi":"Score 90 or more in a lesson","Giọng vàng":"Golden voice","Phát âm đạt từ 80%":"Reach 80% in pronunciation","Tai thính":"Sharp ears","Nghe chép đúng từ 80%":"Get 80% right in dictation","Nói như gió":"Smooth talker","Role-play đạt từ 80 điểm":"Score 80 or more in role-play","Kho 50 từ":"50-word stash","Có 50 từ trong flashcard":"Have 50 words in flashcards","Kho 100 từ":"100-word stash","Có 100 từ trong flashcard":"Have 100 words in flashcards","Thủ khoa Unit":"Unit topper","Kiểm tra định kỳ đạt từ 85%":"Score 85% or more in a unit test","Tốt nghiệp":"Graduate","Hoàn thành một khóa học":"Complete a course","<span class=\"spin\"></span> Đang dịch":"<span class=\"spin\"></span> Translating","Ẩn bản dịch":"Hide translation","lỗi ":"error ","Chưa dịch được: ":"Couldn't translate: ","quá chậm":"too slow","Trình duyệt chưa cho phép dùng micro. Bấm biểu tượng bên trái thanh địa chỉ và cho phép Micro.":"Your browser hasn't allowed the microphone yet. Click the icon to the left of the address bar and allow Microphone.","Không nghe thấy gì. Hãy nói to, rõ và gần micro hơn.":"I didn't hear anything. Speak louder, more clearly, and closer to the mic.","Trình duyệt này không hỗ trợ nhận giọng nói. Hãy dùng Chrome hoặc Edge.":"This browser doesn't support speech recognition. Please use Chrome or Edge.","Nhận giọng nói cần kết nối Internet.":"Speech recognition needs an internet connection.","Đã dừng ghi âm.":"Recording stopped.","Lỗi micro: ":"Microphone error: ","\"><b>Phát âm ":"\"><b>Pronunciation ","<br><span class=\"muted small\">Máy nghe được: \"":"<br><span class=\"muted small\">I heard: \"","<br><span class=\"small\">Từ gạch đỏ là từ máy chưa nhận ra. Bấm Nghe chậm, nghe mẫu rồi đọc lại.</span>":"<br><span class=\"small\">Words in red weren't recognised. Tap Slow, listen to the model, then try again.</span>","\"><b>Nghe đúng ":"\"><b>Heard correctly ","%</b><br>Câu gốc: ":"%</b><br>Original: ","Đang nghe: ":"Listening: ","Đang kiểm tra...":"Checking...","Bạn":"You","Đã tải tiến độ mới nhất từ thiết bị khác":"Loaded your latest progress from another device","Chưa lưu được tiến độ, app sẽ tự thử lại":"Couldn't save your progress yet. The app will retry automatically","Đã cập nhật tiến độ từ thiết bị khác":"Progress updated from another device","AI tạm nghỉ:":"AI paused:","Kiểm tra":"Check","không kết nối được":"can't connect","phản hồi quá chậm":"responding too slowly","mất kết nối":"connection lost","quá tải":"overloaded","AI hết lượt, tạm dùng nội dung mẫu":"AI out of quota, using sample content for now","Gemini lỗi ":"Gemini error ","không rõ lỗi":"unknown error","Gemini phản hồi quá chậm, sẽ tự thử lại sau":"Gemini is responding too slowly, will retry later","không gọi được server":"couldn't reach the server","Người học đang tiến bộ nhanh: tăng độ khó một chút.":"The learner is progressing quickly: make it slightly harder.","Người học đang gặp khó: giữ câu ngắn, từ thông dụng.":"The learner is struggling: keep sentences short and words common.","Bạn là giáo viên tiếng Anh cho người Việt. Trình độ người học: ":"You are an English teacher for Vietnamese learners. Learner's level: ",". Mục tiêu: ":". Goal: ",". Lĩnh vực: ":". Field: "," Các tình huống người học hay gặp: ":" Situations the learner often faces: ",". Người học tự mô tả: ":". The learner's own description: "," Ví dụ và tình huống luôn bám sát lĩnh vực này. Giải thích ngắn gọn bằng tiếng Việt.":" Examples and situations should always stay close to this field. Keep explanations short and in English."," Vị trí công việc: ":" Job title: ","không có":"none","Mới":"New","Đã thuộc":"Mastered","Đang nhớ":"Remembering","Đang học":"Learning","Ôn lại: ":"Review: ","Buổi ôn tập: củng cố phần chưa vững":"Review lesson: strengthen weak spots","Ôn lại các từ bạn trả lời sai trong bài kiểm tra":"Review the words you got wrong in the test","Người học":"Learner","Trò chuyện tự do với gia sư để dùng lại các từ vừa ôn.":"Chat freely with the tutor to reuse the words you just reviewed.","Dùng ít nhất 3 từ vừa ôn":"Use at least 3 of the words you reviewed","Kể về một việc bạn làm tuần này":"Talk about something you did this week","Đặt một câu hỏi cho gia sư":"Ask the tutor a question","Soạn buổi học số ":"Create lesson number "," của khóa ":" of the course ",".\nBài đã học (không lặp chủ đề và điểm ngữ pháp): ":".\nLessons already covered (don't repeat topics or grammar points): ",".\nTừ đã học (không lặp lại): ":".\nWords already learned (don't repeat): "," Độ khó tăng dần theo số buổi.\nTrả JSON đúng cấu trúc:\n{\"topic\":\"tên chủ đề tiếng Việt\",\"scenario\":\"bối cảnh 1 câu tiếng Việt\",\n\"words\":[{\"w\":\"từ hoặc cụm từ\",\"ipa\":\"IPA\",\"pos\":\"từ loại tiếng Việt\",\"vi\":\"nghĩa tiếng Việt\",\"ex\":\"câu ví dụ tiếng Anh\",\"ex_vi\":\"dịch câu ví dụ\"}] (đúng 8 mục),\n\"grammar\":{\"name\":\"tên điểm ngữ pháp\",\"pattern\":\"công thức\",\"note\":\"giải thích 2-3 câu tiếng Việt\",\"quiz\":[{\"q\":\"câu có chỗ trống ___\",\"opts\":[\"4 lựa chọn\"],\"ans\":0,\"explain\":\"giải thích ngắn\"}] (đúng 3 câu, đáp án ở vị trí ngẫu nhiên)},\n\"translations\":[{\"src\":\"câu gốc\",\"ref\":\"bản dịch mẫu\",\"dir\":\"vi-en hoặc en-vi\"}] (4 câu: 2 vi-en, 2 en-vi, có dùng từ và ngữ pháp của bài),\n\"roleplay\":{\"ai_role\":\"vai của AI, tiếng Anh\",\"user_role\":\"vai người học, tiếng Việt\",\"setting\":\"bối cảnh tiếng Việt\",\"tasks\":[\"3 nhiệm vụ tiếng Việt\"],\"opening\":\"câu mở đầu của AI, tiếng Anh\"}}":" Difficulty increases gradually with each lesson.\nReturn JSON with exactly this structure:\n{\"topic\":\"topic name in English\",\"scenario\":\"one-sentence context in English\",\n\"words\":[{\"w\":\"word or phrase\",\"ipa\":\"IPA\",\"pos\":\"part of speech in English\",\"vi\":\"Vietnamese meaning\",\"ex\":\"English example sentence\",\"ex_vi\":\"Vietnamese translation of the example\"}] (exactly 8 items),\n\"grammar\":{\"name\":\"grammar point name\",\"pattern\":\"pattern\",\"note\":\"2-3 sentence explanation in English\",\"quiz\":[{\"q\":\"sentence with a blank ___\",\"opts\":[\"4 options\"],\"ans\":0,\"explain\":\"short explanation\"}] (exactly 3 questions, correct answer in a random position)},\n\"translations\":[{\"src\":\"source sentence\",\"ref\":\"model translation\",\"dir\":\"vi-en or en-vi\"}] (4 sentences: 2 vi-en, 2 en-vi, using the lesson's words and grammar),\n\"roleplay\":{\"ai_role\":\"the AI's role, in English\",\"user_role\":\"the learner's role, in English\",\"setting\":\"context in English\",\"tasks\":[\"3 tasks in English\"],\"opening\":\"the AI's opening line, in English\"}}","(chưa có)":"(none yet)","TÌNH HUỐNG CỦA BUỔI NÀY: \"":"THIS LESSON'S SITUATION: \"","\". Toàn bộ chủ đề, từ vựng, câu dịch và role-play phải xoay quanh đúng tình huống này":"\". The whole topic, vocabulary, translation sentences and role-play must revolve around exactly this situation",", từ góc nhìn của người làm ":", from the perspective of someone working as ","Chủ đề, từ vựng, câu dịch và role-play phải là tình huống thực tế trong lĩnh vực của người học.":"The topic, vocabulary, translation sentences and role-play must be real situations in the learner's field.","Không sinh được bài:":"Couldn't generate lesson:","chờ quá lâu":"waited too long","AI chưa soạn được bài:":"AI couldn't create the lesson yet:"," nghĩa là gì?":" — what does it mean?","Từ nào có nghĩa là \"":"Which word means \"","Viết từ tiếng Anh có nghĩa: \"":"Write the English word for: \""," ký tự)":" letters)"," · phát âm ":" · pronunciation ","\">🔊 Nghe mẫu</button><button data-a=\"slow\" data-v=\"":"\">🔊 Listen</button><button data-a=\"slow\" data-v=\"","\">🐢 Nghe chậm</button>\n      <button class=\"mic big ":"\">🐢 Slow</button>\n      <button class=\"mic big ","● Đang nghe, bấm để dừng":"● Listening, tap to stop","🎤 Bấm rồi đọc to câu trên":"🎤 Tap and read the sentence aloud","<p class=\"live center\" id=\"live\">Hãy đọc...</p>":"<p class=\"live center\" id=\"live\">Start reading...</p>","<p class=\"muted small center\">Trình duyệt này không hỗ trợ micro.</p>":"<p class=\"muted small center\">This browser doesn't support the microphone.</p>","Dịch sang tiếng Anh":"Translate into English","Dịch sang tiếng Việt":"Translate into Vietnamese","<span class=\"muted small\">Gợi ý: ":"<span class=\"muted small\">Hint: ","Bản dịch của bạn":"Your translation","Gõ lại câu bạn nghe được":"Type what you heard","Gõ từ tiếng Anh":"Type the English word","<span class=\"spin\"></span> Đang chấm":"<span class=\"spin\"></span> Checking","Trả lời":"Answer","Đúng (có lỗi chính tả nhỏ)":"Correct (small spelling mistake)","Chính xác!":"Correct!","Chưa đúng.":"Not quite."," Đáp án: <b>":" Answer: <b>"," · từ vừa nghe: <b>":" · the word you heard: <b>","Xem kết quả":"See results","Câu tiếp theo":"Next question","\" aria-label=\"Nghe lại\">🔊</button><button class=\"mini\" data-a=\"slow\" data-v=\"":"\" aria-label=\"Listen again\">🔊</button><button class=\"mini\" data-a=\"slow\" data-v=\"","\">🐢 Nghe chậm</button></div>":"\">🐢 Slow</button></div>","\n     <div class=\"qcount\"><span class=\"eyebrow\">Câu ":"\n     <div class=\"qcount\"><span class=\"eyebrow\">Question ","\">← Thoát</button>":"\">← Exit</button>","Từ mục tiêu: \"":"Target word: \"","\". Câu người học viết: \"":"\". The learner's sentence: \"","\".\nChấm theo rubric: ngữ pháp 4 điểm, dùng từ mục tiêu đúng nghĩa 4 điểm, tự nhiên 2 điểm. Không bắt lỗi văn phong vượt trình độ ":"\".\nGrade with this rubric: grammar 4 points, using the target word with the right meaning 4 points, naturalness 2 points. Don't penalise style beyond level ",".\nTrả JSON {\"score\":0-10,\"corrected\":\"câu đã sửa (giữ nguyên nếu đúng)\",\"errors\":[{\"type\":\"ngữ pháp|dùng từ|chính tả|tự nhiên\",\"fix\":\"phần sửa\",\"explain\":\"giải thích ngắn tiếng Việt\"}],\"note\":\"nhận xét 1 câu tiếng Việt\"}":".\nReturn JSON {\"score\":0-10,\"corrected\":\"corrected sentence (unchanged if already correct)\",\"errors\":[{\"type\":\"grammar|word choice|spelling|naturalness\",\"fix\":\"the fix\",\"explain\":\"short explanation in English\"}],\"note\":\"one-sentence comment in English\"}","Câu chưa dùng từ \"":"The sentence doesn't use \"","Câu dùng đúng từ mục tiêu.":"The sentence uses the target word correctly.","Hãy viết câu đầy đủ hơn: có chủ ngữ, động từ, viết hoa đầu câu và dấu chấm cuối câu.":"Try writing a fuller sentence: a subject, a verb, a capital letter at the start and a full stop at the end.","Câu gốc: \"":"Original: \"","\". Bản dịch tham khảo: \"":"\". Reference translation: \"","\". Bản dịch của người học: \"":"\". Learner's translation: \"","\".\nChấm theo mức độ đúng ý (6 điểm) và đúng ngữ pháp, tự nhiên (4 điểm). Chấp nhận cách dịch khác nếu đúng nghĩa.\nTrả JSON {\"score\":0-10,\"note\":\"nhận xét ngắn tiếng Việt, chỉ ra lỗi nếu có\",\"better\":\"bản dịch tốt hơn dựa trên câu của người học\"}":"\".\nGrade on meaning (6 points) and on grammar and naturalness (4 points). Accept other translations if the meaning is right.\nReturn JSON {\"score\":0-10,\"note\":\"short comment in English, pointing out mistakes if any\",\"better\":\"an improved translation based on the learner's sentence\"}","Bản dịch sát ý.":"The translation captures the meaning.","Bản dịch còn thiếu ý, hãy so với câu tham khảo.":"The translation misses some meaning. Compare it with the reference.","Nghe và chọn nghĩa đúng":"Listen and choose the right meaning","<section class=\"panel\"><h2>Xem lại: Ôn bài cũ":"<section class=\"panel\"><h2>Review: Previous lesson","<p class=\"muted\">Buổi này không có phần ôn bài cũ.</p>":"<p class=\"muted\">This lesson had no review section.</p>","<section class=\"panel\"><h2>Xem lại: Từ vựng & ngữ pháp</h2>\n    <div class=\"revlist\">":"<section class=\"panel\"><h2>Review: Vocabulary & grammar</h2>\n    <div class=\"revlist\">","<section class=\"panel\"><h3>Ngữ pháp: ":"<section class=\"panel\"><h3>Grammar: ","<header class=\"lhead\"><div class=\"row between\"><button class=\"ghost\" data-a=\"exitLesson\">← Lưu & thoát</button>\n     <span class=\"muted small\">":"<header class=\"lhead\"><div class=\"row between\"><button class=\"ghost\" data-a=\"exitLesson\">← Save & exit</button>\n     <span class=\"muted small\">"," · Bước ":" · Step ","Buổi ôn tập":"Review lesson","Buổi ":"Lesson ","\" role=\"button\" tabindex=\"0\" title=\"Xem lại bước ":"\" role=\"button\" tabindex=\"0\" title=\"Review step ","<p class=\"muted small center\">Bấm vào thanh tiến trình để quay lại xem bước đã học.</p>":"<p class=\"muted small center\">Tap the progress bar to go back to a step you've done.</p>","<div class=\"backbar\"><span>👀 Đang xem lại bước ":"<div class=\"backbar\"><span>👀 Reviewing step ","\">Về bước đang học (":"\">Back to current step (","<section class=\"panel\"><h2>Ôn bài cũ</h2><p>Đây là buổi đầu tiên nên chưa có bài cũ để ôn.</p><button class=\"primary\" data-a=\"step\" data-v=\"1\">Sang từ vựng mới</button></section>":"<section class=\"panel\"><h2>Review</h2><p>This is your first lesson, so there's nothing to review yet.</p><button class=\"primary\" data-a=\"step\" data-v=\"1\">Go to new words</button></section>","<section class=\"panel\"><h2>Ôn bài cũ":"<section class=\"panel\"><h2>Review","</h2><p class=\"muted\">Ôn nhanh từ vựng và ngữ pháp buổi trước. Câu sai sẽ được đưa vào flashcard để ôn sớm hơn.</p></section>\n    <section class=\"panel quiz\">":"</h2><p class=\"muted\">A quick review of the last lesson's vocabulary and grammar. Wrong answers go into your flashcards so you review them sooner.</p></section>\n    <section class=\"panel quiz\">","<section class=\"panel\"><div class=\"row between\"><span class=\"tag\">Từ ":"<section class=\"panel\"><div class=\"row between\"><span class=\"tag\">Word ","\">🔊 Nghe câu</button> </p><div>":"\">🔊 Listen</button> </p><div>","<button data-a=\"vprev\">Từ trước</button>":"<button data-a=\"vprev\">Previous word</button>","Từ tiếp theo":"Next word","Xem điểm ngữ pháp":"See the grammar point","<section class=\"panel\"><span class=\"eyebrow\">Ngữ pháp trọng tâm</span><h2>":"<section class=\"panel\"><span class=\"eyebrow\">Key grammar</span><h2>","\n      <div class=\"row\"><button data-a=\"vprev\">Xem lại từ</button><button class=\"primary\" data-a=\"vnext\">Kiểm tra nhanh 4 câu</button></div></section>":"\n      <div class=\"row\"><button data-a=\"vprev\">Back to words</button><button class=\"primary\" data-a=\"vnext\">Quick 4-question check</button></div></section>","<p class=\"muted small\">Điểm ngữ pháp này sẽ được ôn lại ở đầu buổi sau.</p>":"<p class=\"muted small\">This grammar point will be reviewed at the start of your next lesson.</p>","<section class=\"panel\"><h2>Kiểm tra nhanh từ mới</h2><p class=\"muted\">Từ bạn học hôm nay đã được thêm vào flashcard.</p></section><section class=\"panel quiz\">":"<section class=\"panel\"><h2>Quick check: new words</h2><p class=\"muted\">Today's words have been added to your flashcards.</p></section><section class=\"panel quiz\">","Đọc từ":"Say the word","Đọc cả câu":"Say the sentence","<div class=\"speakbox\"><p class=\"eyebrow\">Luyện nghe – nói</p>\n    <div class=\"row\"><button class=\"mini\" data-a=\"slow\" data-v=\"":"<div class=\"speakbox\"><p class=\"eyebrow\">Listening & speaking</p>\n    <div class=\"row\"><button class=\"mini\" data-a=\"slow\" data-v=\"","\">🐢 Nghe chậm câu ví dụ</button>\n    ":"\">🐢 Slow example</button>\n    ","<p class=\"live\" id=\"live\">Hãy đọc to...</p>":"<p class=\"live\" id=\"live\">Read it aloud...</p>","<p class=\"muted small\">Trình duyệt này chưa hỗ trợ nhận giọng nói. Hãy mở app bằng Chrome hoặc Edge.</p>":"<p class=\"muted small\">This browser doesn't support speech recognition yet. Please open the app in Chrome or Edge.</p>","<section class=\"panel\"><h2>Tự đặt câu</h2><p class=\"muted\">Viết một câu tiếng Anh với mỗi từ, càng gần với công việc và cuộc sống của bạn càng tốt. ":"<section class=\"panel\"><h2>Your sentences</h2><p class=\"muted\">Write an English sentence with each word, as close to your work and life as you can. ","AI sẽ sửa lỗi và giải thích.":"AI will correct mistakes and explain.","Đang chấm cơ bản vì AI đang nghỉ.":"Basic grading only, because AI is taking a break.","\">Nghe ví dụ</button></div>\n     <label class=\"sr\" for=\"sent":"\">Hear example</button></div>\n     <label class=\"sr\" for=\"sent","\">Câu với ":"\">Sentence with ","\" placeholder=\"Ví dụ gợi ý: ":"\" placeholder=\"Example: ","Chấm lại":"Re-check","Chấm câu":"Check","<button data-a=\"step\" data-v=\"3\">Sang bước dịch câu →</button>":"<button data-a=\"step\" data-v=\"3\">Go to translation →</button>","<br>Câu sửa: <i>":"<br>Corrected: <i>","Hãy viết ít nhất một câu":"Write at least one sentence","<section class=\"panel\"><h2>Dịch câu</h2><p class=\"muted\">Dịch theo ý, không cần khớp từng chữ. Bấm vào từng từ để xem nghĩa và phiên âm; nút \"Xem bản dịch máy\" dịch cả câu ngay tại đây (nên tự dịch trước rồi mới so).</p></section>\n   ":"<section class=\"panel\"><h2>Translation</h2><p class=\"muted\">Translate the meaning; it doesn't have to match word for word. Tap any word to see its meaning and pronunciation. \"Show machine translation\" translates the whole sentence right here (try it yourself first, then compare).</p></section>\n   ","\n   <section class=\"panel\"><h2>Nghe và chép</h2><p class=\"muted\">Nghe câu tiếng Anh rồi gõ lại. Có thể nghe nhiều lần, nghe chậm nếu cần.</p></section>\n   ":"\n   <section class=\"panel\"><h2>Dictation</h2><p class=\"muted\">Listen to the English sentence and type it. You can listen as many times as you like, slowly if needed.</p></section>\n   ","\">Bản dịch</label><textarea id=\"tr":"\">Translation</label><textarea id=\"tr","\" rows=\"2\" placeholder=\"Bản dịch của bạn\">":"\" rows=\"2\" placeholder=\"Your translation\">","Việt → Anh":"Vietnamese → English","Anh → Việt":"English → Vietnamese","Xem bản dịch máy":"Show machine translation","\">🔊 Nghe câu</button>":"\">🔊 Listen</button>","<br>Tham khảo: <i>":"<br>Reference: <i>","<br>Gợi ý từ câu của bạn: <i>":"<br>Suggested from your sentence: <i>","<section class=\"panel\"><span class=\"tag\">Câu nghe ":"<section class=\"panel\"><span class=\"tag\">Dictation ","\">🐢 Nghe chậm</button></div>\n     <label class=\"sr\" for=\"dc":"\">🐢 Slow</button></div>\n     <label class=\"sr\" for=\"dc","\">Chép lại câu ":"\">Type sentence ","\" rows=\"2\" placeholder=\"Gõ lại câu bạn nghe được\">":"\" rows=\"2\" placeholder=\"Type what you heard\">","Chấm bài":"Check my work","Hãy dịch hoặc chép ít nhất một câu":"Translate or type at least one sentence","<section class=\"panel\"><h2>Kết quả role-play</h2><div class=\"stats\">":"<section class=\"panel\"><h2>Role-play results</h2><div class=\"stats\">","\n      <div class=\"row\"><button data-a=\"rpAgain\">Trò chuyện thêm</button><button class=\"primary\" data-a=\"step\" data-v=\"5\">Xem tổng kết →</button></div></section>":"\n      <div class=\"row\"><button data-a=\"rpAgain\">Keep chatting</button><button class=\"primary\" data-a=\"step\" data-v=\"5\">See summary →</button></div></section>","Trôi chảy":"Fluency","Chính xác":"Accuracy","Hoàn thành nhiệm vụ":"Tasks completed","<div class=\"fb\">Bạn nói: <i>":"<div class=\"fb\">You said: <i>","</i><br>Tự nhiên hơn: <b>":"</i><br>More natural: <b>","<section class=\"panel rp\"><div class=\"row between\"><h2>Role-play</h2><span class=\"muted small\">Bạn: ":"<section class=\"panel rp\"><div class=\"row between\"><h2>Role-play</h2><span class=\"muted small\">You: ","</ul>\n    <p class=\"small\">Từ đã dùng: ":"</ul>\n    <p class=\"small\">Words used: ","\n    <div class=\"row nowrap\"><label class=\"sr\" for=\"rpIn\">Câu trả lời</label><input id=\"rpIn\" data-enter=\"rpSend\" placeholder=\"Trả lời bằng tiếng Anh...\" autocomplete=\"off\" ":"\n    <div class=\"row nowrap\"><label class=\"sr\" for=\"rpIn\">Your reply</label><input id=\"rpIn\" data-enter=\"rpSend\" placeholder=\"Reply in English...\" autocomplete=\"off\" "," aria-label=\"Nói\">":" aria-label=\"Speak\">",">Gửi</button></div>\n    ":">Send</button></div>\n    ","\" data-a=\"autospeak\">🔈 Tự đọc câu của AI</button><button class=\"mini seg ":"\" data-a=\"autospeak\">🔈 Read AI replies aloud</button><button class=\"mini seg ","\" data-a=\"hidetext\">🙈 Ẩn chữ để luyện nghe</button>\n      ":"\" data-a=\"hidetext\">🙈 Hide text for listening practice</button>\n      ","</div>\n    <div class=\"row\"><button data-a=\"rpHint\">Gợi ý câu trả lời</button>":"</div>\n    <div class=\"row\"><button data-a=\"rpHint\">Suggest a reply</button>","<span class=\"muted\">(Chữ đã ẩn, hãy nghe)</span> <button class=\"mini\" data-a=\"reveal\" data-v=\"":"<span class=\"muted\">(Text hidden, listen)</span> <button class=\"mini\" data-a=\"reveal\" data-v=\"","\">Hiện chữ</button>":"\">Show text</button>","<span class=\"fix\">Nên nói: ":"<span class=\"fix\">Better: ","<div class=\"fb\">Gợi ý: <b>":"<div class=\"fb\">Try: <b>","● Dừng":"● Stop","🎤 Nói":"🎤 Speak","<p class=\"live\" id=\"live\">Hãy nói bằng tiếng Anh...</p>":"<p class=\"live\" id=\"live\">Speak in English...</p>","<span class=\"muted\">Bấm 🎤 Nói để trả lời bằng giọng nói.</span>":"<span class=\"muted\">Tap 🎤 Speak to answer by voice.</span>","<span class=\"muted\">Mở bằng Chrome hoặc Edge để nói bằng micro.</span>":"<span class=\"muted\">Open in Chrome or Edge to speak with the mic.</span>","<button class=\"primary\" data-a=\"rpEnd\" id=\"rpEndBtn\">Kết thúc & chấm điểm</button>":"<button class=\"primary\" data-a=\"rpEnd\" id=\"rpEndBtn\">Finish & get feedback</button>","<span class=\"muted small\">Trao đổi ít nhất 3 lượt để kết thúc (":"<span class=\"muted small\">Have at least 3 exchanges to finish (","Role-play: AI là ":"Role-play: the AI is ",", người học là ":", the learner is ",". Nhiệm vụ: ":". Tasks: ",".\nHội thoại: ":".\nConversation: ","\nGợi ý MỘT câu trả lời tiếp theo cho học viên, phù hợp trình độ ":"\nSuggest ONE next reply for the learner, suited to level ",". Trả JSON {\"en\":\"câu tiếng Anh\",\"vi\":\"nghĩa tiếng Việt\"}":". Return JSON {\"en\":\"English sentence\",\"vi\":\"Vietnamese meaning\"}","Học viên: ":"Learner: ",", có dùng từ \"":", using the word \"","Bạn có thể nói thêm về điều đó không?":"Could you tell me more about that?","Đánh giá phần role-play của học viên (trình độ ":"Evaluate the learner's role-play (level ","). AI đóng vai: ":"). The AI played: ",".\nHội thoại (câu có [nói] là học viên nói bằng giọng, được máy chuyển thành chữ nên có thể sai chính tả do nhận dạng; đừng trừ điểm lỗi chính tả ở những câu đó): ":".\nConversation (lines marked [spoken] were said aloud and converted to text by speech recognition, so they may have recognition spelling errors; don't deduct points for spelling in those lines): ","\nTrả JSON {\"fluency\":0-10,\"accuracy\":0-10,\"task_score\":0-10,\"comment_vi\":\"nhận xét 2 câu tiếng Việt\",\"better_phrases\":[{\"you\":\"câu học viên đã nói\",\"better\":\"cách nói tự nhiên hơn\"}] (tối đa 3)}":"\nReturn JSON {\"fluency\":0-10,\"accuracy\":0-10,\"task_score\":0-10,\"comment_vi\":\"2-sentence comment in English\",\"better_phrases\":[{\"you\":\"what the learner said\",\"better\":\"a more natural way to say it\"}] (max 3)}","Học viên [nói]: ":"Learner [spoken]: ","Bạn đã trao đổi ":"You had "," lượt (":" exchanges ("," lượt nói bằng giọng) và dùng ":" spoken) and used "," từ mới.":" new words.","Kiểm tra từ":"Word check","Phát âm":"Pronunciation","Đặt câu":"Sentences","Nghe chép":"Dictation","\n     <div class=\"grow\"><span class=\"eyebrow\">Tổng kết buổi học</span><h2>":"\n     <div class=\"grow\"><span class=\"eyebrow\">Lesson summary</span><h2>","</b><span>điểm trung bình</span></div>\n     <div class=\"bars\">":"</b><span>average score</span></div>\n     <div class=\"bars\">","</div></section>\n   <section class=\"panel\"><h3>Từ vựng hôm nay (":"</div></section>\n   <section class=\"panel\"><h3>Today's words ("," từ, đã vào flashcard)</h3>\n     <div class=\"wordgrid\">":" words, added to flashcards)</h3>\n     <div class=\"wordgrid\">","</div></section>\n   <section class=\"panel\"><h3>Ngữ pháp: ":"</div></section>\n   <section class=\"panel\"><h3>Grammar: "," Bạn có ":" You have "," thẻ flashcard cần ôn.</p>\n     <button class=\"primary\" data-a=\"finishLesson\" data-v=\"":" flashcards to review.</p>\n     <button class=\"primary\" data-a=\"finishLesson\" data-v=\"","\">Hoàn thành buổi học</button></section>":"\">Finish lesson</button></section>","Xuất sắc! Bạn làm rất tốt.":"Excellent! You did really well.","Tốt lắm! Thêm chút nữa là đạt 3 sao.":"Great job! Just a little more for 3 stars.","Khá ổn. Ôn lại phần chưa vững nhé.":"Not bad. Go over the weak spots again.","Đừng nản, buổi sau sẽ tốt hơn!":"Don't give up, next time will be better!","<section class=\"panel\"><h3>Lỗi cần nhớ</h3>":"<section class=\"panel\"><h3>Mistakes to remember</h3>","<b>Buổi tới là bài kiểm tra định kỳ</b> sau 5 buổi học.":"<b>Your next session is a unit test</b> after 5 lessons.","Còn ":""," buổi nữa đến bài kiểm tra định kỳ.":" more lessons until your unit test.","Đã lưu buổi học. Giỏi lắm!":"Lesson saved. Well done!","Nghe và chép lại câu":"Listen and type the sentence","Bạn nắm bài rất tốt. Các buổi tới sẽ khó hơn một chút.":"You've got a solid grasp of this. The next lessons will be a little harder.","Bạn đang theo kịp lộ trình. Giữ nguyên nhịp độ.":"You're keeping up with the course. Keep up the pace.","Hệ thống đã thêm 1 buổi ôn tập vào lộ trình để củng cố các từ còn sai.":"A review lesson has been added to your course to strengthen the words you missed.","</div><span class=\"eyebrow\">Kiểm tra định kỳ · Unit ":"</div><span class=\"eyebrow\">Unit test · Unit ","\n    <div class=\"row\"><button class=\"primary\" data-a=\"go\" data-v=\"home\">Về trang chủ</button>":"\n    <div class=\"row\"><button class=\"primary\" data-a=\"go\" data-v=\"home\">Back to home</button>","Xuất sắc":"Excellent","Đạt":"Passed","Cần ôn thêm":"Needs more review","<h3>Từ cần ôn lại</h3><p>":"<h3>Words to review</h3><p>","<button data-a=\"go\" data-v=\"review\">Ôn flashcard ngay</button>":"<button data-a=\"go\" data-v=\"review\">Review flashcards now</button>","</span><h1>Bạn học tiếng Anh để làm gì?</h1>\n    <p class=\"muted\">Câu trả lời quyết định chủ đề, từ vựng và tình huống role-play trong từng buổi học.</p></section>\n   <section class=\"panel\"><label for=\"sv-name\"><h3>Bạn tên gì?</h3></label><input id=\"sv-name\" data-sv=\"name\" value=\"":"</span><h1>Why are you learning English?</h1>\n    <p class=\"muted\">Your answers shape the topics, vocabulary and role-play situations in every lesson.</p></section>\n   <section class=\"panel\"><label for=\"sv-name\"><h3>What's your name?</h3></label><input id=\"sv-name\" data-sv=\"name\" value=\"","\" placeholder=\"Tên để app xưng hô\">\n    <h3>Mục tiêu chính</h3><div class=\"choices\">":"\" placeholder=\"What should the app call you?\">\n    <h3>Main goal</h3><div class=\"choices\">"," <span class=\"muted normal\">(chọn một hoặc nhiều)</span></h3>\n    <div class=\"chips\">":" <span class=\"muted normal\">(choose one or more)</span></h3>\n    <div class=\"chips\">"," <span class=\"muted normal\">(không bắt buộc)</span></h3></label>\n    <input id=\"sv-int\" data-sv=\"interest\" placeholder=\"":" <span class=\"muted normal\">(optional)</span></h3></label>\n    <input id=\"sv-int\" data-sv=\"interest\" placeholder=\"","\n    <h3>Thời gian học mỗi ngày</h3><div class=\"choices\">":"\n    <h3>Study time per day</h3><div class=\"choices\">","</div>\n    <h3>Kỹ năng muốn cải thiện</h3><div class=\"chips\">":"</div>\n    <h3>Skills to improve</h3><div class=\"chips\">","</div>\n    <label for=\"sv-rm\"><h3>Nhắc tôi học từ lúc</h3></label><input id=\"sv-rm\" type=\"time\" data-sv=\"remind\" value=\"":"</div>\n    <label for=\"sv-rm\"><h3>Remind me to study from</h3></label><input id=\"sv-rm\" type=\"time\" data-sv=\"remind\" value=\"","\" class=\"short\">\n    <p class=\"muted small\">Nếu chưa học, app nhắc mỗi tiếng từ giờ này đến 23:00. Đổi giờ và khoảng cách nhắc trong Cài đặt.</p>\n    <div class=\"row\">":"\" class=\"short\">\n    <p class=\"muted small\">If you haven't studied yet, the app reminds you every hour from this time until 23:00. Change the times and interval in Settings.</p>\n    <div class=\"row\">","Cập nhật mục tiêu":"Update goal","Bước 1/2 · Khảo sát":"Step 1/2 · Survey","Kỳ thi bạn nhắm tới":"Your target exam","Lĩnh vực công việc":"Your field of work","Hình thức đi nước ngoài":"Type of trip abroad","Bạn muốn giao tiếp trong tình huống nào":"Situations where you want to communicate"," <span class=\"muted normal\">(chọn càng đúng, bài học càng sát)</span></h3>\n      ":" <span class=\"muted normal\">(the more precise, the better your lessons fit)</span></h3>\n      ","\n      <div class=\"row\"><button class=\"mini\" data-a=\"svSubAll\">Chọn tất cả</button>":"\n      <div class=\"row\"><button class=\"mini\" data-a=\"svSubAll\">Select all</button>","Kỹ năng cần luyện nhiều nhất":"Skill you need to practise most","Tình huống cụ thể bạn hay gặp":"Specific situations you often face","<span class=\"muted small\">Đã chọn ":"<span class=\"muted small\">Selected "," tình huống</span>":" situations</span>","<label for=\"sv-job\"><h3>Vị trí công việc của bạn</h3></label><input id=\"sv-job\" data-sv=\"job\" value=\"":"<label for=\"sv-job\"><h3>Your job title</h3></label><input id=\"sv-job\" data-sv=\"job\" value=\"","\" placeholder=\"Ví dụ: QA Engineer, nhân viên lễ tân, kế toán\">":"\" placeholder=\"E.g. QA Engineer, receptionist, accountant\">","Điểm mục tiêu và kỹ năng cần nhất":"Target score and most needed skill","Mô tả cụ thể hơn":"Describe it in more detail","<label for=\"sv-dl\"><h3>Ngày thi <span class=\"muted normal\">(để tính độ dài khóa học)</span></h3></label><input id=\"sv-dl\" type=\"date\" data-sv=\"deadline\" value=\"":"<label for=\"sv-dl\"><h3>Exam date <span class=\"muted normal\">(to set the course length)</span></h3></label><input id=\"sv-dl\" type=\"date\" data-sv=\"deadline\" value=\""," phút</button>":" min</button>","<button data-a=\"go\" data-v=\"settings\">Hủy</button>":"<button data-a=\"go\" data-v=\"settings\">Cancel</button>","Chọn ít nhất một lĩnh vực":"Choose at least one field","Lưu mục tiêu":"Save goal","Tiếp tục: kiểm tra trình độ":"Continue: level test","<div class=\"grow\"><h3>🔔 Cho phép app nhắc bạn học mỗi ngày?</h3>\n    <p class=\"small\">Nếu hôm đó bạn chưa học, app sẽ nhắc từ ":"<div class=\"grow\"><h3>🔔 Let the app remind you to study every day?</h3>\n    <p class=\"small\">If you haven't studied that day, the app will remind you from ",". Đổi giờ hoặc tắt bất cứ lúc nào trong Cài đặt.</p>\n    ":". Change the time or turn it off anytime in Settings.</p>\n    ","<p class=\"small muted\">Trên iPhone: bấm <b>Chia sẻ</b> → <b>Thêm vào MH chính</b>, rồi mở app từ biểu tượng ngoài màn hình để bật được thông báo.</p>":"<p class=\"small muted\">On iPhone: tap <b>Share</b> → <b>Add to Home Screen</b>, then open the app from the home screen icon to turn on notifications.</p>","<button class=\"primary\" data-a=\"pushAsk\" data-v=\"1\">Bật thông báo</button>":"<button class=\"primary\" data-a=\"pushAsk\" data-v=\"1\">Turn on notifications</button>","Đã hiểu":"Got it","Để sau":"Later","</div><span class=\"eyebrow\">Bước 2/2 · Kiểm tra trình độ</span><h1>Bài test đầu vào thích ứng</h1>\n    <p>":"</div><span class=\"eyebrow\">Step 2/2 · Level test</span><h1>Adaptive placement test</h1>\n    <p>"," câu, khoảng 5 phút. Trả lời đúng thì câu sau khó hơn, sai thì dễ hơn, để xác định chính xác level của bạn từ A0 đến C1.</p>\n    <p class=\"muted\">Không biết thì chọn \"Tôi không biết\", đừng đoán, kết quả sẽ chính xác hơn.</p>\n    <button class=\"primary\" data-a=\"startPlacement\">Bắt đầu kiểm tra</button>\n    <button class=\"ghost\" data-a=\"skipPlacement\">Tôi mới bắt đầu học, bỏ qua và học từ A0</button></section></div>":" questions, about 5 minutes. Answer correctly and the next question gets harder; get it wrong and it gets easier, to pin down your level from A0 to C1.</p>\n    <p class=\"muted\">If you don't know, choose \"I don't know\" rather than guessing. The result will be more accurate.</p>\n    <button class=\"primary\" data-a=\"startPlacement\">Start the test</button>\n    <button class=\"ghost\" data-a=\"skipPlacement\">I'm a complete beginner, skip and start from A0</button></section></div>","</div><span class=\"eyebrow\">Kết quả kiểm tra</span>\n    <div class=\"levelbadge\">":"</div><span class=\"eyebrow\">Test result</span>\n    <div class=\"levelbadge\">","</h1>\n    <p>Bạn trả lời đúng ":"</h1>\n    <p>You answered "," câu.</p>\n    <div class=\"ladder\">":" questions correctly.</p>\n    <div class=\"ladder\">","</div>\n    <h3>Lộ trình đề xuất</h3>\n    <p><b>":"</div>\n    <h3>Suggested course</h3>\n    <p><b>"," tuần</b>: ":" weeks</b>: "," buổi học (5 buổi mỗi tuần, mỗi buổi ":" lessons (5 a week, "," phút), ":" min each), "," bài kiểm tra định kỳ. Nội dung xoay quanh <b>":" unit tests. Content focuses on <b>","</b>.</p>\n    <button class=\"primary\" data-a=\"confirmPath\">Bắt đầu lộ trình</button><button class=\"ghost\" data-a=\"startPlacement\">Làm lại bài test</button></section></div>":"</b>.</p>\n    <button class=\"primary\" data-a=\"confirmPath\">Start the course</button><button class=\"ghost\" data-a=\"startPlacement\">Retake the test</button></section></div>","<h2>Xong phiên ôn tập</h2><div class=\"scorebig\"><b>":"<h2>Review session complete</h2><div class=\"scorebig\"><b>","</b><span>câu đúng</span></div>\n      <div class=\"row center\"><button class=\"primary\" data-a=\"go\" data-v=\"review\">Về trang Ôn tập</button></div></section></div>":"</b><span>correct</span></div>\n      <div class=\"row center\"><button class=\"primary\" data-a=\"go\" data-v=\"review\">Back to Review</button></div></section></div>","Kiểm tra trình độ":"Level test","Kiểm tra định kỳ · Unit ":"Unit test · Unit ","Ôn tập flashcard":"Flashcard review","<div class=\"center\"><button class=\"ghost\" data-a=\"pick\" data-v=\"-1\">Tôi không biết</button></div>":"<div class=\"center\"><button class=\"ghost\" data-a=\"pick\" data-v=\"-1\">I don't know</button></div>","Hôm nay bạn đã học rồi, tuyệt vời! Ôn thêm vài thẻ flashcard cho nhớ lâu nhé.":"You've already studied today, awesome! Review a few flashcards to make it stick.","Chào buổi sáng! Một buổi học ngắn giúp cả ngày nói tiếng Anh tự tin hơn.":"Good morning! A short lesson helps you speak English more confidently all day.","Nghỉ trưa học một chút nhé, chỉ cần ":"Take a little study break at lunch, it only takes "," phút thôi.":" minutes.","Buổi chiều vui vẻ! Bài học hôm nay đang chờ bạn.":"Good afternoon! Today's lesson is waiting for you.","Buổi tối thư thả là lúc học hiệu quả nhất. Bắt đầu thôi!":"A relaxed evening is the best time to learn. Let's go!","<div class=\"grow\"><p class=\"eyebrow\">Nhãn dán mới</p><h2>Bạn vừa mở khóa ":"<div class=\"grow\"><p class=\"eyebrow\">New stickers</p><h2>You just unlocked "," nhãn dán!</h2></div></div>\n     <div class=\"badge-row\">":" stickers!</h2></div></div>\n     <div class=\"badge-row\">","</div><div class=\"row\"><button class=\"primary\" data-a=\"closeCelebrate\">Tuyệt quá!</button><a href=\"#\" class=\"link\" data-a=\"go\" data-v=\"history\">Xem bộ sưu tập →</a></div></section>":"</div><div class=\"row\"><button class=\"primary\" data-a=\"closeCelebrate\">Awesome!</button><a href=\"#\" class=\"link\" data-a=\"go\" data-v=\"history\">See collection →</a></div></section>","</p><h1>Chào ":"</p><h1>Hi "," ngày liên tiếp</span><span>":" day streak</span><span>"," Khóa ":" Course "," Tuần ":" Week ","</b><span>ngày học liên tiếp</span></div>\n      <div class=\"tile hue-mint\">":"</b><span>day streak</span></div>\n      <div class=\"tile hue-mint\">","</b><span>từ đã học</span></div>\n      <div class=\"tile hue-sun\">":"</b><span>words learned</span></div>\n      <div class=\"tile hue-sun\">","</b><span>điểm TB 5 buổi</span></div>\n      <button class=\"tile hue-sky\" data-a=\"":"</b><span>avg. of last 5 lessons</span></div>\n      <button class=\"tile hue-sky\" data-a=\""," Hành trình khóa học</h3><a href=\"#\" class=\"link\" data-a=\"go\" data-v=\"path\">Xem lộ trình →</a></div>\n    <div class=\"track\"><div class=\"track-fill\" style=\"width:":" Course journey</h3><a href=\"#\" class=\"link\" data-a=\"go\" data-v=\"path\">See course →</a></div>\n    <div class=\"track\"><div class=\"track-fill\" style=\"width:"," buổi · ":" lessons · "," bài kiểm tra · cờ là các bài kiểm tra định kỳ</p></section></div>":" tests · flags mark the unit tests</p></section></div>","bạn":"there","<div><b>Đã đến giờ học (":"<div><b>Time to study (",")</b><br><span class=\"muted\">Bạn chưa học hôm nay. Chỉ cần ":")</b><br><span class=\"muted\">You haven't studied today. Just "," phút để giữ chuỗi ngày học.</span></div></section>":" minutes keeps your streak going.</span></div></section>","Kiểm tra định kỳ":"Unit test","Đang ở bước ":"Currently on step ","<span class=\"eyebrow\">Đến hạn</span><h2>Kiểm tra định kỳ Unit ":"<span class=\"eyebrow\">Due</span><h2>Unit test ","</h2>\n        <p class=\"muted\">Bạn đã xong 5 buổi học. Bài kiểm tra gồm từ vựng, ngữ pháp, chính tả, dịch, nghe và nói, khoảng 15 phút.</p>\n        <button class=\"primary big\" data-a=\"startUnit\">Làm bài kiểm tra</button>":"</h2>\n        <p class=\"muted\">You've finished 5 lessons. The test covers vocabulary, grammar, spelling, translation, listening and speaking, about 15 minutes.</p>\n        <button class=\"primary big\" data-a=\"startUnit\">Take the test</button>","Bạn đã học hôm nay":"You've studied today","Buổi học hôm nay":"Today's lesson","<p class=\"small\"><span class=\"tag good\">Đã soạn xong</span> ":"<p class=\"small\"><span class=\"tag good\">Ready</span> ","Bài soạn riêng theo mục tiêu của bạn":"Made for your goals","Bài mẫu trình độ ":"Sample lesson, level "," · ôn lại":" · review","<p class=\"small muted\"><span class=\"spin\"></span> Gemini đang soạn sẵn buổi này...</p>":"<p class=\"small muted\"><span class=\"spin\"></span> Preparing this lesson...</p>","Học tiếp":"Continue","Học thêm buổi tiếp theo":"Do the next lesson","Bắt đầu buổi học":"Start lesson","thẻ cần ôn · bấm để ôn":"cards to review · tap to review","thẻ cần ôn":"cards to review","%\" title=\"Kiểm tra Unit ":"%\" title=\"Unit test ","<span class=\"eyebrow\">Hoàn thành khóa học</span><div class=\"levelbadge\">":"<span class=\"eyebrow\">Course complete</span><div class=\"levelbadge\">","</div>\n    <h1>Chúc mừng ":"</div>\n    <h1>Congratulations ","!</h1><p>Bạn đã hoàn thành ":"!</h1><p>You've completed "," buổi học và ":" lessons and "," bài kiểm tra của khóa ":" tests in the ","</b><span>điểm TB buổi học</span></div><div class=\"stat\"><b>":"</b><span>avg. lesson score</span></div><div class=\"stat\"><b>","%</b><span>điểm TB kiểm tra</span></div><div class=\"stat\"><b>":"%</b><span>avg. test score</span></div><div class=\"stat\"><b>","</b><span>từ đã học</span></div></div>\n    ":"</b><span>words learned</span></div></div>\n    ","<button class=\"primary big\" data-a=\"nextCourse\">Bắt đầu khóa ":"<button class=\"primary big\" data-a=\"nextCourse\">Start the course ","<button class=\"primary big\" data-a=\"nextCourse\">Tiếp tục nâng cao trình độ C1</button>":"<button class=\"primary big\" data-a=\"nextCourse\">Keep advancing at C1</button>","Chưa mở":"Locked","Buổi tiếp theo":"Next lesson","<span class=\"muted small\">Dự kiến · ":"<span class=\"muted small\">Planned · "," điểm":" pts"," · ôn tập":" · review","<button class=\"mini primary\" data-a=\"startLesson\">Học</button>":"<button class=\"mini primary\" data-a=\"startLesson\">Study</button>"," điểm</span></div><em>":" pts</span></div><em>","/5 buổi</span></div>\n      <ol class=\"sessions\">":"/5 lessons</span></div>\n      <ol class=\"sessions\">","\"><span class=\"num\">✓</span><div><b>Kiểm tra định kỳ Unit ":"\"><span class=\"num\">✓</span><div><b>Unit test ","<button class=\"mini primary\" data-a=\"startUnit\">Làm bài</button>":"<button class=\"mini primary\" data-a=\"startUnit\">Take test</button>","<div><p class=\"eyebrow\">Lộ trình của bạn</p><h1>":"<div><p class=\"eyebrow\">Your course</p><h1>"," tuần · ":" weeks · "," buổi · bắt đầu ":" lessons · started ","</p><p class=\"muted small\">Các buổi chưa học hiện bài dự kiến trong kho bài mẫu ":"</p><p class=\"muted small\">Upcoming lessons show the planned sample lesson for level ",". Khi Gemini hoạt động, bài sẽ được soạn riêng theo lĩnh vực của bạn ở cùng trình độ.</p></div>\n    <div class=\"ladder\">":". When AI is available, each lesson is tailored to your field at the same level.</p></div>\n    <div class=\"ladder\">","Đến hạn (":"Due (","Từ khó (":"Hard words (","Tất cả (":"All (","<h2>Chưa có flashcard</h2><p class=\"muted\">Từ vựng trong mỗi buổi học và từ bạn tra sẽ tự động được thêm vào đây.</p></section></div>":"<h2>No flashcards yet</h2><p class=\"muted\">Words from each lesson and words you look up are added here automatically.</p></section></div>","<input id=\"rq\" data-live=\"rq\" placeholder=\"Tìm từ hoặc nghĩa...\" value=\"":"<input id=\"rq\" data-live=\"rq\" placeholder=\"Search words or meanings...\" value=\"","\">\n      <div class=\"table-wrap\"><table class=\"cards\"><thead><tr><th>Từ</th><th>Nghĩa</th><th>Trạng thái</th><th>Ôn lại</th><th></th></tr></thead><tbody>\n      ":"\">\n      <div class=\"table-wrap\"><table class=\"cards\"><thead><tr><th>Word</th><th>Meaning</th><th>Status</th><th>Next review</th><th></th></tr></thead><tbody>\n      ","\" aria-label=\"Xóa ":"\" aria-label=\"Delete ","\">Xóa</button></td></tr>":"\">Delete</button></td></tr>","Đến hạn":"Due"," thẻ. Chọn cách ôn:</p><div class=\"modes\">\n      <button class=\"mode\" data-a=\"startFlip\" data-v=\"":" cards. Choose how to review:</p><div class=\"modes\">\n      <button class=\"mode\" data-a=\"startFlip\" data-v=\"","\"><b>Lật thẻ</b><span>Tự đánh giá Quên / Khó / Nhớ / Dễ</span></button>\n      <button class=\"mode\" data-a=\"startRQuiz\" data-v=\"":"\"><b>Flip cards</b><span>Rate yourself: Again / Hard / Good / Easy</span></button>\n      <button class=\"mode\" data-a=\"startRQuiz\" data-v=\"",":mcq\"><b>Trắc nghiệm</b><span>Chọn nghĩa đúng của từ</span></button>\n      <button class=\"mode\" data-a=\"startRQuiz\" data-v=\"":":mcq\"><b>Multiple choice</b><span>Pick the right meaning</span></button>\n      <button class=\"mode\" data-a=\"startRQuiz\" data-v=\"",":type\"><b>Gõ từ</b><span>Nhìn nghĩa, viết lại từ tiếng Anh</span></button>\n      <button class=\"mode\" data-a=\"startRQuiz\" data-v=\"":":type\"><b>Type it</b><span>See the meaning, write the English word</span></button>\n      <button class=\"mode\" data-a=\"startRQuiz\" data-v=\"",":listen\"><b>Nghe & gõ</b><span>Nghe phát âm, gõ lại từ</span></button>\n      ":":listen\"><b>Listen & type</b><span>Hear the word, type it</span></button>\n      ",":speak\"><b>Đọc to</b><span>Đọc từ và câu ví dụ, máy chấm phát âm</span></button>":":speak\"><b>Read aloud</b><span>Say the word and example; get a pronunciation score</span></button>","Bạn đã ôn hết thẻ đến hạn. Quay lại sau nhé.":"You've reviewed all due cards. Come back later!","Chưa có từ nào bị quên nhiều lần.":"No words you keep forgetting yet.","<button data-a=\"startFlip\" data-v=\"all\">Ôn tự do 20 thẻ bất kỳ</button>":"<button data-a=\"startFlip\" data-v=\"all\">Free review: 20 random cards</button>","<div><p class=\"eyebrow\">Ôn tập</p><h1>Flashcard của bạn</h1><p class=\"muted\">Lặp lại ngắt quãng: từ bạn nhớ tốt sẽ xuất hiện thưa dần (1, 3, 7, 16... ngày), từ hay quên sẽ quay lại sớm.</p></div></section>\n   <section class=\"panel\"><div class=\"stats\">":"<div><p class=\"eyebrow\">Review</p><h1>Your flashcards</h1><p class=\"muted\">Spaced repetition: words you know well show up less and less often (1, 3, 7, 16... days), while words you forget come back sooner.</p></div></section>\n   <section class=\"panel\"><div class=\"stats\">","<div class=\"wrap narrow\"><section class=\"panel center\"><h2>Xong phiên ôn tập</h2><p>Bạn đã ôn ":"<div class=\"wrap narrow\"><section class=\"panel center\"><h2>Review session complete</h2><p>You reviewed "," thẻ.</p><button class=\"primary\" data-a=\"go\" data-v=\"review\">Về trang Ôn tập</button></section></div>":" cards.</p><button class=\"primary\" data-a=\"go\" data-v=\"review\">Back to Review</button></section></div>","<div class=\"wrap narrow\"><div class=\"row between\"><button class=\"ghost\" data-a=\"go\" data-v=\"review\">← Thoát</button><span class=\"eyebrow\">Thẻ ":"<div class=\"wrap narrow\"><div class=\"row between\"><button class=\"ghost\" data-a=\"go\" data-v=\"review\">← Exit</button><span class=\"eyebrow\">Card ","\" data-a=\"flip\" tabindex=\"0\" role=\"button\" aria-label=\"Lật thẻ\">\n    ":"\" data-a=\"flip\" tabindex=\"0\" role=\"button\" aria-label=\"Flip card\">\n    ","<p class=\"muted\">Câu của bạn: ":"<p class=\"muted\">Your sentence: ","</div><p class=\"muted\">Bấm để xem nghĩa (phím Space)</p>":"</div><p class=\"muted\">Tap to see the meaning (Space key)</p>","Quên":"Again","<1 phút":"<1 min","Khó":"Hard","Nhớ":"Good","Dễ":"Easy","</b><span class=\"small muted\">phím ":"</b><span class=\"small muted\">key ","\">🔊 Nghe</button><button class=\"primary\" data-a=\"flip\">Xem nghĩa</button></div>":"\">🔊 Listen</button><button class=\"primary\" data-a=\"flip\">Show meaning</button></div>","<div><p class=\"eyebrow\">Lịch sử</p><h1>Kết quả học tập</h1>\n    <p class=\"muted\">":"<div><p class=\"eyebrow\">History</p><h1>Your progress</h1>\n    <p class=\"muted\">"," buổi học · ":" lessons · "," bài kiểm tra · tổng ":" tests · "," phút</p></div></section>\n   <section class=\"panel\"><div class=\"row between\"><h3>Bộ sưu tập nhãn dán</h3><span class=\"tag\">":" min in total</p></div></section>\n   <section class=\"panel\"><div class=\"row between\"><h3>Sticker collection</h3><span class=\"tag\">","\n   <section class=\"panel\"><h3>Hành trình level</h3><ul class=\"timeline\">\n     ":"\n   <section class=\"panel\"><h3>Level journey</h3><ul class=\"timeline\">\n     ","</ul></section>\n   <section class=\"panel\"><h3>Bài kiểm tra định kỳ</h3>":"</ul></section>\n   <section class=\"panel\"><h3>Unit tests</h3>","</section>\n   <section class=\"panel\"><h3>Các buổi học</h3>":"</section>\n   <section class=\"panel\"><h3>Lessons</h3>","<section class=\"panel\"><h3>Điểm 20 buổi gần nhất</h3><div class=\"spark\">":"<section class=\"panel\"><h3>Scores from your last 20 lessons</h3><div class=\"spark\">","</b> Test đầu vào · ":"</b> Placement test · ","</b> Hoàn thành khóa ":"</b> Completed the course ","</b> Khóa hiện tại, bắt đầu ":"</b> Current course, started ","<p class=\"muted\">Bài kiểm tra đầu tiên mở sau 5 buổi học.</p>":"<p class=\"muted\">Your first unit test unlocks after 5 lessons.</p>"," phút":" min","Ôn bài":"Review","<p class=\"muted\">Chưa có buổi học nào.</p>":"<p class=\"muted\">No lessons yet.</p>","Mục tiêu học":"Learning goal","Nhắc học & thông báo":"Reminders & notifications","Giao diện & ngày sinh":"Appearance & birthday","Giọng đọc & micro":"Voice & microphone","Hướng dẫn sử dụng":"How to use SEED","Gửi phản hồi":"Send feedback","Về SEED & người sáng lập":"About SEED & the founder","Dữ liệu":"Data","<div class=\"wrap narrow\"><div class=\"sethead\"><button class=\"mini ghost\" data-a=\"setPage\" data-v=\"\">‹ Cài đặt</button><h2>":"<div class=\"wrap narrow\"><div class=\"sethead\"><button class=\"mini ghost\" data-a=\"setPage\" data-v=\"\">‹ Settings</button><h2>","<button class=\"setitem\" data-a=\"logout\"><span class=\"si-ic\">🚪</span><span class=\"si-t danger-t\">Đăng xuất</span><span class=\"si-v\"></span><span class=\"si-go\"></span></button></div>\n   <p class=\"muted small center\">SEED · phiên bản ":"<button class=\"setitem\" data-a=\"logout\"><span class=\"si-ic\">🚪</span><span class=\"si-t danger-t\">Log out</span><span class=\"si-v\"></span><span class=\"si-go\"></span></button></div>\n   <p class=\"muted small center\">SEED · version "," · <a href=\"/privacy\">Quyền riêng tư</a></p></div>":" · <a href=\"/privacy\">Privacy</a></p></div>","Chưa đặt tên":"No name yet","Chưa bật trên máy này":"Not on for this device","Đang tắt":"Off","Mặc định":"Default"," phút/ngày · Trình độ ":" min/day · Level "," · Khóa ":" · Course ","</p><button class=\"primary\" data-a=\"editGoal\">Sửa mục tiêu</button></section>":"</p><button class=\"primary\" data-a=\"editGoal\">Edit goal</button></section>","<section class=\"panel\">\n    <div class=\"row between\"><b>Nhắc khi hôm đó chưa học</b><button class=\"mini seg ":"<section class=\"panel\">\n    <div class=\"row between\"><b>Remind me if I haven't studied</b><button class=\"mini seg ","</section>\n   <section class=\"panel\"><b>Thiết bị này</b>\n    ":"</section>\n   <section class=\"panel\"><b>This device</b>\n    ","Bật":"On","Tắt":"Off","<div class=\"row timerow\"><div class=\"tfield\"><label for=\"remindSet\">Từ</label><input id=\"remindSet\" type=\"time\" value=\"":"<div class=\"row timerow\"><div class=\"tfield\"><label for=\"remindSet\">From</label><input id=\"remindSet\" type=\"time\" value=\"","\" data-change=\"setRemind\"></div>\n     <div class=\"tfield\"><label for=\"remindEnd\">Đến</label><input id=\"remindEnd\" type=\"time\" value=\"":"\" data-change=\"setRemind\"></div>\n     <div class=\"tfield\"><label for=\"remindEnd\">Until</label><input id=\"remindEnd\" type=\"time\" value=\"","\" data-change=\"setRemindEnd\"></div></div>\n    <div class=\"setrow\"><span>Nhắc mỗi</span>":"\" data-change=\"setRemindEnd\"></div></div>\n    <div class=\"setrow\"><span>Remind every</span>","</div>\n    <div class=\"setrow\"><span>Giọng nhắc</span>":"</div>\n    <div class=\"setrow\"><span>Reminder style</span>","30 phút":"30 min","1 giờ":"1 hour","2 giờ":"2 hours","3 giờ":"3 hours","😈 Lầy lội":"😈 Cheeky","🙂 Nhẹ nhàng":"🙂 Gentle","<div class=\"row\"><span class=\"tag good\">Đang nhận thông báo</span><button class=\"mini\" data-a=\"pushTest\">Gửi thử</button><button class=\"mini\" data-a=\"pushOff\">Tắt</button></div>":"<div class=\"row\"><span class=\"tag good\">Notifications on</span><button class=\"mini\" data-a=\"pushTest\">Send a test</button><button class=\"mini\" data-a=\"pushOff\">Turn off</button></div>","<p class=\"small\">Trên iPhone, hãy thêm app vào màn hình chính trước (xem Hướng dẫn sử dụng).</p>":"<p class=\"small\">On iPhone, add the app to your Home Screen first (see How to use SEED).</p>","<button class=\"primary\" data-a=\"pushOn\">Bật thông báo</button>":"<button class=\"primary\" data-a=\"pushOn\">Turn on notifications</button>","<section class=\"panel\">\n    <div class=\"tfield\"><label for=\"bday\">Ngày sinh</label><input id=\"bday\" type=\"date\" value=\"":"<section class=\"panel\">\n    <div class=\"tfield\"><label for=\"bday\">Birthday</label><input id=\"bday\" type=\"date\" value=\"","\" data-change=\"setBday\"></div>\n    <label for=\"festSel\">Chủ đề</label><select id=\"festSel\" data-change=\"setFest\"><option value=\"auto\" ":"\" data-change=\"setBday\"></div>\n    <label for=\"festSel\">Theme</label><select id=\"festSel\" data-change=\"setFest\"><option value=\"auto\" ",">Tự động theo mùa & ngày lễ</option><option value=\"off\" ":">Automatic (seasons & holidays)</option><option value=\"off\" ",">Mặc định</option>\n      ":">Default</option>\n      ","</select>\n    <div class=\"setrow\"><span>Hiệu ứng rơi</span>":"</select>\n    <div class=\"setrow\"><span>Falling effects</span>","</div>\n    <div class=\"setrow\"><span>Cỡ chữ</span>":"</div>\n    <div class=\"setrow\"><span>Text size</span>","</div>\n    <div class=\"setrow\"><span>Chế độ</span>":"</div>\n    <div class=\"setrow\"><span>Mode</span>",">Xem thử: ":">Preview: ","Nhỏ":"Small","Vừa":"Medium","Lớn":"Large","Theo máy":"System","Sáng":"Light","Tối":"Dark","<section class=\"panel\">\n    <label for=\"voiceSel\">Giọng đọc</label><select id=\"voiceSel\" data-change=\"setVoice\">":"<section class=\"panel\">\n    <label for=\"voiceSel\">Voice</label><select id=\"voiceSel\" data-change=\"setVoice\">","</select>\n    <div class=\"setrow\"><span>Tốc độ</span>":"</select>\n    <div class=\"setrow\"><span>Speed</span>","</div>\n    <div class=\"row\"><button data-a=\"speak\" data-v=\"Hello! This is how I sound. Let's practise English together.\">🔊 Nghe thử</button><button class=\"mic ":"</div>\n    <div class=\"row\"><button data-a=\"speak\" data-v=\"Hello! This is how I sound. Let's practise English together.\">🔊 Preview</button><button class=\"mic ","<option>Giọng mặc định</option>":"<option>Default voice</option>","Rất chậm":"Very slow","Chậm":"Slow","● Đang nghe...":"● Listening...","🎤 Thử micro":"🎤 Test microphone","<p class=\"live\" id=\"live\">Hãy nói một câu tiếng Anh...</p>":"<p class=\"live\" id=\"live\">Say a sentence in English...</p>","<section class=\"panel\">\n    <p>Bạn thấy SEED thế nào? Mọi góp ý đều được đọc và dùng để làm app tốt hơn 💚</p>\n    <div class=\"setrow\"><span>Loại</span>":"<section class=\"panel\">\n    <p>How are you finding SEED? Every piece of feedback is read and used to make the app better 💚</p>\n    <div class=\"setrow\"><span>Type</span>","</div>\n    <div class=\"setrow\"><span>Đánh giá</span><div class=\"row stars\">":"</div>\n    <div class=\"setrow\"><span>Rating</span><div class=\"row stars\">","</div></div>\n    <label for=\"fbMsg\">Nội dung</label><textarea id=\"fbMsg\" rows=\"5\" maxlength=\"2000\" placeholder=\"Bạn thích điều gì, gặp lỗi ở đâu, muốn có thêm tính năng gì...\"></textarea>\n    <button class=\"primary\" data-a=\"fbSend\" ":"</div></div>\n    <label for=\"fbMsg\">Message</label><textarea id=\"fbMsg\" rows=\"5\" maxlength=\"2000\" placeholder=\"What do you like, what went wrong, what would you like to see...\"></textarea>\n    <button class=\"primary\" data-a=\"fbSend\" ","💡 Góp ý":"💡 Idea","🐞 Báo lỗi":"🐞 Bug","Khác":"Other","Đang gửi...":"Sending...","<section class=\"panel about center\">\n    <img src=\"/logo-full.png?v=5\" alt=\"SEED\" width=\"240\" height=\"240\" class=\"logo-lg\"><h2>SEED</h2><p class=\"muted\">Học tiếng Anh theo đúng mục tiêu của bạn, mỗi ngày một chút.</p></section>\n   <section class=\"panel founder\"><p class=\"eyebrow\">Người sáng lập</p><h3>":"<section class=\"panel about center\">\n    <img src=\"/logo-full.png?v=5\" alt=\"SEED\" width=\"240\" height=\"240\" class=\"logo-lg\"><h2>SEED</h2><p class=\"muted\">Learn English around your own goals, a little every day.</p></section>\n   <section class=\"panel founder\"><p class=\"eyebrow\">Founder</p><h3>","”</blockquote></section>\n   <section class=\"panel\"><p class=\"small muted\">Phiên bản ":"”</blockquote></section>\n   <section class=\"panel\"><p class=\"small muted\">Version "," · Sinh nhật SEED cùng ngày với người sáng lập (18/3).<br><a href=\"/privacy\">Chính sách quyền riêng tư</a> · <a href=\"/data-deletion\">Xoá dữ liệu</a></p></section>":" · SEED shares its birthday with its founder (18 March).<br><a href=\"/privacy\">Privacy policy</a> · <a href=\"/data-deletion\">Delete your data</a></p></section>","<section class=\"panel\"><p>Xoá toàn bộ tiến độ học để bắt đầu lại từ đầu. Không thể hoàn tác.</p><button class=\"danger\" data-a=\"reset\" id=\"resetBtn\">Xóa tiến độ và làm lại</button></section>":"<section class=\"panel\"><p>Erase all your learning progress and start over. This can't be undone.</p><button class=\"danger\" data-a=\"reset\" id=\"resetBtn\">Erase progress and start over</button></section>","Một người yêu cái đẹp: yêu thiên nhiên, cây cối, những bức tranh và từng nốt nhạc, và yêu con người. SEED được tạo ra từ mong muốn giúp mỗi người học tiếng Anh nhẹ nhàng như chăm một mầm cây: mỗi ngày tưới một chút, rồi đến lúc sẽ nở hoa.":"Someone who loves beautiful things: nature, plants, paintings, every note of music, and people. SEED grew from a wish to make learning English feel as gentle as tending a seedling: a little water every day, and one day it blooms.","🌿 Thiên nhiên":"🌿 Nature","🎨 Hội hoạ":"🎨 Painting","🎵 Âm nhạc":"🎵 Music","🎻 Nhạc cụ":"🎻 Instruments","💚 Con người":"💚 People","Ngôn ngữ cũng như âm nhạc: không cần hoàn hảo, chỉ cần mỗi ngày được cất lên.":"Language is like music: it doesn't have to be perfect, it just needs to be heard every day.","Một buổi học gồm những gì?":"What's in a lesson?","6 bước: Ôn bài cũ → Từ vựng mới → Tự đặt câu → Dịch câu → Role-play với AI → Tổng kết. Bấm thanh tiến trình trên đầu bài để quay lại xem bước đã học. Cứ 5 buổi có một bài kiểm tra ngắn.":"6 steps: Review → New words → Your sentences → Translation → Role-play with AI → Summary. Tap the progress bar at the top to go back to a step you've done. Every 5 lessons there's a short unit test.","Tra nghĩa và nghe phát âm":"Look up words and hear pronunciation","Bấm vào bất kỳ từ tiếng Anh nào để xem nghĩa, từ loại, phiên âm IPA và ví dụ. Bấm 🔊 để nghe, 🌐 Dịch để dịch cả câu ngay trong trang. Đổi giọng đọc và tốc độ trong Cài đặt → Giọng đọc & micro.":"Tap any English word to see its meaning, part of speech, IPA and examples. Tap 🔊 to listen, or 🌐 Translate to translate the whole sentence right on the page. Change the voice and speed in Settings → Voice & microphone.","Luyện nói bằng micro":"Speaking practice with the mic","Bấm 🎤 rồi nói. App chấm phát âm theo từng từ. Nhận giọng nói chạy tốt nhất trên Chrome hoặc Edge, cần có Internet.":"Tap 🎤 and speak. The app scores your pronunciation word by word. Speech recognition works best in Chrome or Edge and needs an internet connection.","Flashcard và ôn tập":"Flashcards and review","Từ đã học tự vào flashcard. App nhắc ôn đúng lúc bạn sắp quên (lặp lại ngắt quãng). Vào tab Ôn tập để lật thẻ hoặc làm bài ôn.":"Words you learn go into your flashcards automatically. The app brings them back just before you're likely to forget (spaced repetition). Open the Review tab to flip cards or take a review quiz.","Bật thông báo nhắc học":"Turning on study reminders","Cài đặt → Nhắc học & thông báo → Bật thông báo. Mỗi thiết bị bật riêng một lần. Học xong (hoặc đã vào học, ôn flashcard) trong ngày thì app không nhắc nữa.":"Settings → Reminders & notifications → Turn on notifications. Each device needs to be turned on once. Once you've studied that day (finished a lesson, started one, or reviewed flashcards), the app stops reminding you.","Dùng trên iPhone":"Using SEED on iPhone","Mở bằng Safari → nút Chia sẻ → Thêm vào MH chính → mở app từ biểu tượng ngoài màn hình. Sau đó mới bật được thông báo (iOS 16.4 trở lên).":"Open in Safari → Share → Add to Home Screen → open the app from its home screen icon. Then you can turn on notifications (iOS 16.4 or later).","Cộng đồng: trò chuyện ẩn danh":"Community: anonymous chat","Phòng chung theo trình độ để hỏi đáp; Ghép đôi 1-1 để luyện nói, kể cả khi người kia đang offline. Mọi người chỉ thấy biệt danh. Không chia sẻ số điện thoại, mạng xã hội hay đường link (app sẽ chặn).":"Level-based rooms for questions and answers; 1-on-1 matching for speaking practice, even when the other person is offline. Everyone only sees nicknames. Don't share phone numbers, social media or links (the app blocks them).","Giữ cuộc trò chuyện, thu hồi, chặn":"Keeping chats, unsending, blocking","⭐ Giữ: khi cả hai cùng bấm, hai bạn thành bạn chat và tin nhắn không bị xoá (cuộc trò chuyện thường tự xoá sau 30 ngày). Bấm ⋯ ở tin của mình để thu hồi. Bấm ⋯ trên đầu cuộc trò chuyện để tắt thông báo, kết thúc hoặc chặn. Bỏ chặn: Ghép đôi 1-1 → Người đã chặn.":"⭐ Keep: when you both tap it, you become chat buddies and your messages are kept (other chats are deleted after 30 days). Tap ⋯ on your own message to unsend it. Tap ⋯ at the top of a chat to mute, end or block. To unblock: 1-on-1 → Blocked people.","Giao diện theo mùa và sinh nhật":"Seasonal themes and birthdays","Giao diện tự đổi theo 4 mùa và các ngày lễ (Tết, 14/2, 8/3, 18/3, 1/6, Trung thu, 14/10, 20/11, Giáng Sinh…). Nhập ngày sinh để nhận lời chúc riêng đúng ngày sinh nhật.":"The look changes with the four seasons and holidays (Lunar New Year, 14 Feb, 8 Mar, 18 Mar, 1 Jun, Mid-Autumn, 14 Oct, 20 Nov, Christmas…). Add your birthday to get a special greeting on the day.","Đổi tài khoản":"Switching accounts","Cài đặt → Đăng xuất, rồi chọn tài khoản khác khi đăng nhập lại. Tiến độ được lưu theo tài khoản và đồng bộ giữa các thiết bị.":"Settings → Log out, then choose another account when you log back in. Progress is saved per account and synced across devices.","Tra từ ":"Look up ","Tra từ tiếng Anh \"":"Look up the English word \"","\" trong ngữ cảnh: \"":"\" in this context: \"","\".\nTrả JSON {\"headword\":\"dạng gốc\",\"ipa\":\"phiên âm IPA\",\"pos\":\"từ loại tiếng Việt (Danh từ, Động từ, Tính từ...)\",\"meaning\":\"nghĩa tiếng Việt đúng ngữ cảnh; thêm 1-2 nghĩa phổ biến khác nếu có\",\n\"examples\":[{\"en\":\"câu ví dụ\",\"vi\":\"dịch\"}] (3 câu, ưu tiên lĩnh vực của người học),\"collocations\":[\"cụm hay đi kèm\"] (tối đa 3)}":"\".\nReturn JSON {\"headword\":\"base form\",\"ipa\":\"IPA transcription\",\"pos\":\"part of speech in English (noun, verb, adjective...)\",\"meaning\":\"Vietnamese meaning that fits the context; add 1-2 other common meanings if any\",\n\"examples\":[{\"en\":\"example sentence\",\"vi\":\"Vietnamese translation\"}] (3 sentences, preferably from the learner's field),\"collocations\":[\"common collocations\"] (max 3)}","</div></div>\n     <button class=\"mini\" data-a=\"closePop\" aria-label=\"Đóng\">✕</button></div>\n   ":"</div></div>\n     <button class=\"mini\" data-a=\"closePop\" aria-label=\"Close\">✕</button></div>\n   ","\" data-sl=\"en\">🌐 Dịch</button></div><div class=\"pop-tr\"></div>":"\" data-sl=\"en\">🌐 Translate</button></div><div class=\"pop-tr\"></div>"," <span class=\"muted small\">(định nghĩa tiếng Anh)</span>":" <span class=\"muted small\">(English definition)</span>","<p class=\"muted small\">Hay đi với: ":"<p class=\"muted small\">Often used with: ","<p class=\"muted small\"><span class=\"spin\"></span> Đang tra...</p>":"<p class=\"muted small\"><span class=\"spin\"></span> Looking up...</p>","<p class=\"muted\">Chưa tra được từ này":"<p class=\"muted\">Couldn't look up this word",". Thử nút Dịch hoặc Cambridge bên dưới.</p>":". Try Translate or Cambridge below.</p>"," vì AI đang nghỉ":" because AI is taking a break","Đã có trong flashcard":"Already in flashcards","+ Thêm vào flashcard":"+ Add to flashcards","Tra từ tiếng Việt":"Look up Vietnamese word","Câu tiếng Việt: \"":"Vietnamese sentence: \"","\". Người học bấm vào âm tiết thứ ":"\". The learner tapped syllable number "," là \"":" which is \"","\".\nXác định TỪ tiếng Việt chứa âm tiết đó (có thể là từ ghép nhiều âm tiết, ví dụ \"hành lý\", \"kỹ sư phần mềm\").\nTrả JSON {\"word_vi\":\"từ tiếng Việt\",\"start\":vị trí âm tiết đầu tiên của từ (đếm từ 1),\"length\":số âm tiết,\"en\":\"từ hoặc cụm tiếng Anh tương đương đúng ngữ cảnh câu\",\"alts\":[\"cách nói khác\"] (tối đa 2),\"pos\":\"từ loại tiếng Việt\",\"ipa\":\"IPA của từ tiếng Anh chính\",\"note\":\"lưu ý cách dùng ngắn, nếu có\",\"examples\":[{\"en\":\"câu ví dụ\",\"vi\":\"dịch\"}] (2 câu)}":"\".\nIdentify the Vietnamese WORD containing that syllable (it may be a multi-syllable compound, e.g. \"hành lý\", \"kỹ sư phần mềm\").\nReturn JSON {\"word_vi\":\"the Vietnamese word\",\"start\":position of the word's first syllable (counting from 1),\"length\":number of syllables,\"en\":\"equivalent English word or phrase that fits the sentence\",\"alts\":[\"other ways to say it\"] (max 2),\"pos\":\"part of speech in English\",\"ipa\":\"IPA of the main English word\",\"note\":\"short usage note in English, if any\",\"examples\":[{\"en\":\"example sentence\",\"vi\":\"Vietnamese translation\"}] (2 sentences)}","<div class=\"row between nowrap\"><div><p class=\"eyebrow\">Tiếng Việt → Tiếng Anh</p><div class=\"word sm\">":"<div class=\"row between nowrap\"><div><p class=\"eyebrow\">Vietnamese → English</p><div class=\"word sm\">","</div></div><button class=\"mini\" data-a=\"closePop\" aria-label=\"Đóng\">✕</button></div>\n   ":"</div></div><button class=\"mini\" data-a=\"closePop\" aria-label=\"Close\">✕</button></div>\n   ","\">🌐 Dịch cả câu</button></div>\n   <div class=\"pop-tr\"></div>":"\">🌐 Translate sentence</button></div>\n   <div class=\"pop-tr\"></div>","<p class=\"small\">Cách nói khác: ":"<p class=\"small\">Other ways to say it: ","<p class=\"muted small\"><span class=\"spin\"></span> Đang tra theo ngữ cảnh câu...</p>":"<p class=\"muted small\"><span class=\"spin\"></span> Looking up in context...</p>"," Bạn vẫn có thể dịch cả câu bên dưới.</p>":" You can still translate the whole sentence below.</p>","Chưa tra được":"Couldn't look it up","Tra từng từ tiếng Việt cần AI đang hoạt động.":"Looking up Vietnamese words needs AI to be available.","Đến giờ học tiếng Anh":"Time to study English"," đang chờ bạn. ":" is waiting for you. "," thẻ flashcard cần ôn.":" flashcards to review.","Học tiếng Anh":"Study English","Mở app: ":"Open the app: ","SUMMARY:Học tiếng Anh":"SUMMARY:Study English","DESCRIPTION:Mở app: ":"DESCRIPTION:Open the app: ","DESCRIPTION:Đến giờ học tiếng Anh":"DESCRIPTION:Time to study English","Trên iPhone: mở app bằng Safari, bấm Chia sẻ → Thêm vào MH chính, rồi mở app từ biểu tượng ngoài màn hình để bật thông báo.":"On iPhone: open the app in Safari, tap Share → Add to Home Screen, then open it from the home screen icon to turn on notifications.","Trình duyệt này không hỗ trợ thông báo đẩy. Hãy dùng Chrome (Android/máy tính) hoặc Safari (iPhone, iOS 16.4 trở lên).":"This browser doesn't support push notifications. Please use Chrome (Android/computer) or Safari (iPhone, iOS 16.4 or later).","<span class=\"spin\"></span> Đang bật...":"<span class=\"spin\"></span> Turning on...","Bạn chưa cho phép thông báo. Vào cài đặt trình duyệt/điện thoại để cho phép thông báo của trang này.":"You haven't allowed notifications. Go to your browser or phone settings and allow notifications for this site.","Server chưa cấu hình khóa thông báo":"The server hasn't set up notification keys","Không lưu được thiết bị":"Couldn't save this device","Đã bật nhắc học trên thiết bị này":"Study reminders turned on for this device","Đã tắt nhắc học trên thiết bị này":"Study reminders turned off for this device","Đã gửi thông báo thử, kiểm tra thanh thông báo":"Test notification sent, check your notifications","Gửi thử thất bại":"Couldn't send the test","Hãy viết vài dòng hoặc chọn số sao nhé":"Write a few lines or pick a star rating","Không gửi được":"Couldn't send","Cảm ơn bạn đã góp ý 💚":"Thanks for your feedback 💚","Đã ghép! Bạn ấy có thể chưa online, cứ chào trước nhé 👋":"Matched! They may not be online yet, so say hi first 👋","Đã bỏ chặn":"Unblocked","🔕 Đã tắt thông báo của cuộc trò chuyện này. Tin nhắn vẫn hiện trong hộp thư.":"🔕 Notifications muted for this chat. Messages still show up in your inbox.","🔔 Đã bật lại thông báo":"🔔 Notifications turned back on","Bấm lần nữa để chặn":"Tap again to block","Đã chặn. Bạn sẽ không bao giờ thấy tin, bị ghép hay nhận thông báo từ người này nữa.":"Blocked. You'll never see messages from, be matched with, or get notifications from this person again.","⭐ Hai bạn đã là bạn chat!":"⭐ You're now chat buddies!","Đã bấm giữ. Chờ bạn ấy đồng ý nhé.":"Kept. Waiting for them to agree.","Đã bỏ giữ":"No longer kept","Bấm lần nữa để xác nhận":"Tap again to confirm","Đã gửi báo cáo. Cảm ơn bạn!":"Report sent. Thank you!","Đã chặn. Bạn sẽ không thấy tin nhắn của người này nữa.":"Blocked. You won't see this person's messages anymore.","Đã bật hiệu ứng rơi":"Falling effects on","Đã tắt hiệu ứng rơi":"Falling effects off","Máy nghe được: \"":"I heard: \"","Đã tạo lộ trình. Bắt đầu buổi 1 thôi!":"Your course is ready. Let's start lesson 1!","Đã lưu mục tiêu. Các buổi học tới sẽ theo lĩnh vực mới.":"Goal saved. Upcoming lessons will follow your new field.","Bắt đầu khóa mới!":"New course started!","Nghe và gõ lại từ":"Listen and type the word","nghĩa là ":"means ","Đã thêm vào flashcard":"Added to flashcards","Lời nhắc sẽ nhẹ nhàng":"Reminders will be gentle","Lời nhắc sẽ lầy lội 😈":"Reminders will be cheeky 😈","Đã bật nhắc học":"Study reminders on","Đã tắt nhắc học":"Study reminders off","<span class=\"spin\"></span> Đang dịch...":"<span class=\"spin\"></span> Translating...","<p class=\"muted small\">Chưa dịch được: ":"<p class=\"muted small\">Couldn't translate: ","lỗi":"error","Key và model hợp lệ":"Key and model are valid","Gemini chưa dùng được: ":"Gemini isn't available yet: ","Bấm lần nữa để xác nhận xóa":"Tap again to confirm erasing","Đã xóa tiến độ":"Progress erased","Đã lưu ngày sinh 🎂":"Birthday saved 🎂","Đã xoá ngày sinh":"Birthday removed","Đã lưu giờ nhắc":"Reminder time saved","Đã ghép với một bạn luyện tập 🎉":"Matched with a practice partner 🎉","Trình duyệt này chưa hỗ trợ ghi âm":"This browser doesn't support recording yet","Đoạn ghi âm quá ngắn":"Recording too short","Chưa có quyền dùng micro":"No permission to use the microphone","<h2>Cộng đồng dành cho người từ 16 tuổi</h2>\n    <p class=\"muted\">Phần trò chuyện với người lạ chỉ mở cho người từ 16 tuổi trở lên. Bạn vẫn có thể luyện nói với AI trong bước Role-play của mỗi bài học nhé!</p></section></div>":"<h2>Community is for ages 16 and up</h2>\n    <p class=\"muted\">Chatting with strangers is only open to people aged 16 and over. You can still practise speaking with AI in the Role-play step of every lesson!</p></section></div>","<p class=\"eyebrow\">Cộng đồng</p><h2>Trò chuyện ẩn danh để cùng luyện tiếng Anh</h2>\n    <p>Gặp những người cũng đang học, cùng luyện nói, hỏi đáp và động viên nhau. Không ai biết bạn là ai: mỗi ngày bạn có một biệt danh ngẫu nhiên.</p>\n    <h3>Nội quy</h3><ul class=\"rules\">\n     <li>🙂 Tôn trọng và lịch sự. Không xúc phạm, quấy rối, phân biệt đối xử.</li>\n     <li>🔒 Không chia sẻ thông tin cá nhân: số điện thoại, địa chỉ, mạng xã hội, đường link (app sẽ chặn).</li>\n     <li>🚫 Không nội dung người lớn, bạo lực, lừa đảo, quảng cáo.</li>\n     <li>🗣️ Ưu tiên nói tiếng Anh; dùng tiếng Việt khi cần hỏi bài.</li>\n     <li>🚩 Gặp người vi phạm: bấm ⋯ ở tin nhắn để <b>Báo cáo</b> hoặc <b>Chặn</b>. Người bị nhiều báo cáo sẽ bị khoá chat.</li>\n     <li>🎤 Tin nhắn giọng nói được lưu tối đa 30 ngày rồi tự xoá.</li></ul>\n    <p class=\"muted small\">Chỉ dành cho người từ 16 tuổi trở lên.</p>\n    <button class=\"primary big\" data-a=\"chAgree\">Tôi đồng ý, vào cộng đồng</button></section></div>":"<p class=\"eyebrow\">Community</p><h2>Practise English together, anonymously</h2>\n    <p>Meet other learners, practise speaking, ask questions and cheer each other on. No one knows who you are: you get a random nickname every day.</p>\n    <h3>Community rules</h3><ul class=\"rules\">\n     <li>🙂 Be respectful and kind. No insults, harassment or discrimination.</li>\n     <li>🔒 Don't share personal information: phone numbers, addresses, social media or links (the app blocks them).</li>\n     <li>🚫 No adult content, violence, scams or advertising.</li>\n     <li>🗣️ Use English whenever you can; Vietnamese is fine when asking about a lesson.</li>\n     <li>🚩 If someone breaks the rules, tap ⋯ on their message to <b>Report</b> or <b>Block</b>. People with many reports get chat-banned.</li>\n     <li>🎤 Voice messages are kept for up to 30 days, then deleted automatically.</li></ul>\n    <p class=\"muted small\">For ages 16 and up only.</p>\n    <button class=\"primary big\" data-a=\"chAgree\">I agree, join the community</button></section></div>","\" data-a=\"chTab\" data-v=\"room\">💬 Phòng chung</button><button class=\"seg ":"\" data-a=\"chTab\" data-v=\"room\">💬 Rooms</button><button class=\"seg ","\" data-a=\"chTab\" data-v=\"pair\">🤝 Ghép đôi 1-1</button>\n    ":"\" data-a=\"chTab\" data-v=\"pair\">🤝 1-on-1</button>\n    ","<span class=\"muted small\">Hôm nay bạn là <b>":"<span class=\"muted small\">Today you're <b>","Mọi trình độ":"All levels","\" title=\"Chặn người này, không bao giờ thấy tin của họ nữa\">⛔</button></div>":"\" title=\"Block this person and never see their messages again\">⛔</button></div>"," <span class=\"tag good\">⭐ Bạn chat</span>":" <span class=\"tag good\">⭐ Chat buddy</span>"," <span class=\"tag\">muốn giữ cuộc trò chuyện</span>":" <span class=\"tag\">wants to keep this chat</span>","Chưa có tin nhắn, hãy chào bạn ấy nhé!":"No messages yet, say hi!","<span title=\"Đã tắt thông báo\">🔕</span>":"<span title=\"Notifications muted\">🔕</span>","<section class=\"panel\">\n      <div class=\"row between nowrap\"><div><h2>Ghép đôi 1-1</h2></div>":"<section class=\"panel\">\n      <div class=\"row between nowrap\"><div><h2>1-on-1 chats</h2></div>","\n      <h3>Cuộc trò chuyện của bạn</h3>\n      ":"\n      <h3>Your chats</h3>\n      ","<div class=\"row\"><span class=\"spin\"></span><span>Đang tìm bạn phù hợp...</span><button class=\"mini\" data-a=\"chCancel\">Huỷ tìm</button></div>":"<div class=\"row\"><span class=\"spin\"></span><span>Finding a good match...</span><button class=\"mini\" data-a=\"chCancel\">Cancel</button></div>","<button class=\"primary big\" data-a=\"chMatch\">🔍 Tìm bạn luyện tập mới</button>":"<button class=\"primary big\" data-a=\"chMatch\">🔍 Find a new practice partner</button>","<p class=\"muted\">Chưa có cuộc trò chuyện nào.</p>":"<p class=\"muted\">No chats yet.</p>","Ẩn người đã chặn":"Hide blocked people","Người đã chặn":"Blocked people","</b><br><span class=\"muted small\">Chặn lúc ":"</b><br><span class=\"muted small\">Blocked on ","|0\">Bỏ chặn</button>":"|0\">Unblock</button>","|1\">Bỏ chặn & mở lại chat</button>":"|1\">Unblock & reopen chat</button>","<p class=\"muted small\">Bạn chưa chặn ai.</p>":"<p class=\"muted small\">You haven't blocked anyone.</p>","<div class=\"phead\"><button class=\"mini ghost\" data-a=\"chBack\" aria-label=\"Quay lại\">←</button>":"<div class=\"phead\"><button class=\"mini ghost\" data-a=\"chBack\" aria-label=\"Back\">←</button>","\n      <button class=\"mini\" data-a=\"chHMenu\" aria-label=\"Tuỳ chọn\" aria-expanded=\"":"\n      <button class=\"mini\" data-a=\"chHMenu\" aria-label=\"Options\" aria-expanded=\"","<span class=\"tag good\">⭐ Bạn chat</span>":"<span class=\"tag good\">⭐ Chat buddy</span>","\" title=\"Giữ cuộc trò chuyện\">":"\" title=\"Keep this chat\">","✓ Đã giữ":"✓ Kept","⭐ Giữ":"⭐ Keep","\">⛔ Chặn</button></div>":"\">⛔ Block</button></div>","🔔 Bật lại thông báo":"🔔 Unmute","🔕 Tắt thông báo":"🔕 Mute","Huỷ bạn chat":"Stop being chat buddies","Kết thúc":"End chat","<p class=\"fb small\">⭐ Bạn ấy muốn giữ cuộc trò chuyện. Bấm “Giữ” để thành bạn chat.</p>":"<p class=\"fb small\">⭐ They want to keep this chat. Tap “Keep” to become chat buddies.</p>","<p class=\"fb small\">Cuộc trò chuyện đã kết thúc.</p>":"<p class=\"fb small\">This chat has ended.</p>","Bạn đã thu hồi một tin nhắn":"You unsent a message","Tin nhắn đã được thu hồi":"This message was unsent","<span class=\"muted\">(Tin nhắn đã bị ẩn do vi phạm)</span>":"<span class=\"muted\">(Message hidden for breaking the rules)</span>","Xem tiếng Anh":"Show in English","\">↩️ Thu hồi</button><button class=\"mini ghost\" data-a=\"chMenu\" data-v=\"\">Đóng</button></div>":"\">↩️ Unsend</button><button class=\"mini ghost\" data-a=\"chMenu\" data-v=\"\">Close</button></div>","<div class=\"row cmenu\"><span class=\"small\">🚩 Báo cáo:</span>":"<div class=\"row cmenu\"><span class=\"small\">🚩 Report:</span>","\">⛔ Chặn người này</button><button class=\"mini ghost\" data-a=\"chMenu\" data-v=\"\">Đóng</button></div>":"\">⛔ Block this person</button><button class=\"mini ghost\" data-a=\"chMenu\" data-v=\"\">Close</button></div>","Thô tục":"Offensive","Quấy rối":"Harassment","Nội dung người lớn":"Adult content","Lừa đảo/quảng cáo":"Scam/advertising","Chưa có tin nhắn nào. Hãy chào mọi người nhé: “Hi everyone! 👋”":"No messages yet. Say hello to everyone: “Hi everyone! 👋”","<p class=\"fb small\">Bạn đang bị tạm khoá trò chuyện đến ":"<p class=\"fb small\">You're temporarily banned from chat until "," do bị báo cáo vi phạm.</p>":" because of reports against you.</p>","<div class=\"row recbar\"><span class=\"recdot\"></span><b id=\"recT\">0:00</b><span class=\"muted small\">Đang ghi âm (tối đa 60 giây)</span><button class=\"ghost\" data-a=\"chRecCancel\">Huỷ</button><button class=\"primary\" data-a=\"chRecStop\">Dừng & gửi</button></div>":"<div class=\"row recbar\"><span class=\"recdot\"></span><b id=\"recT\">0:00</b><span class=\"muted small\">Recording (up to 60 seconds)</span><button class=\"ghost\" data-a=\"chRecCancel\">Cancel</button><button class=\"primary\" data-a=\"chRecStop\">Stop & send</button></div>","<div class=\"row nowrap\"><label class=\"sr\" for=\"chIn\">Tin nhắn</label><input id=\"chIn\" data-enter=\"chSend\" maxlength=\"500\" placeholder=\"Viết bằng tiếng Anh (hoặc hỏi bằng tiếng Việt)...\" autocomplete=\"off\">\n         <button class=\"round\" data-a=\"chRec\" aria-label=\"Ghi âm\" title=\"Gửi tin nhắn giọng nói\">🎤</button><button class=\"primary\" data-a=\"chSend\" ":"<div class=\"row nowrap\"><label class=\"sr\" for=\"chIn\">Message</label><input id=\"chIn\" data-enter=\"chSend\" maxlength=\"500\" placeholder=\"Write in English (or ask in Vietnamese)...\" autocomplete=\"off\">\n         <button class=\"round\" data-a=\"chRec\" aria-label=\"Record\" title=\"Send a voice message\">🎤</button><button class=\"primary\" data-a=\"chSend\" ","Gửi":"Send","Tết Nguyên Đán":"Lunar New Year","Chúc mừng năm mới! Năm mới học tiếng Anh tiến bộ vượt bậc nhé 🧧":"Happy Lunar New Year! Wishing you a year of big leaps in your English 🧧","Lễ Tình nhân 14/2":"Valentine's Day","Happy Valentine's Day! Học thêm vài câu tỏ tình bằng tiếng Anh nào 💌":"Happy Valentine's Day! How about learning a few romantic lines in English? 💌","Quốc tế Phụ nữ 8/3":"International Women's Day","Chúc mừng ngày 8/3! Gửi lời chúc tới những người phụ nữ tuyệt vời 💐":"Happy Women's Day! Sending love to all the amazing women out there 💐","Sinh nhật người sáng lập 18/3":"Founder's birthday (18 March)","Hôm nay 18/3 là sinh nhật người tạo ra app này, một người yêu hội họa, âm nhạc và thiên nhiên. Cảm ơn bạn đã cùng học, cùng yêu cái đẹp! 🎨🎵":"Today, 18 March, is the birthday of the person who made this app, someone who loves painting, music and nature. Thank you for learning with us and loving beautiful things! 🎨🎵","Quốc tế Thiếu nhi 1/6":"Children's Day","Happy Children's Day! Ai cũng có một đứa trẻ bên trong, học vui như chơi nhé 🎈":"Happy Children's Day! There's a child in all of us, so make learning feel like play 🎈","Tết Trung thu":"Mid-Autumn Festival","Trung thu vui vẻ! Thử kể về Tết Trung thu bằng tiếng Anh xem 🥮":"Happy Mid-Autumn Festival! Try describing the festival in English 🥮","Ngày đặc biệt 14/10":"A special day (14 October)","Ngày Nhà giáo Việt Nam 20/11":"Vietnamese Teachers' Day","Chúc mừng ngày Nhà giáo Việt Nam 20/11! Tri ân những người thầy, người cô 💐":"Happy Vietnamese Teachers' Day! A big thank-you to all our teachers 💐","Tết Dương lịch":"New Year's Day","Happy New Year! Năm mới, mục tiêu mới: mỗi ngày thêm vài từ, cuối năm nói tiếng Anh thật tự tin 🎆":"Happy New Year! New year, new goals: a few new words every day, and by the end of the year you'll speak English with real confidence 🎆","Giáng Sinh":"Christmas","Merry Christmas! Giáng Sinh an lành và ấm áp 🎄":"Merry Christmas! Wishing you a warm and peaceful Christmas 🎄","Sinh nhật của bạn":"Your birthday","Mùa xuân":"Spring","Xuân về, hoa nở. Gieo vài từ mới hôm nay, mai sẽ nở thành câu nói 🌸":"Spring is here and flowers are blooming. Plant a few new words today and tomorrow they'll grow into sentences 🌸","Mùa hè":"Summer","Hè rực rỡ! Học một bài nhẹ rồi nghe một bản nhạc tiếng Anh nhé ☀️🎶":"Bright summer days! Do a light lesson, then listen to an English song ☀️🎶","Mùa thu":"Autumn","Thu dịu dàng như một bản violin. Pha tách trà và học vài câu mới nào 🍂🎻":"Autumn is as gentle as a violin. Make a cup of tea and learn a few new sentences 🍂🎻","Mùa đông":"Winter","Đông về, ngoài kia lạnh nhưng tiếng Anh của bạn vẫn ấm. Vào học thôi ❄️🎹":"Winter is here. It's cold outside, but your English is still warm. Time to study ❄️🎹","Chúc mừng sinh nhật ":"Happy birthday ","! 🎂 Chúc bạn tuổi mới thật nhiều niềm vui và nói tiếng Anh ngày càng giỏi. Happy birthday!":"! 🎂 Wishing you a year full of joy and ever-better English. Happy birthday!","Trang chủ":"Home","Lộ trình":"Course","Ôn tập":"Review","Cộng đồng":"Community","Lịch sử":"History","<div class=\"hin\"><a href=\"#\" class=\"brand\" data-a=\"go\" data-v=\"home\"><img class=\"logo\" src=\"/logo.png?v=5\" alt=\"\" width=\"40\" height=\"40\"><span><b>SEED</b><small>Tiếng Anh cá nhân hóa</small></span></a>\n    ":"<div class=\"hin\"><a href=\"#\" class=\"brand\" data-a=\"go\" data-v=\"home\"><img class=\"logo\" src=\"/logo.png?v=5\" alt=\"\" width=\"40\" height=\"40\"><span><b>SEED</b><small>Personalised English</small></span></a>\n    ","\n     <div class=\"usermenu\"><button class=\"avatar\" data-a=\"menu\" aria-label=\"Tài khoản ":"\n     <div class=\"usermenu\"><button class=\"avatar\" data-a=\"menu\" aria-label=\"Account ","<nav class=\"tabs-top\" aria-label=\"Điều hướng\">":"<nav class=\"tabs-top\" aria-label=\"Navigation\">","<span class=\"lvl\" title=\"Trình độ hiện tại\">":"<span class=\"lvl\" title=\"Current level\">","<a href=\"#\" data-a=\"logout\">Đăng xuất</a></div>":"<a href=\"#\" data-a=\"logout\">Log out</a></div>","Tài khoản":"Account","<a href=\"/admin\">🛠️ Quản trị</a>":"<a href=\"/admin\">🛠️ Admin</a>","<a href=\"#\" data-a=\"go\" data-v=\"settings\">Cài đặt</a>":"<a href=\"#\" data-a=\"go\" data-v=\"settings\">Settings</a>","Cài đặt":"Settings","<div class=\"wrap\"><section class=\"panel center\"><p><span class=\"spin\"></span> Đang tải tiến độ của bạn...</p></section></div>":"<div class=\"wrap\"><section class=\"panel center\"><p><span class=\"spin\"></span> Loading your progress...</p></section></div>","đang kiểm tra kết nối...":"checking connection..."};
+const _t = s => (LANG === "en" && EN[s] !== undefined) ? EN[s] : s;
+const prevTr = p => { if (!p || LANG !== "en") return p || ""; const me = p.startsWith("Bạn: "); const body = me ? p.slice(5) : p; return (me ? "You: " : "") + _t(body); };
+const whoName = w => (LANG === "en" && w?.name_en) || w?.name || "";
+const VI_OF = Object.fromEntries(Object.entries(EN).map(([v, e]) => [e, v]));
+// Nhãn lưu trong hồ sơ (lĩnh vực, tình huống) có thể được lưu bằng ngôn ngữ cũ: đổi sang ngôn ngữ đang dùng
+const relabel = x => LANG === "en" ? _t(x) : (VI_OF[x] || x);
+document.documentElement.lang = LANG;
+
 /* =====================================================================
    DỮ LIỆU CỐ ĐỊNH
    ===================================================================== */
 const LEVELS = ["A0","A1","A2","B1","B2","C1"];
-const LEVEL_VI = {A0:"Mới bắt đầu",A1:"Sơ cấp",A2:"Sơ trung cấp",B1:"Trung cấp",B2:"Trung cao cấp",C1:"Cao cấp"};
-const GOALS = [["communication","Giao tiếp"],["work","Công việc"],["travel","Du lịch"],["exam","Thi cử"]];
+const LEVEL_VI = {A0:_t("Mới bắt đầu"),A1:_t("Sơ cấp"),A2:_t("Sơ trung cấp"),B1:_t("Trung cấp"),B2:_t("Trung cao cấp"),C1:_t("Cao cấp")};
+const GOALS = [["communication",_t("Giao tiếp")],["work",_t("Công việc")],["travel",_t("Du lịch")],["exam",_t("Thi cử")]];
 // Mục tiêu → lĩnh vực → tình huống cụ thể
-const WORK_COMMON = ["Họp nhóm, báo cáo tiến độ","Viết email công việc","Thuyết trình","Họp online với khách hàng, đối tác","Đàm phán","Small talk với đồng nghiệp nước ngoài","Phỏng vấn xin việc","Đọc tài liệu chuyên ngành"];
+const WORK_COMMON = [_t("Họp nhóm, báo cáo tiến độ"),_t("Viết email công việc"),_t("Thuyết trình"),_t("Họp online với khách hàng, đối tác"),_t("Đàm phán"),_t("Small talk với đồng nghiệp nước ngoài"),_t("Phỏng vấn xin việc"),_t("Đọc tài liệu chuyên ngành")];
 const FIELDS = {
   communication:[
-    ["Đời sống hằng ngày",["Chào hỏi, làm quen","Mua sắm, đi chợ","Gọi món ở quán ăn","Hỏi đường, đi lại","Gọi điện thoại","Đi khám bệnh, mua thuốc","Ngân hàng, bưu điện","Thuê nhà, nói chuyện với hàng xóm"]],
-    ["Giao tiếp khi du lịch",["Sân bay, máy bay","Khách sạn","Taxi, tàu xe","Nhà hàng","Tham quan, mua vé","Mua sắm, trả giá","Xử lý sự cố (mất đồ, ốm)"]],
-    ["Kết bạn, mạng xã hội",["Small talk","Nói về sở thích","Nhắn tin, bình luận","Chia sẻ quan điểm","Gọi video với bạn nước ngoài"]],
-    ["Gia đình, nuôi dạy con",["Nói chuyện với con bằng tiếng Anh","Đọc truyện cho con","Sinh hoạt hằng ngày ở nhà","Trao đổi với giáo viên trường quốc tế"]],
-    ["Hẹn hò, tình cảm",["Làm quen, mời đi chơi","Nhắn tin","Bày tỏ cảm xúc","Gặp gia đình người yêu"]],
-    ["Nói trước đám đông",["Thuyết trình","Phát biểu, chúc mừng","Nêu ý kiến, tranh luận","Dẫn chương trình"]]],
+    [_t("Đời sống hằng ngày"),[_t("Chào hỏi, làm quen"),_t("Mua sắm, đi chợ"),_t("Gọi món ở quán ăn"),_t("Hỏi đường, đi lại"),_t("Gọi điện thoại"),_t("Đi khám bệnh, mua thuốc"),_t("Ngân hàng, bưu điện"),_t("Thuê nhà, nói chuyện với hàng xóm")]],
+    [_t("Giao tiếp khi du lịch"),[_t("Sân bay, máy bay"),_t("Khách sạn"),_t("Taxi, tàu xe"),_t("Nhà hàng"),_t("Tham quan, mua vé"),_t("Mua sắm, trả giá"),_t("Xử lý sự cố (mất đồ, ốm)")]],
+    [_t("Kết bạn, mạng xã hội"),["Small talk",_t("Nói về sở thích"),_t("Nhắn tin, bình luận"),_t("Chia sẻ quan điểm"),_t("Gọi video với bạn nước ngoài")]],
+    [_t("Gia đình, nuôi dạy con"),[_t("Nói chuyện với con bằng tiếng Anh"),_t("Đọc truyện cho con"),_t("Sinh hoạt hằng ngày ở nhà"),_t("Trao đổi với giáo viên trường quốc tế")]],
+    [_t("Hẹn hò, tình cảm"),[_t("Làm quen, mời đi chơi"),_t("Nhắn tin"),_t("Bày tỏ cảm xúc"),_t("Gặp gia đình người yêu")]],
+    [_t("Nói trước đám đông"),[_t("Thuyết trình"),_t("Phát biểu, chúc mừng"),_t("Nêu ý kiến, tranh luận"),_t("Dẫn chương trình")]]],
   work:[
-    ["IT, phần mềm",["Daily stand-up","Code review","Viết bug report, ticket","Giải thích vấn đề kỹ thuật","Làm việc với khách hàng nước ngoài (outsourcing)","Viết tài liệu kỹ thuật"]],
-    ["Kinh doanh, sales",["Giới thiệu sản phẩm","Gọi điện cho khách hàng mới","Đàm phán giá","Chốt hợp đồng","Chăm sóc khách hàng sau bán"]],
-    ["Marketing",["Brainstorm ý tưởng","Viết content","Báo cáo chiến dịch","Làm việc với agency","Phân tích số liệu"]],
-    ["Tài chính, ngân hàng",["Tư vấn khách hàng","Giải thích sản phẩm tài chính","Báo cáo tài chính","Làm việc với kiểm toán"]],
-    ["Y tế, dược",["Hỏi bệnh sử","Giải thích chẩn đoán","Hướng dẫn dùng thuốc","Trao đổi với đồng nghiệp","Đọc tài liệu y khoa"]],
-    ["Khách sạn, nhà hàng",["Đón khách, check-in","Giới thiệu dịch vụ","Nhận order, giới thiệu món","Xử lý phàn nàn","Đặt phòng qua điện thoại"]],
-    ["Kỹ thuật, sản xuất",["Hướng dẫn vận hành máy","An toàn lao động","Báo cáo sự cố","Làm việc với chuyên gia nước ngoài"]],
-    ["Giáo dục",["Giảng dạy trên lớp","Trao đổi với phụ huynh","Họp chuyên môn","Viết nhận xét học sinh"]],
-    ["Xuất nhập khẩu, logistics",["Theo dõi đơn hàng","Làm việc với forwarder","Chứng từ, hải quan","Xử lý giao hàng trễ"]],
-    ["Chăm sóc khách hàng",["Trả lời điện thoại","Chat với khách","Xử lý khiếu nại","Hướng dẫn sử dụng sản phẩm"]],
-    ["Văn phòng, hành chính, nhân sự",["Lên lịch họp","Tiếp khách","Tuyển dụng, phỏng vấn ứng viên","Soạn thông báo nội bộ"]]],
+    [_t("IT, phần mềm"),["Daily stand-up","Code review",_t("Viết bug report, ticket"),_t("Giải thích vấn đề kỹ thuật"),_t("Làm việc với khách hàng nước ngoài (outsourcing)"),_t("Viết tài liệu kỹ thuật")]],
+    ["Kinh doanh, sales",[_t("Giới thiệu sản phẩm"),_t("Gọi điện cho khách hàng mới"),_t("Đàm phán giá"),_t("Chốt hợp đồng"),_t("Chăm sóc khách hàng sau bán")]],
+    ["Marketing",[_t("Brainstorm ý tưởng"),_t("Viết content"),_t("Báo cáo chiến dịch"),_t("Làm việc với agency"),_t("Phân tích số liệu")]],
+    [_t("Tài chính, ngân hàng"),[_t("Tư vấn khách hàng"),_t("Giải thích sản phẩm tài chính"),_t("Báo cáo tài chính"),_t("Làm việc với kiểm toán")]],
+    [_t("Y tế, dược"),[_t("Hỏi bệnh sử"),_t("Giải thích chẩn đoán"),_t("Hướng dẫn dùng thuốc"),_t("Trao đổi với đồng nghiệp"),_t("Đọc tài liệu y khoa")]],
+    [_t("Khách sạn, nhà hàng"),[_t("Đón khách, check-in"),_t("Giới thiệu dịch vụ"),_t("Nhận order, giới thiệu món"),_t("Xử lý phàn nàn"),_t("Đặt phòng qua điện thoại")]],
+    [_t("Kỹ thuật, sản xuất"),[_t("Hướng dẫn vận hành máy"),_t("An toàn lao động"),_t("Báo cáo sự cố"),_t("Làm việc với chuyên gia nước ngoài")]],
+    [_t("Giáo dục"),[_t("Giảng dạy trên lớp"),_t("Trao đổi với phụ huynh"),_t("Họp chuyên môn"),_t("Viết nhận xét học sinh")]],
+    [_t("Xuất nhập khẩu, logistics"),[_t("Theo dõi đơn hàng"),_t("Làm việc với forwarder"),_t("Chứng từ, hải quan"),_t("Xử lý giao hàng trễ")]],
+    [_t("Chăm sóc khách hàng"),[_t("Trả lời điện thoại"),_t("Chat với khách"),_t("Xử lý khiếu nại"),_t("Hướng dẫn sử dụng sản phẩm")]],
+    [_t("Văn phòng, hành chính, nhân sự"),[_t("Lên lịch họp"),_t("Tiếp khách"),_t("Tuyển dụng, phỏng vấn ứng viên"),_t("Soạn thông báo nội bộ")]]],
   travel:[
-    ["Du lịch tự túc",["Sân bay, máy bay","Khách sạn, homestay","Phương tiện công cộng","Ăn uống","Tham quan, mua vé","Mua sắm","Xử lý sự cố"]],
-    ["Đi công tác",["Sân bay, khách sạn","Gặp đối tác","Dự hội thảo","Ăn tối tiếp khách","Báo cáo chuyến công tác"]],
-    ["Du học",["Phỏng vấn visa","Thủ tục nhập học","Thảo luận trên lớp","Ở ký túc xá, ở ghép","Đi làm thêm"]],
-    ["Định cư ở nước ngoài",["Thuê nhà","Mở tài khoản ngân hàng","Đi khám bệnh","Xin việc","Giấy tờ hành chính","Hàng xóm, cộng đồng"]]],
+    [_t("Du lịch tự túc"),[_t("Sân bay, máy bay"),_t("Khách sạn, homestay"),_t("Phương tiện công cộng"),_t("Ăn uống"),_t("Tham quan, mua vé"),_t("Mua sắm"),_t("Xử lý sự cố")]],
+    [_t("Đi công tác"),[_t("Sân bay, khách sạn"),_t("Gặp đối tác"),_t("Dự hội thảo"),_t("Ăn tối tiếp khách"),_t("Báo cáo chuyến công tác")]],
+    [_t("Du học"),[_t("Phỏng vấn visa"),_t("Thủ tục nhập học"),_t("Thảo luận trên lớp"),_t("Ở ký túc xá, ở ghép"),_t("Đi làm thêm")]],
+    [_t("Định cư ở nước ngoài"),[_t("Thuê nhà"),_t("Mở tài khoản ngân hàng"),_t("Đi khám bệnh"),_t("Xin việc"),_t("Giấy tờ hành chính"),_t("Hàng xóm, cộng đồng")]]],
   exam:[
     ["IELTS",["Listening","Reading","Writing Task 1","Writing Task 2","Speaking Part 1","Speaking Part 2–3"]],
     ["TOEIC",["Listening","Reading","Speaking","Writing"]],
     ["TOEFL",["Listening","Reading","Speaking","Writing"]],
-    ["VSTEP",["Nghe","Đọc","Viết","Nói"]],
+    ["VSTEP",[_t("Nghe"),_t("Đọc"),_t("Viết"),_t("Nói")]],
     ["Cambridge (KET/PET/FCE)",["Reading & Writing","Listening","Speaking"]]]
 };
 const subsOf = (goal, field) => { const f = FIELDS[goal].find(x => x[0] === field); return f ? f[1] : (goal === "work" && field === WORK_GROUP ? WORK_COMMON : []); };
-const WORK_GROUP = "Việc chung ở công sở";
+const WORK_GROUP = _t("Việc chung ở công sở");
 const subGroups = s => s.goal === "work" && s.fields.length ? [...s.fields, WORK_GROUP] : s.fields;
 const DETAIL_HINT = {
-  communication:"Ví dụ: hay nói chuyện với bạn bè nước ngoài qua mạng",
-  work:"Ví dụ: tôi làm QA, thường họp và viết email với khách hàng Mỹ",
-  travel:"Ví dụ: đi Nhật và Hàn tháng 3 năm sau, tự đặt phòng và đi tàu",
-  exam:"Ví dụ: IELTS 6.5, cần nhất là Speaking"
+  communication:_t("Ví dụ: hay nói chuyện với bạn bè nước ngoài qua mạng"),
+  work:_t("Ví dụ: tôi làm QA, thường họp và viết email với khách hàng Mỹ"),
+  travel:_t("Ví dụ: đi Nhật và Hàn tháng 3 năm sau, tự đặt phòng và đi tàu"),
+  exam:_t("Ví dụ: IELTS 6.5, cần nhất là Speaking")
 };
-const STEPS = ["Ôn bài cũ","Từ vựng mới","Tự đặt câu","Dịch câu","Role-play","Tổng kết"];
-const SKILL_VI = {vocab:"Từ vựng",grammar:"Ngữ pháp",spelling:"Chính tả",translation:"Dịch",listening:"Nghe",speaking:"Nói"};
+const STEPS = [_t("Ôn bài cũ"),_t("Từ vựng mới"),_t("Tự đặt câu"),_t("Dịch câu"),"Role-play",_t("Tổng kết")];
+const SKILL_VI = {vocab:_t("Từ vựng"),grammar:_t("Ngữ pháp"),spelling:_t("Chính tả"),translation:_t("Dịch"),listening:_t("Nghe"),speaking:_t("Nói")};
 
 // Test đầu vào: [bậc 0=A1..4=C1, câu hỏi, lựa chọn, đáp án]
 const PLACEMENT = [
@@ -264,18 +277,18 @@ const STEP_STK = ["book", "sparkle", "pencil", "globe", "chat", "trophy"];
 const WEEK_STK = ["star", "flame", "target", "sparkle", "trophy", "heart", "globe", "book"];
 const confetti = (n = 42) => `<div class="confetti" aria-hidden="true">${Array.from({length:n}, (_, i) => `<i style="left:${(Math.random() * 100).toFixed(1)}%;animation-delay:${(Math.random() * .9).toFixed(2)}s;animation-duration:${(2.4 + Math.random() * 1.8).toFixed(2)}s;background:${["#ffc94a","#ff7a59","#5bb8ff","#4fd1a5","#a78bfa","#ff9ec7"][i % 6]};--rot:${Math.round(Math.random() * 720)}deg"></i>`).join("")}</div>`;
 const BADGES = [
-  {id:"first", name:"Bước đầu tiên", desc:"Hoàn thành buổi học đầu tiên", stk:"star"},
-  {id:"streak3", name:"Lửa nhỏ", desc:"Học 3 ngày liên tiếp", stk:"flame"},
-  {id:"streak7", name:"Lửa bùng cháy", desc:"Học 7 ngày liên tiếp", stk:"sparkle"},
-  {id:"week", name:"Tròn một tuần", desc:"Hoàn thành 5 buổi học", stk:"calendar"},
-  {id:"perfect", name:"Điểm tuyệt đối", desc:"Đạt từ 90 điểm trong một buổi", stk:"trophy"},
-  {id:"speaker", name:"Giọng vàng", desc:"Phát âm đạt từ 80%", stk:"mic"},
-  {id:"listener", name:"Tai thính", desc:"Nghe chép đúng từ 80%", stk:"headphones"},
-  {id:"chatter", name:"Nói như gió", desc:"Role-play đạt từ 80 điểm", stk:"chat"},
-  {id:"words50", name:"Kho 50 từ", desc:"Có 50 từ trong flashcard", stk:"book"},
-  {id:"words100", name:"Kho 100 từ", desc:"Có 100 từ trong flashcard", stk:"globe"},
-  {id:"ace", name:"Thủ khoa Unit", desc:"Kiểm tra định kỳ đạt từ 85%", stk:"target"},
-  {id:"course", name:"Tốt nghiệp", desc:"Hoàn thành một khóa học", stk:"cap"}
+  {id:"first", name:_t("Bước đầu tiên"), desc:_t("Hoàn thành buổi học đầu tiên"), stk:"star"},
+  {id:"streak3", name:_t("Lửa nhỏ"), desc:_t("Học 3 ngày liên tiếp"), stk:"flame"},
+  {id:"streak7", name:_t("Lửa bùng cháy"), desc:_t("Học 7 ngày liên tiếp"), stk:"sparkle"},
+  {id:"week", name:_t("Tròn một tuần"), desc:_t("Hoàn thành 5 buổi học"), stk:"calendar"},
+  {id:"perfect", name:_t("Điểm tuyệt đối"), desc:_t("Đạt từ 90 điểm trong một buổi"), stk:"trophy"},
+  {id:"speaker", name:_t("Giọng vàng"), desc:_t("Phát âm đạt từ 80%"), stk:"mic"},
+  {id:"listener", name:_t("Tai thính"), desc:_t("Nghe chép đúng từ 80%"), stk:"headphones"},
+  {id:"chatter", name:_t("Nói như gió"), desc:_t("Role-play đạt từ 80 điểm"), stk:"chat"},
+  {id:"words50", name:_t("Kho 50 từ"), desc:_t("Có 50 từ trong flashcard"), stk:"book"},
+  {id:"words100", name:_t("Kho 100 từ"), desc:_t("Có 100 từ trong flashcard"), stk:"globe"},
+  {id:"ace", name:_t("Thủ khoa Unit"), desc:_t("Kiểm tra định kỳ đạt từ 85%"), stk:"target"},
+  {id:"course", name:_t("Tốt nghiệp"), desc:_t("Hoàn thành một khóa học"), stk:"cap"}
 ];
 const BADGE = Object.fromEntries(BADGES.map(b => [b.id, b]));
 function checkBadges() {
@@ -294,9 +307,9 @@ const badgeCard = (b, on = true, date) => `<div class="badge-item ${on ? "" : "l
 // ---- Dịch ngay trong trang (/api/translate) ----
 const TRC = {};
 const trKey = (t, sl, tl) => sl + "|" + tl + "|" + t;
-function trBtn(text, sl = "en", tl = "vi", label = "Dịch") {
+function trBtn(text, sl = "en", tl = "vi", label = _t("Dịch")) {
   const k = trKey(text, sl, tl), r = TRC[k];
-  return `<span class="trbox"><button class="mini trbtn" data-a="tr" data-v="${esc(k)}" ${r === "…" ? "disabled" : ""}>${r === "…" ? `<span class="spin"></span> Đang dịch` : r ? "Ẩn bản dịch" : "🌐 " + label}</button>${r && r !== "…" ? `<span class="tr-out">${esc(r.text)}${r.ipa ? `<span class="ipa tr-ipa">${esc(r.ipa)}</span>` : ""}<em>${esc(r.engine)}</em></span>` : ""}</span>`;
+  return `<span class="trbox"><button class="mini trbtn" data-a="tr" data-v="${esc(k)}" ${r === "…" ? "disabled" : ""}>${r === "…" ? `${_t("<span class=\"spin\"></span> Đang dịch")}` : r ? _t("Ẩn bản dịch") : "🌐 " + label}</button>${r && r !== "…" ? `<span class="tr-out">${esc(r.text)}${r.ipa ? `<span class="ipa tr-ipa">${esc(r.ipa)}</span>` : ""}<em>${esc(r.engine)}</em></span>` : ""}</span>`;
 }
 // IPA cả câu: ghép IPA từng từ (từ điển + từ đã học), từ không tra được giữ nguyên chữ
 const IPAC = {};
@@ -326,8 +339,8 @@ async function doTranslate(k) {
   const [sl, tl, ...rest] = k.split("|"), text = rest.join("|");
   TRC[k] = "…"; render();
   try { const r = await timeoutFetch(`/api/translate?sl=${sl}&tl=${tl}&q=${encodeURIComponent(text)}`, {}, 15000); const d = await r.json();
-    if (!r.ok) throw new Error(d.error || "lỗi " + r.status); const en = sl === "en" ? text : tl === "en" ? d.text : ""; TRC[k] = {text:d.text, engine:d.engine, ipa: en ? await sentIPA(en) : ""}; }
-  catch (e) { delete TRC[k]; toast("Chưa dịch được: " + (e.name === "AbortError" ? "quá chậm" : e.message)); }
+    if (!r.ok) throw new Error(d.error || _t("lỗi ") + r.status); const en = sl === "en" ? text : tl === "en" ? d.text : ""; TRC[k] = {text:d.text, engine:d.engine, ipa: en ? await sentIPA(en) : ""}; }
+  catch (e) { delete TRC[k]; toast(_t("Chưa dịch được: ") + (e.name === "AbortError" ? _t("quá chậm") : e.message)); }
   render();
 }
 const gtLink = (t, sl, tl) => `https://translate.google.com/?sl=${sl}&tl=${tl}&op=translate&text=${encodeURIComponent(t)}`;
@@ -348,9 +361,9 @@ function hear(onInterim) { return new Promise((resolve, reject) => {
   r.onerror = e => { REC = null; reject(new Error(e.error)); };
   r.onend = () => { REC = null; resolve({text:text.trim(), alts}); };
   r.start(); }); }
-const micErr = e => /not-allowed|service-not-allowed/.test(e.message) ? "Trình duyệt chưa cho phép dùng micro. Bấm biểu tượng bên trái thanh địa chỉ và cho phép Micro." :
-  e.message === "no-speech" ? "Không nghe thấy gì. Hãy nói to, rõ và gần micro hơn." : e.message === "unsupported" ? "Trình duyệt này không hỗ trợ nhận giọng nói. Hãy dùng Chrome hoặc Edge." :
-  e.message === "network" ? "Nhận giọng nói cần kết nối Internet." : e.message === "aborted" ? "Đã dừng ghi âm." : "Lỗi micro: " + e.message;
+const micErr = e => /not-allowed|service-not-allowed/.test(e.message) ? _t("Trình duyệt chưa cho phép dùng micro. Bấm biểu tượng bên trái thanh địa chỉ và cho phép Micro.") :
+  e.message === "no-speech" ? _t("Không nghe thấy gì. Hãy nói to, rõ và gần micro hơn.") : e.message === "unsupported" ? _t("Trình duyệt này không hỗ trợ nhận giọng nói. Hãy dùng Chrome hoặc Edge.") :
+  e.message === "network" ? _t("Nhận giọng nói cần kết nối Internet.") : e.message === "aborted" ? _t("Đã dừng ghi âm.") : _t("Lỗi micro: ") + e.message;
 // So sánh câu nói với câu mẫu: từ nào máy nghe đúng
 function pronScore(target, said, alts = []) {
   const tw_ = norm(target); let best = {score:-1, marks:[], said};
@@ -362,19 +375,19 @@ function pronScore(target, said, alts = []) {
   return {...best, words:tw_};
 }
 const markWords = (words, marks) => words.map((w, i) => `<span class="${marks[i] ? "ok-w" : "bad-w"}">${esc(w)}</span>`).join(" ");
-const pronHtml = r => `<div class="fb ${r.score >= 80 ? "good" : r.score >= 50 ? "" : "bad"}"><b>Phát âm ${r.score}%</b> · ${markWords(r.words, r.marks)}<br><span class="muted small">Máy nghe được: "${esc(r.said)}"</span>${r.score < 80 ? `<br><span class="small">Từ gạch đỏ là từ máy chưa nhận ra. Bấm Nghe chậm, nghe mẫu rồi đọc lại.</span>` : ""}</div>`;
+const pronHtml = r => `<div class="fb ${r.score >= 80 ? "good" : r.score >= 50 ? "" : "bad"}${_t("\"><b>Phát âm ")}${r.score}%</b> · ${markWords(r.words, r.marks)}${_t("<br><span class=\"muted small\">Máy nghe được: \"")}${esc(r.said)}"</span>${r.score < 80 ? `${_t("<br><span class=\"small\">Từ gạch đỏ là từ máy chưa nhận ra. Bấm Nghe chậm, nghe mẫu rồi đọc lại.</span>")}` : ""}</div>`;
 function dictScore(ref, text) { const rw = norm(ref), uw = norm(text); const marks = rw.map(w => uw.some(x => x === w || (w.length > 4 && lev(x, w) <= 1))); return {text, ref, score:pct(marks.filter(Boolean).length, rw.length), marks, words:rw}; }
-const dictHtml = r => `<div class="fb ${r.score >= 80 ? "good" : "bad"}"><b>Nghe đúng ${r.score}%</b><br>Câu gốc: ${markWords(r.words, r.marks)}</div>`;
+const dictHtml = r => `<div class="fb ${r.score >= 80 ? "good" : "bad"}${_t("\"><b>Nghe đúng ")}${r.score}${_t("%</b><br>Câu gốc: ")}${markWords(r.words, r.marks)}</div>`;
 const autoSpeak = () => pref("ep_autospeak") !== "0";
 const hideText = () => pref("ep_hidetext") === "1";
 function startRec(key, onDone) {
   if (UI.rec) { try { REC?.stop(); } catch (e) {} return; }
   UI.rec = key; render();
-  hear(t => { const el = $("#live"); if (el) el.textContent = "Đang nghe: " + t; })
+  hear(t => { const el = $("#live"); if (el) el.textContent = _t("Đang nghe: ") + t; })
     .then(r => { if (!r.text) throw new Error("no-speech"); UI.rec = null; onDone(r); })
     .catch(e => toast(micErr(e))).finally(() => { if (UI.rec === key) UI.rec = null; render(); });
 }
-function toast(msg) { const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
+function toast(msg) { const t = document.createElement("div"); t.className = "toast"; t.textContent = _t(String(msg)); document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
 const pref = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } };
 
 /* =====================================================================
@@ -382,7 +395,7 @@ const pref = (k, v) => { try { if (v === undefined) return localStorage.getItem(
    ===================================================================== */
 const blank = () => ({v:4, profile:null, level:null, target:null, placement:null, path:null, sessions:[], cards:{}, tests:[], lessons:{}, dict:{}, current:null, remedial:[], difficulty:0, courses:[]});
 let S = blank();
-let AI = {on:false, msg:"Đang kiểm tra..."};
+let AI = {on:false, msg:_t("Đang kiểm tra...")};
 let ME = null; // tài khoản đang đăng nhập: {email, name, avatar, provider}
 const displayName = () => S.profile?.name || ME?.name || "";
 let view = "home", UI = {rtab:"due", q:"", hx:null, menu:false};
@@ -395,11 +408,16 @@ let cancelWait = null; // bấm "Dùng bài mẫu" để thôi chờ Gemini
 const normWord = x => Array.isArray(x) ? {w:x[0], ipa:x[1]||"", pos:"", vi:x[2]||"", ex:x[3]||"", ex_vi:""} : x;
 function migrate(d) {
   const s = Object.assign(blank(), d || {});
+  if (s.profile) {
+    if (Array.isArray(s.profile.fields)) s.profile.fields = s.profile.fields.map(relabel);
+    if (Array.isArray(s.profile.subs)) s.profile.subs = s.profile.subs.map(x => { const i = x.indexOf(": "); return i < 0 ? relabel(x) : relabel(x.slice(0, i)) + ": " + relabel(x.slice(i + 2)); });
+    if (Array.isArray(s.profile.weak)) s.profile.weak = s.profile.weak.map(relabel);
+  }
   for (const k in s.cards) { const c = s.cards[k]; c.w = normWord(c.w); }
   for (const k in s.lessons) { const l = s.lessons[k]; if (l && l.words) l.words = l.words.map(normWord);
     if (l && typeof l.grammar === "string") l.grammar = {name:l.grammar, note:"", pattern:"", quiz:[]};
     if (l && !l.translations && l.tr) l.translations = l.tr.map(t => ({src:t[0], ref:t[1], dir:t[2] === "vi" ? "vi-en" : "en-vi"}));
-    if (l && l.role && !l.roleplay) l.roleplay = {ai_role:l.role.ai, user_role:"Bạn", setting:l.role.goal, tasks:[l.role.goal], opening:""}; }
+    if (l && l.role && !l.roleplay) l.roleplay = {ai_role:l.role.ai, user_role:_t("Bạn"), setting:l.role.goal, tasks:[l.role.goal], opening:""}; }
   if (s.path && !s.path.id) { s.path.id = "c1"; s.path.offset = 0; s.sessions.forEach(x => x.course = x.course || "c1"); s.tests.forEach(x => x.course = x.course || "c1"); }
   if (s.current && !s.current.les) s.current = null;
   return s;
@@ -416,10 +434,10 @@ async function pushState(keepalive = false) {
   try { S.rev = next;
     const body = JSON.stringify(S);
     const r = await fetch("/api/state?base=" + BASE, {method:"PUT", keepalive: keepalive && body.length < 60000, headers:{"Content-Type":"application/json"}, body});
-    if (r.status === 409) { const d = await r.json(); adoptState(d.data, "Đã tải tiến độ mới nhất từ thiết bị khác"); }
+    if (r.status === 409) { const d = await r.json(); adoptState(d.data, _t("Đã tải tiến độ mới nhất từ thiết bị khác")); }
     else if (!r.ok) throw new Error(r.status);
     else BASE = next;
-  } catch (e) { S.rev = BASE; DIRTY = true; saveTimer = setTimeout(pushState, 5000); if (!keepalive) toast("Chưa lưu được tiến độ, app sẽ tự thử lại"); }
+  } catch (e) { S.rev = BASE; DIRTY = true; saveTimer = setTimeout(pushState, 5000); if (!keepalive) toast(_t("Chưa lưu được tiến độ, app sẽ tự thử lại")); }
   SAVING = false;
 }
 function adoptState(data, msg) {
@@ -432,7 +450,7 @@ function adoptState(data, msg) {
 async function syncFromServer() {
   if (DIRTY || SAVING || saveTimer) return;
   try { const r = await timeoutFetch("/api/state", {}, 10000); if (!r.ok) return; const d = await r.json();
-    if (d && Number(d.rev || 0) > BASE && !DIRTY && !SAVING) adoptState(d, "Đã cập nhật tiến độ từ thiết bị khác"); } catch (e) {}
+    if (d && Number(d.rev || 0) > BASE && !DIRTY && !SAVING) adoptState(d, _t("Đã cập nhật tiến độ từ thiết bị khác")); } catch (e) {}
 }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") syncFromServer(); else if (DIRTY) pushState(true); });
 addEventListener("pagehide", () => { if (DIRTY) pushState(true); });
@@ -450,31 +468,31 @@ async function loadState() {
 function pauseAI(reason) {
   const first = !AI.pauseUntil || Date.now() > AI.pauseUntil;
   AI.pauseUntil = Date.now() + 120e3;
-  if (first) console.warn("AI tạm nghỉ:", reason);
+  if (first) console.warn(_t("AI tạm nghỉ:"), reason);
 }
 let LAST_ENGINE = "", LAST_ENGINE_AT = 0, PROBE = null;
 async function probeAI() {
   PROBE = "…"; render();
-  try { const r = await timeoutFetch("/api/ai?probe=1", {}, 40000); PROBE = (await r.json()).list || []; } catch (e) { PROBE = [{name:"Kiểm tra", ok:false, error:"không kết nối được"}]; }
+  try { const r = await timeoutFetch("/api/ai?probe=1", {}, 40000); PROBE = (await r.json()).list || []; } catch (e) { PROBE = [{name:_t("Kiểm tra"), ok:false, error:_t("không kết nối được")}]; }
   render();
 }
 async function gemini(system, prompt, json = true, history, ms = 30000) {
   const contents = history || [{role:"user", parts:[{text:prompt}]}];
   let r;
   try { r = await timeoutFetch("/api/ai", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({system, contents, json, heavy:ms > 60000})}, ms); }
-  catch (e) { pauseAI(e.name === "AbortError" ? "phản hồi quá chậm" : "mất kết nối"); throw e; }
+  catch (e) { pauseAI(e.name === "AbortError" ? _t("phản hồi quá chậm") : _t("mất kết nối")); throw e; }
   const d = await r.json().catch(() => ({}));
-  if (!r.ok && !d.quota && (d.busy || r.status >= 500)) pauseAI(d.error ? "quá tải" : "lỗi " + r.status);
-  if (!r.ok) { if (d.quota) { AI = {on:false, quota:true, quotaAt:Date.now(), msg:d.error}; console.warn("AI hết lượt, tạm dùng nội dung mẫu"); }
-    throw new Error(d.error || ("Gemini lỗi " + r.status)); }
+  if (!r.ok && !d.quota && (d.busy || r.status >= 500)) pauseAI(d.error ? _t("quá tải") : _t("lỗi ") + r.status);
+  if (!r.ok) { if (d.quota) { AI = {on:false, quota:true, quotaAt:Date.now(), msg:d.error}; console.warn(_t("AI hết lượt, tạm dùng nội dung mẫu")); }
+    throw new Error(d.error || (_t("Gemini lỗi ") + r.status)); }
   if (d.engine) { LAST_ENGINE = d.engine; LAST_ENGINE_AT = Date.now(); }
   if (!json) return d.text;
   return JSON.parse(String(d.text).replace(/^```(json)?|```$/g, "").trim());
 }
 const timeoutFetch = (url, opt = {}, ms = 15000) => { const c = new AbortController(); const t = setTimeout(() => c.abort(), ms); return fetch(url, {...opt, signal:c.signal}).finally(() => clearTimeout(t)); };
 async function checkAI() {
-  try { const r = await timeoutFetch("/api/ai", {}, 12000); const d = await r.json(); AI = {on:!!d.ok, busy:!!d.busy, msg:d.ok ? (d.busy ? d.error : "") : (d.error || "không rõ lỗi")}; }
-  catch (e) { AI = {on:false, msg:e.name === "AbortError" ? "Gemini phản hồi quá chậm, sẽ tự thử lại sau" : "không gọi được server"}; }
+  try { const r = await timeoutFetch("/api/ai", {}, 12000); const d = await r.json(); AI = {on:!!d.ok, busy:!!d.busy, msg:d.ok ? (d.busy ? d.error : "") : (d.error || _t("không rõ lỗi"))}; }
+  catch (e) { AI = {on:false, msg:e.name === "AbortError" ? _t("Gemini phản hồi quá chậm, sẽ tự thử lại sau") : _t("không gọi được server")}; }
 }
 const aiOn = () => AI.on && !(AI.pauseUntil && Date.now() < AI.pauseUntil);
 const goalName = () => (GOALS.find(g => g[0] === S.profile?.goal) || [, ""])[1];
@@ -483,8 +501,8 @@ const focusName = () => goalName() + (fieldName() ? " · " + fieldName() : "");
 const subList = () => (S.profile?.subs || []).map(x => x.split(": ").slice(1).join(": "));
 // Mỗi buổi xoay vòng một tình huống người học đã chọn
 const nextSituation = () => { const a = S.profile?.subs || []; return a.length ? a[doneN() % a.length] : ""; };
-const diffText = () => S.difficulty > 0 ? "Người học đang tiến bộ nhanh: tăng độ khó một chút." : S.difficulty < 0 ? "Người học đang gặp khó: giữ câu ngắn, từ thông dụng." : "";
-const TEACHER = () => `Bạn là giáo viên tiếng Anh cho người Việt. Trình độ người học: ${S.level}. Mục tiêu: ${goalName()}. Lĩnh vực: ${fieldName() || "chung"}.${S.profile?.job ? ` Vị trí công việc: ${S.profile.job}.` : ""} Các tình huống người học hay gặp: ${subList().join(", ") || "chung"}. Người học tự mô tả: ${S.profile?.interest || "không có"}. ${diffText()} Ví dụ và tình huống luôn bám sát lĩnh vực này. Giải thích ngắn gọn bằng tiếng Việt.`;
+const diffText = () => S.difficulty > 0 ? _t("Người học đang tiến bộ nhanh: tăng độ khó một chút.") : S.difficulty < 0 ? _t("Người học đang gặp khó: giữ câu ngắn, từ thông dụng.") : "";
+const TEACHER = () => `${_t("Bạn là giáo viên tiếng Anh cho người Việt. Trình độ người học: ")}${S.level}${_t(". Mục tiêu: ")}${goalName()}${_t(". Lĩnh vực: ")}${fieldName() || "chung"}.${S.profile?.job ? `${_t(" Vị trí công việc: ")}${S.profile.job}.` : ""}${_t(" Các tình huống người học hay gặp: ")}${subList().join(", ") || "chung"}${_t(". Người học tự mô tả: ")}${S.profile?.interest || _t("không có")}. ${diffText()}${_t(" Ví dụ và tình huống luôn bám sát lĩnh vực này. Giải thích ngắn gọn bằng tiếng Việt.")}`;
 
 /* =====================================================================
    SPACED REPETITION (SM-2)
@@ -506,7 +524,7 @@ function review(word, q) { // q: 1 Quên · 3 Khó · 4 Nhớ · 5 Dễ
 const cardList = () => Object.values(S.cards);
 const dueCards = () => cardList().filter(c => c.due <= Date.now()).sort((a, b) => b.lapses - a.lapses || a.due - b.due);
 const hardCards = () => cardList().filter(c => c.lapses >= 2 || (c.ef < 2.1 && c.rep > 0));
-const cardState = c => c.rep === 0 && !c.last ? "Mới" : c.int >= 21 ? "Đã thuộc" : c.int >= 3 ? "Đang nhớ" : "Đang học";
+const cardState = c => c.rep === 0 && !c.last ? _t("Mới") : c.int >= 21 ? _t("Đã thuộc") : c.int >= 3 ? _t("Đang nhớ") : _t("Đang học");
 
 /* =====================================================================
    LỘ TRÌNH
@@ -559,7 +577,7 @@ function bankSequence() {
 function pickBankLesson() {
   const seq = bankSequence(), pos = doneN();
   const les = JSON.parse(JSON.stringify(seq[pos % seq.length]));
-  if (pos >= seq.length) { les.topic = "Ôn lại: " + les.topic; les.review = true; }
+  if (pos >= seq.length) { les.topic = _t("Ôn lại: ") + les.topic; les.review = true; }
   les.bank = true;
   return les;
 }
@@ -592,10 +610,10 @@ async function buildLesson(idx) {
   if (S.remedial?.length) {
     const ws = S.remedial.slice(0, 8).map(normWord);
     const g = Object.values(S.lessons).reverse().find(l => l.grammar?.quiz?.length)?.grammar || BANK[0].grammar;
-    les = {level:S.level, topic:"Buổi ôn tập: củng cố phần chưa vững", scenario:"Ôn lại các từ bạn trả lời sai trong bài kiểm tra", remedial:true, words:ws, grammar:g,
+    les = {level:S.level, topic:_t("Buổi ôn tập: củng cố phần chưa vững"), scenario:_t("Ôn lại các từ bạn trả lời sai trong bài kiểm tra"), remedial:true, words:ws, grammar:g,
       translations:ws.slice(0, 4).map(w => ({src:w.ex, ref:w.ex_vi || w.vi, dir:"en-vi"})),
-      roleplay:{ai_role:"a friendly English tutor", user_role:"Người học", setting:"Trò chuyện tự do với gia sư để dùng lại các từ vừa ôn.",
-        tasks:["Dùng ít nhất 3 từ vừa ôn", "Kể về một việc bạn làm tuần này", "Đặt một câu hỏi cho gia sư"], opening:"Hi! Let's practise the words from your review today. How was your week?"}};
+      roleplay:{ai_role:"a friendly English tutor", user_role:_t("Người học"), setting:_t("Trò chuyện tự do với gia sư để dùng lại các từ vừa ôn."),
+        tasks:[_t("Dùng ít nhất 3 từ vừa ôn"), _t("Kể về một việc bạn làm tuần này"), _t("Đặt một câu hỏi cho gia sư")], opening:"Hi! Let's practise the words from your review today. How was your week?"}};
     S.remedial = [];
   } else if (aiOn()) {
     try {
@@ -603,18 +621,10 @@ async function buildLesson(idx) {
       const prev = Object.values(S.lessons).slice(-12).map(l => l.topic + " (" + (l.grammar?.name || "") + ")").join("; ");
       const n = doneN() + 1;
       const j = await Promise.race([new Promise((_, rej) => { cancelWait = () => rej(new Error("skip")); }), gemini(TEACHER(),
-`Soạn buổi học số ${n}/${S.path.total} của khóa ${S.path.from} → ${S.path.to}.
-Bài đã học (không lặp chủ đề và điểm ngữ pháp): ${prev || "(chưa có)"}.
-Từ đã học (không lặp lại): ${used || "(chưa có)"}.
-${nextSituation() ? `TÌNH HUỐNG CỦA BUỔI NÀY: "${nextSituation()}". Toàn bộ chủ đề, từ vựng, câu dịch và role-play phải xoay quanh đúng tình huống này${S.profile?.job ? `, từ góc nhìn của người làm ${S.profile.job}` : ""}.` : "Chủ đề, từ vựng, câu dịch và role-play phải là tình huống thực tế trong lĩnh vực của người học."} Độ khó tăng dần theo số buổi.
-Trả JSON đúng cấu trúc:
-{"topic":"tên chủ đề tiếng Việt","scenario":"bối cảnh 1 câu tiếng Việt",
-"words":[{"w":"từ hoặc cụm từ","ipa":"IPA","pos":"từ loại tiếng Việt","vi":"nghĩa tiếng Việt","ex":"câu ví dụ tiếng Anh","ex_vi":"dịch câu ví dụ"}] (đúng 8 mục),
-"grammar":{"name":"tên điểm ngữ pháp","pattern":"công thức","note":"giải thích 2-3 câu tiếng Việt","quiz":[{"q":"câu có chỗ trống ___","opts":["4 lựa chọn"],"ans":0,"explain":"giải thích ngắn"}] (đúng 3 câu, đáp án ở vị trí ngẫu nhiên)},
-"translations":[{"src":"câu gốc","ref":"bản dịch mẫu","dir":"vi-en hoặc en-vi"}] (4 câu: 2 vi-en, 2 en-vi, có dùng từ và ngữ pháp của bài),
-"roleplay":{"ai_role":"vai của AI, tiếng Anh","user_role":"vai người học, tiếng Việt","setting":"bối cảnh tiếng Việt","tasks":["3 nhiệm vụ tiếng Việt"],"opening":"câu mở đầu của AI, tiếng Anh"}}`, true, null, 150000)]);
+`${_t("Soạn buổi học số ")}${n}/${S.path.total}${_t(" của khóa ")}${S.path.from} → ${S.path.to}${_t(".\nBài đã học (không lặp chủ đề và điểm ngữ pháp): ")}${prev || _t("(chưa có)")}${_t(".\nTừ đã học (không lặp lại): ")}${used || _t("(chưa có)")}.
+${nextSituation() ? `${_t("TÌNH HUỐNG CỦA BUỔI NÀY: \"")}${nextSituation()}${_t("\". Toàn bộ chủ đề, từ vựng, câu dịch và role-play phải xoay quanh đúng tình huống này")}${S.profile?.job ? `${_t(", từ góc nhìn của người làm ")}${S.profile.job}` : ""}.` : _t("Chủ đề, từ vựng, câu dịch và role-play phải là tình huống thực tế trong lĩnh vực của người học.")}${_t(" Độ khó tăng dần theo số buổi.\nTrả JSON đúng cấu trúc:\n{\"topic\":\"tên chủ đề tiếng Việt\",\"scenario\":\"bối cảnh 1 câu tiếng Việt\",\n\"words\":[{\"w\":\"từ hoặc cụm từ\",\"ipa\":\"IPA\",\"pos\":\"từ loại tiếng Việt\",\"vi\":\"nghĩa tiếng Việt\",\"ex\":\"câu ví dụ tiếng Anh\",\"ex_vi\":\"dịch câu ví dụ\"}] (đúng 8 mục),\n\"grammar\":{\"name\":\"tên điểm ngữ pháp\",\"pattern\":\"công thức\",\"note\":\"giải thích 2-3 câu tiếng Việt\",\"quiz\":[{\"q\":\"câu có chỗ trống ___\",\"opts\":[\"4 lựa chọn\"],\"ans\":0,\"explain\":\"giải thích ngắn\"}] (đúng 3 câu, đáp án ở vị trí ngẫu nhiên)},\n\"translations\":[{\"src\":\"câu gốc\",\"ref\":\"bản dịch mẫu\",\"dir\":\"vi-en hoặc en-vi\"}] (4 câu: 2 vi-en, 2 en-vi, có dùng từ và ngữ pháp của bài),\n\"roleplay\":{\"ai_role\":\"vai của AI, tiếng Anh\",\"user_role\":\"vai người học, tiếng Việt\",\"setting\":\"bối cảnh tiếng Việt\",\"tasks\":[\"3 nhiệm vụ tiếng Việt\"],\"opening\":\"câu mở đầu của AI, tiếng Anh\"}}")}`, true, null, 150000)]);
       if (validLesson(j)) { les = j; les.ai = true; les.level = S.level; await fillIPA(les.words.map(normWord)).catch(() => {}); }
-    } catch (e) { console.warn("Không sinh được bài:", e.message); if (e.name === "AbortError") e.message = "chờ quá lâu"; if (e.message !== "skip") console.warn("AI chưa soạn được bài:", e.message); }
+    } catch (e) { console.warn(_t("Không sinh được bài:"), e.message); if (e.name === "AbortError") e.message = _t("chờ quá lâu"); if (e.message !== "skip") console.warn(_t("AI chưa soạn được bài:"), e.message); }
     cancelWait = null;
   }
   if (!les) les = pickBankLesson();
@@ -638,14 +648,14 @@ function distinctOpts(right, cands, fill) {
 function meaningQ(card, pool, skill = "vocab") {
   const w = normWord(card);
   const opts = distinctOpts(w.vi, pool.map(normWord).filter(x => x.vi && x.w !== w.w).map(x => x.vi), ["thời tiết","cái bàn","nhanh chóng","bữa sáng","gia đình"]);
-  return {type:"mcq", q:`"${w.w}"${w.ipa ? " " + w.ipa : ""} nghĩa là gì?`, opts, ans:opts.indexOf(w.vi), skill, word:w.w, speak:w.w};
+  return {type:"mcq", q:`"${w.w}"${w.ipa ? " " + w.ipa : ""}${_t(" nghĩa là gì?")}`, opts, ans:opts.indexOf(w.vi), skill, word:w.w, speak:w.w};
 }
 function wordQ(card, pool) {
   const w = normWord(card); const opts = distinctOpts(w.w, pool.map(normWord).filter(x => x.w !== w.w).map(x => x.w), ["window","quickly","family","yesterday","beautiful"]);
-  return {type:"mcq", q:`Từ nào có nghĩa là "${w.vi}"?`, opts, ans:opts.indexOf(w.w), skill:"vocab", word:w.w};
+  return {type:"mcq", q:`${_t("Từ nào có nghĩa là \"")}${w.vi}"?`, opts, ans:opts.indexOf(w.w), skill:"vocab", word:w.w};
 }
 const gramQ = g => { const right = g.opts[g.ans], opts = shuffle(g.opts.slice()); return {type:"mcq", q:g.q, opts, ans:opts.indexOf(right), skill:"grammar", explain:g.explain, speak:g.q}; };
-const spellQ = w => ({type:"type", q:`Viết từ tiếng Anh có nghĩa: "${w.vi}"`, ans:w.w, skill:"spelling", word:w.w, hint:w.w[0] + "… (" + w.w.length + " ký tự)" + (w.ipa ? " · phát âm " + w.ipa : "")});
+const spellQ = w => ({type:"type", q:`${_t("Viết từ tiếng Anh có nghĩa: \"")}${w.vi}"`, ans:w.w, skill:"spelling", word:w.w, hint:w.w[0] + "… (" + w.w.length + _t(" ký tự)") + (w.ipa ? _t(" · phát âm ") + w.ipa : "")});
 const transQ = t => ({type:"trans", q:t.src, ans:t.ref, skill:"translation", dir:t.dir});
 
 function quizPickPlacement(q) {
@@ -712,15 +722,14 @@ function vQuizBody(q, opts = {}) {
       let cls = ""; if (pk) { if (k === it.ans) cls = "right"; else if (k === pk.pick) cls = "wrong"; }
       return `<button class="opt ${cls}" data-a="pick" data-v="${k}" ${pk ? "disabled" : ""}><span class="key">${"ABCD"[k]}</span><span>${esc(o)}</span></button>`; }).join("")}</div>`;
   } else if (it.type === "speak") {
-    body = `<div class="row center"><button data-a="speak" data-v="${esc(it.ans)}">🔊 Nghe mẫu</button><button data-a="slow" data-v="${esc(it.ans)}">🐢 Nghe chậm</button>
-      <button class="mic big ${UI.rec === "q" ? "on" : ""}" data-a="qMic" ${pk || !SR ? "disabled" : ""}>${UI.rec === "q" ? "● Đang nghe, bấm để dừng" : "🎤 Bấm rồi đọc to câu trên"}</button></div>
-      ${UI.rec === "q" ? `<p class="live center" id="live">Hãy đọc...</p>` : ""}${SR ? "" : `<p class="muted small center">Trình duyệt này không hỗ trợ micro.</p>`}`;
+    body = `<div class="row center"><button data-a="speak" data-v="${esc(it.ans)}${_t("\">🔊 Nghe mẫu</button><button data-a=\"slow\" data-v=\"")}${esc(it.ans)}${_t("\">🐢 Nghe chậm</button>\n      <button class=\"mic big ")}${UI.rec === "q" ? "on" : ""}" data-a="qMic" ${pk || !SR ? "disabled" : ""}>${UI.rec === "q" ? _t("● Đang nghe, bấm để dừng") : _t("🎤 Bấm rồi đọc to câu trên")}</button></div>
+      ${UI.rec === "q" ? `${_t("<p class=\"live center\" id=\"live\">Hãy đọc...</p>")}` : ""}${SR ? "" : `${_t("<p class=\"muted small center\">Trình duyệt này không hỗ trợ micro.</p>")}`}`;
   } else {
     const area = it.type === "trans" || it.type === "dict";
-    const label = it.type === "trans" ? `<span class="tag">${it.dir === "vi-en" ? "Dịch sang tiếng Anh" : "Dịch sang tiếng Việt"}</span>` : it.hint ? `<span class="muted small">Gợi ý: ${esc(it.hint)}</span>` : "";
+    const label = it.type === "trans" ? `<span class="tag">${it.dir === "vi-en" ? _t("Dịch sang tiếng Anh") : _t("Dịch sang tiếng Việt")}</span>` : it.hint ? `${_t("<span class=\"muted small\">Gợi ý: ")}${esc(it.hint)}</span>` : "";
     body = `<div class="field">${label}
-      <${area ? "textarea" : "input"} id="qin" data-enter="submitQ" autocomplete="off" spellcheck="false" ${pk ? "disabled" : ""} placeholder="${it.type === "trans" ? "Bản dịch của bạn" : it.type === "dict" ? "Gõ lại câu bạn nghe được" : "Gõ từ tiếng Anh"}">${area ? esc(pk?.pick || "") + "</textarea>" : ""}
-      ${pk ? "" : `<button class="primary" data-a="submitQ" ${q.busy ? "disabled" : ""}>${q.busy ? `<span class="spin"></span> Đang chấm` : "Trả lời"}</button>`}</div>`;
+      <${area ? "textarea" : "input"} id="qin" data-enter="submitQ" autocomplete="off" spellcheck="false" ${pk ? "disabled" : ""} placeholder="${it.type === "trans" ? _t("Bản dịch của bạn") : it.type === "dict" ? _t("Gõ lại câu bạn nghe được") : _t("Gõ từ tiếng Anh")}">${area ? esc(pk?.pick || "") + "</textarea>" : ""}
+      ${pk ? "" : `<button class="primary" data-a="submitQ" ${q.busy ? "disabled" : ""}>${q.busy ? `${_t("<span class=\"spin\"></span> Đang chấm")}` : _t("Trả lời")}</button>`}</div>`;
     if (!area && pk) setTimeout(() => { const i = $("#qin"); if (i) i.value = pk.pick; }, 0);
   }
   let fb = "";
@@ -729,17 +738,16 @@ function vQuizBody(q, opts = {}) {
     if (it.type === "speak") inner = pronHtml(pk.pron);
     else if (it.type === "dict") inner = dictHtml(pk.dict);
     else { const right = it.type === "mcq" ? it.opts[it.ans] : it.ans;
-      inner = `<div class="fb ${pk.ok ? "good" : "bad"}"><b>${pk.ok ? (pk.close ? "Đúng (có lỗi chính tả nhỏ)" : "Chính xác!") : "Chưa đúng."}</b>
-        ${!pk.ok || it.type === "trans" || it.autoplay ? ` Đáp án: <b>${esc(right)}</b>` : ""}${it.autoplay && it.word ? ` · từ vừa nghe: <b>${esc(it.word)}</b>` : ""}
+      inner = `<div class="fb ${pk.ok ? "good" : "bad"}"><b>${pk.ok ? (pk.close ? _t("Đúng (có lỗi chính tả nhỏ)") : _t("Chính xác!")) : _t("Chưa đúng.")}</b>
+        ${!pk.ok || it.type === "trans" || it.autoplay ? `${_t(" Đáp án: <b>")}${esc(right)}</b>` : ""}${it.autoplay && it.word ? `${_t(" · từ vừa nghe: <b>")}${esc(it.word)}</b>` : ""}
         ${it.explain ? `<br>${esc(it.explain)}` : ""}${pk.grade ? `<br>${esc(pk.grade.note || "")}` : ""}</div>`; }
-    fb = inner + `<button class="primary" data-a="nextQ" id="nextBtn">${q.i + 1 >= q.items.length && q.mode !== "placement" ? "Xem kết quả" : "Câu tiếp theo"}</button>`;
+    fb = inner + `<button class="primary" data-a="nextQ" id="nextBtn">${q.i + 1 >= q.items.length && q.mode !== "placement" ? _t("Xem kết quả") : _t("Câu tiếp theo")}</button>`;
   }
   const qText = it.autoplay ? esc(it.q) : (it.type === "trans" && it.dir === "en-vi") || it.type === "speak" ? tw(it.q) : esc(it.q);
-  const listenRow = it.autoplay ? `<div class="row center"><button class="round big-round" data-a="speak" data-v="${esc(it.speak)}" aria-label="Nghe lại">🔊</button><button class="mini" data-a="slow" data-v="${esc(it.speak)}">🐢 Nghe chậm</button></div>` : "";
+  const listenRow = it.autoplay ? `<div class="row center"><button class="round big-round" data-a="speak" data-v="${esc(it.speak)}${_t("\" aria-label=\"Nghe lại\">🔊</button><button class=\"mini\" data-a=\"slow\" data-v=\"")}${esc(it.speak)}${_t("\">🐢 Nghe chậm</button></div>")}` : "";
   return `<div class="qtop">
-     ${opts.exit ? `<button class="ghost" data-a="${opts.exit}">← Thoát</button>` : "<span></span>"}
-     <div class="qcount"><span class="eyebrow">Câu ${q.i + 1}/${q.mode === "placement" ? PLACEMENT_LEN : q.items.length}</span><b class="timer" data-start="${q.start}">${fmtTime(Date.now() - q.start)}</b></div>
-     ${it.speak && !it.autoplay && it.type !== "speak" ? `<button class="round" data-a="speak" data-v="${esc(it.speak)}" aria-label="Nghe">🔊</button>` : "<span></span>"}</div>
+     ${opts.exit ? `<button class="ghost" data-a="${opts.exit}${_t("\">← Thoát</button>")}` : "<span></span>"}${_t("\n     <div class=\"qcount\"><span class=\"eyebrow\">Câu ")}${q.i + 1}/${q.mode === "placement" ? PLACEMENT_LEN : q.items.length}</span><b class="timer" data-start="${q.start}">${fmtTime(Date.now() - q.start)}</b></div>
+     ${it.speak && !it.autoplay && it.type !== "speak" ? `<button class="round" data-a="speak" data-v="${esc(it.speak)}" aria-label="${_t("Nghe")}">🔊</button>` : "<span></span>"}</div>
    <div class="qtext" ${(it.type === "trans" && it.dir === "en-vi") || it.type === "speak" ? "" : "data-notap"}>${qText}</div>${listenRow}${body}${fb}`;
 }
 
@@ -748,24 +756,20 @@ function vQuizBody(q, opts = {}) {
    ===================================================================== */
 async function gradeSentence(word, text) {
   if (aiOn()) { try { const j = await gemini(TEACHER(),
-`Từ mục tiêu: "${word}". Câu người học viết: "${text}".
-Chấm theo rubric: ngữ pháp 4 điểm, dùng từ mục tiêu đúng nghĩa 4 điểm, tự nhiên 2 điểm. Không bắt lỗi văn phong vượt trình độ ${S.level}.
-Trả JSON {"score":0-10,"corrected":"câu đã sửa (giữ nguyên nếu đúng)","errors":[{"type":"ngữ pháp|dùng từ|chính tả|tự nhiên","fix":"phần sửa","explain":"giải thích ngắn tiếng Việt"}],"note":"nhận xét 1 câu tiếng Việt"}`);
+`${_t("Từ mục tiêu: \"")}${word}${_t("\". Câu người học viết: \"")}${text}${_t("\".\nChấm theo rubric: ngữ pháp 4 điểm, dùng từ mục tiêu đúng nghĩa 4 điểm, tự nhiên 2 điểm. Không bắt lỗi văn phong vượt trình độ ")}${S.level}${_t(".\nTrả JSON {\"score\":0-10,\"corrected\":\"câu đã sửa (giữ nguyên nếu đúng)\",\"errors\":[{\"type\":\"ngữ pháp|dùng từ|chính tả|tự nhiên\",\"fix\":\"phần sửa\",\"explain\":\"giải thích ngắn tiếng Việt\"}],\"note\":\"nhận xét 1 câu tiếng Việt\"}")}`);
     if (typeof j.score === "number") return j; } catch (e) {} }
   const has = clean(text).includes(clean(word).split(" ")[0]), len = norm(text).length;
   const sc = Math.min(10, (has ? 5 : 1) + (len >= 6 ? 3 : len >= 4 ? 2 : 0) + (/^[A-Z].*[.?!]$/.test(text.trim()) ? 2 : 0));
-  return {score:sc, corrected:text, errors:[], note:!has ? `Câu chưa dùng từ "${word}".` : sc >= 8 ? "Câu dùng đúng từ mục tiêu." : "Hãy viết câu đầy đủ hơn: có chủ ngữ, động từ, viết hoa đầu câu và dấu chấm cuối câu.", basic:true};
+  return {score:sc, corrected:text, errors:[], note:!has ? `${_t("Câu chưa dùng từ \"")}${word}".` : sc >= 8 ? _t("Câu dùng đúng từ mục tiêu.") : _t("Hãy viết câu đầy đủ hơn: có chủ ngữ, động từ, viết hoa đầu câu và dấu chấm cuối câu."), basic:true};
 }
 async function gradeTrans(t, text) {
   const src = t.src || t.q, ref = t.ref || t.ans;
   if (aiOn()) { try { const j = await gemini(TEACHER(),
-`Câu gốc: "${src}". Bản dịch tham khảo: "${ref}". Bản dịch của người học: "${text}".
-Chấm theo mức độ đúng ý (6 điểm) và đúng ngữ pháp, tự nhiên (4 điểm). Chấp nhận cách dịch khác nếu đúng nghĩa.
-Trả JSON {"score":0-10,"note":"nhận xét ngắn tiếng Việt, chỉ ra lỗi nếu có","better":"bản dịch tốt hơn dựa trên câu của người học"}`);
+`${_t("Câu gốc: \"")}${src}${_t("\". Bản dịch tham khảo: \"")}${ref}${_t("\". Bản dịch của người học: \"")}${text}${_t("\".\nChấm theo mức độ đúng ý (6 điểm) và đúng ngữ pháp, tự nhiên (4 điểm). Chấp nhận cách dịch khác nếu đúng nghĩa.\nTrả JSON {\"score\":0-10,\"note\":\"nhận xét ngắn tiếng Việt, chỉ ra lỗi nếu có\",\"better\":\"bản dịch tốt hơn dựa trên câu của người học\"}")}`);
     if (typeof j.score === "number") return j; } catch (e) {} }
   const a = norm(text), b = norm(ref), hit = b.filter(x => a.includes(x)).length / Math.max(1, b.length);
   const sc = Math.round(hit * 10);
-  return {score:sc, note:sc >= 7 ? "Bản dịch sát ý." : "Bản dịch còn thiếu ý, hãy so với câu tham khảo.", better:ref, basic:true};
+  return {score:sc, note:sc >= 7 ? _t("Bản dịch sát ý.") : _t("Bản dịch còn thiếu ý, hãy so với câu tham khảo."), better:ref, basic:true};
 }
 
 /* =====================================================================
@@ -791,7 +795,7 @@ async function startLesson() {
   if (prevLes) {
     const pw = shuffle(prevLes.words);
     pw.slice(0, 3).forEach((w, k) => items.push(k % 2 ? wordQ(w, pool) : meaningQ(w, pool)));
-    if (pw[3]) items.push({...meaningQ(pw[3], pool, "listening"), q:"Nghe và chọn nghĩa đúng", speak:pw[3].w, autoplay:true});
+    if (pw[3]) items.push({...meaningQ(pw[3], pool, "listening"), q:_t("Nghe và chọn nghĩa đúng"), speak:pw[3].w, autoplay:true});
     (prevLes.grammar?.quiz || []).slice(0, 2).forEach(g => items.push(gramQ(g)));
   }
   dueCards().filter(c => !items.some(i => i.word === c.w.w)).slice(0, Math.max(0, 8 - items.length)).forEach(c => items.push(meaningQ(c.w, pool)));
@@ -809,84 +813,77 @@ function setStep(n) { const l = L(); l.max = Math.max(l.max || 0, l.step, n); l.
 // Xem lại bước đã học: bấm thanh tiến trình. Bước 1–2 (đã làm quiz) hiện bản tóm tắt thay vì làm lại.
 function reviewPanel(k) {
   const l = L(), ws = l.les.words, g = l.les.grammar;
-  if (k === 0) return `<section class="panel"><h2>Xem lại: Ôn bài cũ${l.prevTopic ? ` · ${esc(l.prevTopic)}` : ""}</h2>
-    ${(l.warmItems || []).length ? `<ol class="revlist">${l.warmItems.map(it => `<li><b>${esc(it.q)}</b><br><span class="tag good">${esc(it.opts ? it.opts[it.ans] : it.ans)}</span>${it.explain ? ` <span class="muted small">${esc(it.explain)}</span>` : ""}</li>`).join("")}</ol>` : `<p class="muted">Buổi này không có phần ôn bài cũ.</p>`}</section>`;
-  return `<section class="panel"><h2>Xem lại: Từ vựng & ngữ pháp</h2>
-    <div class="revlist">${ws.map(w => `<div class="revword"><div class="row nowrap"><b>${esc(w.w)}</b><button class="round sm" data-a="speak" data-v="${esc(w.w)}" aria-label="Nghe">🔊</button><span class="ipa">${esc(w.ipa || "")}</span>${w.pos ? `<span class="tag">${esc(w.pos)}</span>` : ""}</div>
+  if (k === 0) return `${_t("<section class=\"panel\"><h2>Xem lại: Ôn bài cũ")}${l.prevTopic ? ` · ${esc(l.prevTopic)}` : ""}</h2>
+    ${(l.warmItems || []).length ? `<ol class="revlist">${l.warmItems.map(it => `<li><b>${esc(it.q)}</b><br><span class="tag good">${esc(it.opts ? it.opts[it.ans] : it.ans)}</span>${it.explain ? ` <span class="muted small">${esc(it.explain)}</span>` : ""}</li>`).join("")}</ol>` : `${_t("<p class=\"muted\">Buổi này không có phần ôn bài cũ.</p>")}`}</section>`;
+  return `${_t("<section class=\"panel\"><h2>Xem lại: Từ vựng & ngữ pháp</h2>\n    <div class=\"revlist\">")}${ws.map(w => `<div class="revword"><div class="row nowrap"><b>${esc(w.w)}</b><button class="round sm" data-a="speak" data-v="${esc(w.w)}" aria-label="${_t("Nghe")}">🔊</button><span class="ipa">${esc(w.ipa || "")}</span>${w.pos ? `<span class="tag">${esc(w.pos)}</span>` : ""}</div>
       <div>${esc(w.vi)}</div>${w.ex ? `<div class="muted small"><i>${esc(w.ex)}</i>${w.ex_vi ? " · " + esc(w.ex_vi) : ""}</div>` : ""}</div>`).join("")}</div></section>
-    ${g ? `<section class="panel"><h3>Ngữ pháp: ${esc(g.name || "")}</h3>${g.pattern ? `<p><code>${esc(g.pattern)}</code></p>` : ""}<p>${esc(g.note || "")}</p>
+    ${g ? `${_t("<section class=\"panel\"><h3>Ngữ pháp: ")}${esc(g.name || "")}</h3>${g.pattern ? `<p><code>${esc(g.pattern)}</code></p>` : ""}<p>${esc(g.note || "")}</p>
       ${(g.quiz || []).map(qz => `<p class="small">• ${esc(qz.q)} → <b>${esc((qz.opts || [])[qz.ans] ?? "")}</b>${qz.explain ? ` <span class="muted">(${esc(qz.explain)})</span>` : ""}</p>`).join("")}</section>` : ""}`;
 }
 
 function vLesson() {
   const l = L(); if (!l) { view = "home"; return vHome(); }
   const mx = l.max = Math.max(l.max || 0, l.step);
-  const head = `<header class="lhead"><div class="row between"><button class="ghost" data-a="exitLesson">← Lưu & thoát</button>
-     <span class="muted small">${fmtTime(Date.now() - l.started)}</span></div>
-     <div class="lesson-title hue-${topicStk(l.les.topic)[1]}">${stk(topicStk(l.les.topic)[0], 64, "", -8)}<div class="grow"><p class="eyebrow">${l.les.remedial ? "Buổi ôn tập" : "Buổi " + (doneN() + 1)}${l.les.level ? " · " + l.les.level : ""} · Bước ${l.step + 1}/6: ${STEPS[l.step]}</p><h2>${esc(l.les.topic)}</h2></div>${stk(STEP_STK[l.step], 46, "step-stk", 10)}</div>
-     <ol class="stepper">${STEPS.map((s, k) => { const reach = k <= mx && k !== l.step; return `<li class="${k < mx || k < l.step ? "done" : ""} ${k === l.step ? "cur" : ""} ${reach ? "go" : ""}" ${reach ? `data-a="step" data-v="${k}" role="button" tabindex="0" title="Xem lại bước ${k + 1}"` : ""}><span>${k + 1}</span><em>${s}</em></li>`; }).join("")}</ol>
-     ${mx > 0 ? `<p class="muted small center">Bấm vào thanh tiến trình để quay lại xem bước đã học.</p>` : ""}</header>`;
-  const back = l.step < mx ? `<div class="backbar"><span>👀 Đang xem lại bước ${l.step + 1}: <b>${STEPS[l.step]}</b></span><button class="primary mini" data-a="step" data-v="${mx}">Về bước đang học (${mx + 1}) →</button></div>` : "";
+  const head = `${_t("<header class=\"lhead\"><div class=\"row between\"><button class=\"ghost\" data-a=\"exitLesson\">← Lưu & thoát</button>\n     <span class=\"muted small\">")}${fmtTime(Date.now() - l.started)}</span></div>
+     <div class="lesson-title hue-${topicStk(l.les.topic)[1]}">${stk(topicStk(l.les.topic)[0], 64, "", -8)}<div class="grow"><p class="eyebrow">${l.les.remedial ? _t("Buổi ôn tập") : _t("Buổi ") + (doneN() + 1)}${l.les.level ? " · " + l.les.level : ""}${_t(" · Bước ")}${l.step + 1}/6: ${STEPS[l.step]}</p><h2>${esc(l.les.topic)}</h2></div>${stk(STEP_STK[l.step], 46, "step-stk", 10)}</div>
+     <ol class="stepper">${STEPS.map((s, k) => { const reach = k <= mx && k !== l.step; return `<li class="${k < mx || k < l.step ? "done" : ""} ${k === l.step ? "cur" : ""} ${reach ? "go" : ""}" ${reach ? `data-a="step" data-v="${k}${_t("\" role=\"button\" tabindex=\"0\" title=\"Xem lại bước ")}${k + 1}"` : ""}><span>${k + 1}</span><em>${s}</em></li>`; }).join("")}</ol>
+     ${mx > 0 ? `${_t("<p class=\"muted small center\">Bấm vào thanh tiến trình để quay lại xem bước đã học.</p>")}` : ""}</header>`;
+  const back = l.step < mx ? `${_t("<div class=\"backbar\"><span>👀 Đang xem lại bước ")}${l.step + 1}: <b>${STEPS[l.step]}</b></span><button class="primary mini" data-a="step" data-v="${mx}${_t("\">Về bước đang học (")}${mx + 1}) →</button></div>` : "";
   const body = l.step < mx && l.step < 2 ? reviewPanel(l.step) : [step1, step2, step3, step4, step5, step6][l.step]();
   return `<div class="wrap narrow">${head}${back}${body}</div>`;
 }
 // Bước 1: Ôn bài cũ
 function step1() {
   const l = L();
-  if (!l.warmItems.length) return `<section class="panel"><h2>Ôn bài cũ</h2><p>Đây là buổi đầu tiên nên chưa có bài cũ để ôn.</p><button class="primary" data-a="step" data-v="1">Sang từ vựng mới</button></section>`;
-  return `<section class="panel"><h2>Ôn bài cũ${l.prevTopic ? `: ${esc(l.prevTopic)}` : ""}</h2><p class="muted">Ôn nhanh từ vựng và ngữ pháp buổi trước. Câu sai sẽ được đưa vào flashcard để ôn sớm hơn.</p></section>
-    <section class="panel quiz">${vQuizBody(Q)}</section>`;
+  if (!l.warmItems.length) return `${_t("<section class=\"panel\"><h2>Ôn bài cũ</h2><p>Đây là buổi đầu tiên nên chưa có bài cũ để ôn.</p><button class=\"primary\" data-a=\"step\" data-v=\"1\">Sang từ vựng mới</button></section>")}`;
+  return `${_t("<section class=\"panel\"><h2>Ôn bài cũ")}${l.prevTopic ? `: ${esc(l.prevTopic)}` : ""}${_t("</h2><p class=\"muted\">Ôn nhanh từ vựng và ngữ pháp buổi trước. Câu sai sẽ được đưa vào flashcard để ôn sớm hơn.</p></section>\n    <section class=\"panel quiz\">")}${vQuizBody(Q)}</section>`;
 }
 // Bước 2: Từ vựng mới + ngữ pháp + kiểm tra nhanh
 function step2() {
   const l = L(), ws = l.les.words, n = ws.length;
   if (l.vi < n) {
     const w = ws[l.vi];
-    return `<section class="panel"><div class="row between"><span class="tag">Từ ${l.vi + 1}/${n}</span><div class="dots">${ws.map((_, k) => `<i class="${k <= l.vi ? "on" : ""}"></i>`).join("")}</div></div>
-      <div class="vocab">${stk(topicStk(l.les.topic)[0], 70, "corner", 12)}<div class="row"><h2 class="word">${esc(w.w)}</h2><button class="round" data-a="speak" data-v="${esc(w.w)}" aria-label="Nghe">🔊</button></div>
+    return `${_t("<section class=\"panel\"><div class=\"row between\"><span class=\"tag\">Từ ")}${l.vi + 1}/${n}</span><div class="dots">${ws.map((_, k) => `<i class="${k <= l.vi ? "on" : ""}"></i>`).join("")}</div></div>
+      <div class="vocab">${stk(topicStk(l.les.topic)[0], 70, "corner", 12)}<div class="row"><h2 class="word">${esc(w.w)}</h2><button class="round" data-a="speak" data-v="${esc(w.w)}" aria-label="${_t("Nghe")}">🔊</button></div>
       <div class="ipa">${esc(w.ipa)}${w.pos ? ` · <span class="tag">${esc(w.pos)}</span>` : ""}</div>
       <p class="meaning">${esc(w.vi)}</p>
-      <div class="example"><p>${tw(w.ex)} <button class="mini" data-a="speak" data-v="${esc(w.ex)}">🔊 Nghe câu</button> </p><div>${trBtn(w.ex, "en", "vi", "Dịch câu")}</div>${w.ex_vi ? `<p class="muted">${twv(w.ex_vi)}</p>` : ""}</div></div>
+      <div class="example"><p>${tw(w.ex)} <button class="mini" data-a="speak" data-v="${esc(w.ex)}${_t("\">🔊 Nghe câu</button> </p><div>")}${trBtn(w.ex, "en", "vi", _t("Dịch câu"))}</div>${w.ex_vi ? `<p class="muted">${twv(w.ex_vi)}</p>` : ""}</div></div>
       ${speakBox(w, l.vi)}
-      <div class="row">${l.vi > 0 ? `<button data-a="vprev">Từ trước</button>` : ""}<button class="primary" data-a="vnext">${l.vi < n - 1 ? "Từ tiếp theo" : "Xem điểm ngữ pháp"}</button></div></section>`;
+      <div class="row">${l.vi > 0 ? `${_t("<button data-a=\"vprev\">Từ trước</button>")}` : ""}<button class="primary" data-a="vnext">${l.vi < n - 1 ? _t("Từ tiếp theo") : _t("Xem điểm ngữ pháp")}</button></div></section>`;
   }
   if (l.vi === n) {
     const g = l.les.grammar;
-    return `<section class="panel"><span class="eyebrow">Ngữ pháp trọng tâm</span><h2>${esc(g.name)}</h2>
+    return `${_t("<section class=\"panel\"><span class=\"eyebrow\">Ngữ pháp trọng tâm</span><h2>")}${esc(g.name)}</h2>
       ${g.pattern ? `<div class="pattern">${esc(g.pattern)}</div>` : ""}<p>${twv(g.note || "")}</p>
-      ${(g.quiz || []).length ? `<p class="muted small">Điểm ngữ pháp này sẽ được ôn lại ở đầu buổi sau.</p>` : ""}
-      <div class="row"><button data-a="vprev">Xem lại từ</button><button class="primary" data-a="vnext">Kiểm tra nhanh 4 câu</button></div></section>`;
+      ${(g.quiz || []).length ? `${_t("<p class=\"muted small\">Điểm ngữ pháp này sẽ được ôn lại ở đầu buổi sau.</p>")}` : ""}${_t("\n      <div class=\"row\"><button data-a=\"vprev\">Xem lại từ</button><button class=\"primary\" data-a=\"vnext\">Kiểm tra nhanh 4 câu</button></div></section>")}`;
   }
-  return `<section class="panel"><h2>Kiểm tra nhanh từ mới</h2><p class="muted">Từ bạn học hôm nay đã được thêm vào flashcard.</p></section><section class="panel quiz">${vQuizBody(Q)}</section>`;
+  return `${_t("<section class=\"panel\"><h2>Kiểm tra nhanh từ mới</h2><p class=\"muted\">Từ bạn học hôm nay đã được thêm vào flashcard.</p></section><section class=\"panel quiz\">")}${vQuizBody(Q)}</section>`;
 }
 function speakBox(w, i) {
   const l = L(); l.pron = l.pron || {};
-  const keys = [["w:" + i, "Đọc từ"], ["ex:" + i, "Đọc cả câu"]];
-  return `<div class="speakbox"><p class="eyebrow">Luyện nghe – nói</p>
-    <div class="row"><button class="mini" data-a="slow" data-v="${esc(w.ex)}">🐢 Nghe chậm câu ví dụ</button>
-    ${keys.map(([k, t]) => `<button class="mini mic ${UI.rec === k ? "on" : ""}" data-a="pron" data-v="${k}" ${SR ? "" : "disabled"}>${UI.rec === k ? "● Đang nghe, bấm để dừng" : "🎤 " + t}</button>`).join("")}</div>
-    ${keys.some(([k]) => UI.rec === k) ? `<p class="live" id="live">Hãy đọc to...</p>` : ""}
+  const keys = [["w:" + i, _t("Đọc từ")], ["ex:" + i, _t("Đọc cả câu")]];
+  return `${_t("<div class=\"speakbox\"><p class=\"eyebrow\">Luyện nghe – nói</p>\n    <div class=\"row\"><button class=\"mini\" data-a=\"slow\" data-v=\"")}${esc(w.ex)}${_t("\">🐢 Nghe chậm câu ví dụ</button>\n    ")}${keys.map(([k, t]) => `<button class="mini mic ${UI.rec === k ? "on" : ""}" data-a="pron" data-v="${k}" ${SR ? "" : "disabled"}>${UI.rec === k ? _t("● Đang nghe, bấm để dừng") : "🎤 " + t}</button>`).join("")}</div>
+    ${keys.some(([k]) => UI.rec === k) ? `${_t("<p class=\"live\" id=\"live\">Hãy đọc to...</p>")}` : ""}
     ${keys.map(([k]) => l.pron[k] ? pronHtml(l.pron[k]) : "").join("")}
-    ${SR ? "" : `<p class="muted small">Trình duyệt này chưa hỗ trợ nhận giọng nói. Hãy mở app bằng Chrome hoặc Edge.</p>`}</div>`;
+    ${SR ? "" : `${_t("<p class=\"muted small\">Trình duyệt này chưa hỗ trợ nhận giọng nói. Hãy mở app bằng Chrome hoặc Edge.</p>")}`}</div>`;
 }
 // Bước 3: Tự đặt câu
 function step3() {
   const l = L(), ws = l.les.words.slice(0, 4), graded = Object.keys(l.sent).length;
-  return `<section class="panel"><h2>Tự đặt câu</h2><p class="muted">Viết một câu tiếng Anh với mỗi từ, càng gần với công việc và cuộc sống của bạn càng tốt. ${aiOn() ? "AI sẽ sửa lỗi và giải thích." : "Đang chấm cơ bản vì AI đang nghỉ."}</p></section>
-   ${ws.map((w, i) => { const r = l.sent[i]; return `<section class="panel"><div class="row between"><h3>${esc(w.w)} <span class="muted normal">· ${esc(w.vi)}</span></h3><button class="mini" data-a="speak" data-v="${esc(w.ex)}">Nghe ví dụ</button></div>
-     <label class="sr" for="sent${i}">Câu với ${esc(w.w)}</label><textarea id="sent${i}" placeholder="Ví dụ gợi ý: ${esc(w.ex)}">${esc(r?.text || "")}</textarea>${sentFb(r)}</section>`; }).join("")}
-   <div class="row sticky-actions"><button class="primary" data-a="grade3" id="g3">${graded ? "Chấm lại" : "Chấm câu"}</button>${graded ? `<button data-a="step" data-v="3">Sang bước dịch câu →</button>` : ""}</div>`;
+  return `${_t("<section class=\"panel\"><h2>Tự đặt câu</h2><p class=\"muted\">Viết một câu tiếng Anh với mỗi từ, càng gần với công việc và cuộc sống của bạn càng tốt. ")}${aiOn() ? _t("AI sẽ sửa lỗi và giải thích.") : _t("Đang chấm cơ bản vì AI đang nghỉ.")}</p></section>
+   ${ws.map((w, i) => { const r = l.sent[i]; return `<section class="panel"><div class="row between"><h3>${esc(w.w)} <span class="muted normal">· ${esc(w.vi)}</span></h3><button class="mini" data-a="speak" data-v="${esc(w.ex)}${_t("\">Nghe ví dụ</button></div>\n     <label class=\"sr\" for=\"sent")}${i}${_t("\">Câu với ")}${esc(w.w)}</label><textarea id="sent${i}${_t("\" placeholder=\"Ví dụ gợi ý: ")}${esc(w.ex)}">${esc(r?.text || "")}</textarea>${sentFb(r)}</section>`; }).join("")}
+   <div class="row sticky-actions"><button class="primary" data-a="grade3" id="g3">${graded ? _t("Chấm lại") : _t("Chấm câu")}</button>${graded ? `${_t("<button data-a=\"step\" data-v=\"3\">Sang bước dịch câu →</button>")}` : ""}</div>`;
 }
 function sentFb(r) {
   if (!r || r.score == null) return "";
   return `<div class="fb ${r.score >= 7 ? "good" : "bad"}"><b>${r.score}/10</b> · ${esc(r.note || "")}
-    ${r.corrected && clean(r.corrected) !== clean(r.text) ? `<br>Câu sửa: <i>${tw(r.corrected)}</i>` : ""}
+    ${r.corrected && clean(r.corrected) !== clean(r.text) ? `${_t("<br>Câu sửa: <i>")}${tw(r.corrected)}</i>` : ""}
     ${(r.errors || []).map(e => `<br>• <b>${esc(e.type || "")}</b>: ${esc(e.fix || "")}${e.explain ? ` · ${esc(e.explain)}` : ""}`).join("")}</div>`;
 }
 async function grade3() {
-  const l = L(), ws = l.les.words.slice(0, 4), btn = $("#g3"); btn.disabled = true; btn.innerHTML = `<span class="spin"></span> Đang chấm`;
+  const l = L(), ws = l.les.words.slice(0, 4), btn = $("#g3"); btn.disabled = true; btn.innerHTML = `${_t("<span class=\"spin\"></span> Đang chấm")}`;
   const texts = ws.map((_, i) => $("#sent" + i).value.trim());
-  if (!texts.some(Boolean)) { btn.disabled = false; btn.textContent = "Chấm câu"; return toast("Hãy viết ít nhất một câu"); }
+  if (!texts.some(Boolean)) { btn.disabled = false; btn.textContent = _t("Chấm câu"); return toast(_t("Hãy viết ít nhất một câu")); }
   await Promise.all(ws.map(async (w, i) => { if (!texts[i]) return; if (l.sent[i]?.text === texts[i]) return;
     const r = await gradeSentence(w.w, texts[i]); l.sent[i] = {text:texts[i], word:w.w, ...r};
     if (r.score >= 7) addCard(w, "lesson", r.corrected || texts[i]); else { const c = S.cards[w.w.toLowerCase()]; if (c) c.due = Date.now(); } }));
@@ -896,23 +893,19 @@ async function grade3() {
 // Bước 4: Dịch câu
 function step4() {
   const l = L(), tr = l.les.translations, graded = Object.keys(l.trans).length;
-  return `<section class="panel"><h2>Dịch câu</h2><p class="muted">Dịch theo ý, không cần khớp từng chữ. Bấm vào từng từ để xem nghĩa và phiên âm; nút "Xem bản dịch máy" dịch cả câu ngay tại đây (nên tự dịch trước rồi mới so).</p></section>
-   ${tr.map((t, i) => { const r = l.trans[i]; return `<section class="panel"><span class="tag">${t.dir === "vi-en" ? "Việt → Anh" : "Anh → Việt"}</span>
+  return `${_t("<section class=\"panel\"><h2>Dịch câu</h2><p class=\"muted\">Dịch theo ý, không cần khớp từng chữ. Bấm vào từng từ để xem nghĩa và phiên âm; nút \"Xem bản dịch máy\" dịch cả câu ngay tại đây (nên tự dịch trước rồi mới so).</p></section>\n   ")}${tr.map((t, i) => { const r = l.trans[i]; return `<section class="panel"><span class="tag">${t.dir === "vi-en" ? _t("Việt → Anh") : _t("Anh → Việt")}</span>
      <h3 class="src">${t.dir === "en-vi" ? tw(t.src) : twv(t.src)}</h3>
-     <div class="row">${trBtn(t.src, t.dir === "vi-en" ? "vi" : "en", t.dir === "vi-en" ? "en" : "vi", "Xem bản dịch máy")}${t.dir === "en-vi" ? `<button class="mini" data-a="speak" data-v="${esc(t.src)}">🔊 Nghe câu</button>` : ""}</div>
-     <label class="sr" for="tr${i}">Bản dịch</label><textarea id="tr${i}" rows="2" placeholder="Bản dịch của bạn">${esc(r?.text || "")}</textarea>
-     ${r ? `<div class="fb ${r.score >= 7 ? "good" : "bad"}"><b>${r.score}/10</b> · ${esc(r.note || "")}<br>Tham khảo: <i>${t.dir === "vi-en" ? tw(t.ref) : esc(t.ref)}</i>${r.better && clean(r.better) !== clean(t.ref) ? `<br>Gợi ý từ câu của bạn: <i>${esc(r.better)}</i>` : ""}</div>` : ""}</section>`; }).join("")}
-   <section class="panel"><h2>Nghe và chép</h2><p class="muted">Nghe câu tiếng Anh rồi gõ lại. Có thể nghe nhiều lần, nghe chậm nếu cần.</p></section>
-   ${dictRefs(l).map((ref, i) => { const r = l.dict?.[i]; return `<section class="panel"><span class="tag">Câu nghe ${i + 1}</span>
-     <div class="row"><button data-a="speak" data-v="${esc(ref)}">🔊 Nghe</button><button data-a="slow" data-v="${esc(ref)}">🐢 Nghe chậm</button></div>
-     <label class="sr" for="dc${i}">Chép lại câu ${i + 1}</label><textarea id="dc${i}" rows="2" placeholder="Gõ lại câu bạn nghe được">${esc(r?.text || "")}</textarea>${r ? dictHtml(r) : ""}</section>`; }).join("")}
-   <div class="row sticky-actions"><button class="primary" data-a="grade4" id="g4">${graded || l.dict ? "Chấm lại" : "Chấm bài"}</button>${graded || l.dict ? `<button data-a="step" data-v="4">Sang role-play →</button>` : ""}</div>`;
+     <div class="row">${trBtn(t.src, t.dir === "vi-en" ? "vi" : "en", t.dir === "vi-en" ? "en" : "vi", _t("Xem bản dịch máy"))}${t.dir === "en-vi" ? `<button class="mini" data-a="speak" data-v="${esc(t.src)}${_t("\">🔊 Nghe câu</button>")}` : ""}</div>
+     <label class="sr" for="tr${i}${_t("\">Bản dịch</label><textarea id=\"tr")}${i}${_t("\" rows=\"2\" placeholder=\"Bản dịch của bạn\">")}${esc(r?.text || "")}</textarea>
+     ${r ? `<div class="fb ${r.score >= 7 ? "good" : "bad"}"><b>${r.score}/10</b> · ${esc(r.note || "")}${_t("<br>Tham khảo: <i>")}${t.dir === "vi-en" ? tw(t.ref) : esc(t.ref)}</i>${r.better && clean(r.better) !== clean(t.ref) ? `${_t("<br>Gợi ý từ câu của bạn: <i>")}${esc(r.better)}</i>` : ""}</div>` : ""}</section>`; }).join("")}${_t("\n   <section class=\"panel\"><h2>Nghe và chép</h2><p class=\"muted\">Nghe câu tiếng Anh rồi gõ lại. Có thể nghe nhiều lần, nghe chậm nếu cần.</p></section>\n   ")}${dictRefs(l).map((ref, i) => { const r = l.dict?.[i]; return `${_t("<section class=\"panel\"><span class=\"tag\">Câu nghe ")}${i + 1}</span>
+     <div class="row"><button data-a="speak" data-v="${esc(ref)}">🔊 Nghe</button><button data-a="slow" data-v="${esc(ref)}${_t("\">🐢 Nghe chậm</button></div>\n     <label class=\"sr\" for=\"dc")}${i}${_t("\">Chép lại câu ")}${i + 1}</label><textarea id="dc${i}${_t("\" rows=\"2\" placeholder=\"Gõ lại câu bạn nghe được\">")}${esc(r?.text || "")}</textarea>${r ? dictHtml(r) : ""}</section>`; }).join("")}
+   <div class="row sticky-actions"><button class="primary" data-a="grade4" id="g4">${graded || l.dict ? _t("Chấm lại") : _t("Chấm bài")}</button>${graded || l.dict ? `<button data-a="step" data-v="4">Sang role-play →</button>` : ""}</div>`;
 }
 const dictRefs = l => (l.dictRefs = l.dictRefs || shuffle(l.les.words.filter(w => w.ex)).slice(0, 2).map(w => w.ex));
 async function grade4() {
-  const l = L(), tr = l.les.translations, btn = $("#g4"); btn.disabled = true; btn.innerHTML = `<span class="spin"></span> Đang chấm`;
+  const l = L(), tr = l.les.translations, btn = $("#g4"); btn.disabled = true; btn.innerHTML = `${_t("<span class=\"spin\"></span> Đang chấm")}`;
   const texts = tr.map((_, i) => $("#tr" + i).value.trim()), dts = dictRefs(l).map((_, i) => $("#dc" + i)?.value.trim() || "");
-  if (!texts.some(Boolean) && !dts.some(Boolean)) { btn.disabled = false; btn.textContent = "Chấm bài"; return toast("Hãy dịch hoặc chép ít nhất một câu"); }
+  if (!texts.some(Boolean) && !dts.some(Boolean)) { btn.disabled = false; btn.textContent = _t("Chấm bài"); return toast(_t("Hãy dịch hoặc chép ít nhất một câu")); }
   l.dict = l.dict || {};
   dictRefs(l).forEach((ref, i) => { if (dts[i]) l.dict[i] = dictScore(ref, dts[i]); });
   if (Object.keys(l.dict).length) l.scores.listening = Math.round(avg(Object.values(l.dict).map(x => x.score)));
@@ -929,24 +922,18 @@ function step5() {
   const turns = l.chat.filter(m => m.role === "user").length;
   if (l.rpEval) {
     const e = l.rpEval;
-    return `<section class="panel"><h2>Kết quả role-play</h2><div class="stats">${[["Trôi chảy", e.fluency], ["Chính xác", e.accuracy], ["Hoàn thành nhiệm vụ", e.task_score]].map(([k, v]) => `<div class="stat"><b>${v}/10</b><span>${k}</span></div>`).join("")}</div>
-      <p>${esc(e.comment_vi || "")}</p>${(e.better_phrases || []).map(b => `<div class="fb">Bạn nói: <i>${esc(b.you)}</i><br>Tự nhiên hơn: <b>${tw(b.better)}</b></div>`).join("")}
-      <div class="row"><button data-a="rpAgain">Trò chuyện thêm</button><button class="primary" data-a="step" data-v="5">Xem tổng kết →</button></div></section>`;
+    return `${_t("<section class=\"panel\"><h2>Kết quả role-play</h2><div class=\"stats\">")}${[[_t("Trôi chảy"), e.fluency], [_t("Chính xác"), e.accuracy], [_t("Hoàn thành nhiệm vụ"), e.task_score]].map(([k, v]) => `<div class="stat"><b>${v}/10</b><span>${k}</span></div>`).join("")}</div>
+      <p>${esc(e.comment_vi || "")}</p>${(e.better_phrases || []).map(b => `${_t("<div class=\"fb\">Bạn nói: <i>")}${esc(b.you)}${_t("</i><br>Tự nhiên hơn: <b>")}${tw(b.better)}</b></div>`).join("")}${_t("\n      <div class=\"row\"><button data-a=\"rpAgain\">Trò chuyện thêm</button><button class=\"primary\" data-a=\"step\" data-v=\"5\">Xem tổng kết →</button></div></section>")}`;
   }
-  return `<section class="panel rp"><div class="row between"><h2>Role-play</h2><span class="muted small">Bạn: ${esc(rp.user_role || "")}</span></div>
+  return `${_t("<section class=\"panel rp\"><div class=\"row between\"><h2>Role-play</h2><span class=\"muted small\">Bạn: ")}${esc(rp.user_role || "")}</span></div>
     <p class="muted">${esc(rp.setting || "")}</p>
-    <ul class="tasks">${(rp.tasks || []).map((t, k) => `<li class="${l.tasksDone.includes(k) ? "done" : ""}">${esc(t)}</li>`).join("")}</ul>
-    <p class="small">Từ đã dùng: ${l.les.words.map(w => `<span class="chip ${used.includes(w.w) ? "on" : ""}">${esc(w.w)}</span>`).join(" ")}</p></section>
-   <section class="panel"><div class="chat" id="chat">${l.chat.map((m, mi) => `<div class="msg ${m.role}">${m.role === "ai" ? (hideText() && !(l.reveal || []).includes(mi) ? `<span class="muted">(Chữ đã ẩn, hãy nghe)</span> <button class="mini" data-a="reveal" data-v="${mi}">Hiện chữ</button>` : tw(m.text)) : (m.voice ? "🎤 " : "") + esc(m.text)}${m.fix ? `<span class="fix">Nên nói: ${esc(m.fix)}</span>` : ""}${m.role === "ai" ? ` <button class="mini" data-a="speak" data-v="${esc(m.text)}" aria-label="Nghe">🔊</button>${trBtn(m.text, "en", "vi")}` : ""}</div>`).join("")}
+    <ul class="tasks">${(rp.tasks || []).map((t, k) => `<li class="${l.tasksDone.includes(k) ? "done" : ""}">${esc(t)}</li>`).join("")}${_t("</ul>\n    <p class=\"small\">Từ đã dùng: ")}${l.les.words.map(w => `<span class="chip ${used.includes(w.w) ? "on" : ""}">${esc(w.w)}</span>`).join(" ")}</p></section>
+   <section class="panel"><div class="chat" id="chat">${l.chat.map((m, mi) => `<div class="msg ${m.role}">${m.role === "ai" ? (hideText() && !(l.reveal || []).includes(mi) ? `${_t("<span class=\"muted\">(Chữ đã ẩn, hãy nghe)</span> <button class=\"mini\" data-a=\"reveal\" data-v=\"")}${mi}${_t("\">Hiện chữ</button>")}` : tw(m.text)) : (m.voice ? "🎤 " : "") + esc(m.text)}${m.fix ? `${_t("<span class=\"fix\">Nên nói: ")}${esc(m.fix)}</span>` : ""}${m.role === "ai" ? ` <button class="mini" data-a="speak" data-v="${esc(m.text)}" aria-label="${_t("Nghe")}">🔊</button>${trBtn(m.text, "en", "vi")}` : ""}</div>`).join("")}
      ${l.rpBusy ? `<div class="msg ai"><span class="spin"></span></div>` : ""}</div>
-    ${l.hint ? `<div class="fb">Gợi ý: <b>${tw(l.hint.en)}</b>${l.hint.vi ? `<br><span class="muted">${twv(l.hint.vi)}</span>` : ""}</div>` : ""}
-    <div class="row nowrap"><label class="sr" for="rpIn">Câu trả lời</label><input id="rpIn" data-enter="rpSend" placeholder="Trả lời bằng tiếng Anh..." autocomplete="off" ${l.rpBusy ? "disabled" : ""}>
-      <button class="mic ${UI.rec === "rp" ? "on" : ""}" data-a="rpMic" ${SR && !l.rpBusy ? "" : "disabled"} aria-label="Nói">${UI.rec === "rp" ? "● Dừng" : "🎤 Nói"}</button>
-      <button class="primary" data-a="rpSend" ${l.rpBusy ? "disabled" : ""}>Gửi</button></div>
-    ${UI.rec === "rp" ? `<p class="live" id="live">Hãy nói bằng tiếng Anh...</p>` : ""}
-    <div class="row small"><button class="mini seg ${autoSpeak() ? "sel" : ""}" data-a="autospeak">🔈 Tự đọc câu của AI</button><button class="mini seg ${hideText() ? "sel" : ""}" data-a="hidetext">🙈 Ẩn chữ để luyện nghe</button>
-      ${SR ? `<span class="muted">Bấm 🎤 Nói để trả lời bằng giọng nói.</span>` : `<span class="muted">Mở bằng Chrome hoặc Edge để nói bằng micro.</span>`}</div>
-    <div class="row"><button data-a="rpHint">Gợi ý câu trả lời</button>${turns >= 3 ? `<button class="primary" data-a="rpEnd" id="rpEndBtn">Kết thúc & chấm điểm</button>` : `<span class="muted small">Trao đổi ít nhất 3 lượt để kết thúc (${turns}/3).</span>`}</div></section>`;
+    ${l.hint ? `${_t("<div class=\"fb\">Gợi ý: <b>")}${tw(l.hint.en)}</b>${l.hint.vi ? `<br><span class="muted">${twv(l.hint.vi)}</span>` : ""}</div>` : ""}${_t("\n    <div class=\"row nowrap\"><label class=\"sr\" for=\"rpIn\">Câu trả lời</label><input id=\"rpIn\" data-enter=\"rpSend\" placeholder=\"Trả lời bằng tiếng Anh...\" autocomplete=\"off\" ")}${l.rpBusy ? "disabled" : ""}>
+      <button class="mic ${UI.rec === "rp" ? "on" : ""}" data-a="rpMic" ${SR && !l.rpBusy ? "" : "disabled"}${_t(" aria-label=\"Nói\">")}${UI.rec === "rp" ? _t("● Dừng") : _t("🎤 Nói")}</button>
+      <button class="primary" data-a="rpSend" ${l.rpBusy ? "disabled" : ""}${_t(">Gửi</button></div>\n    ")}${UI.rec === "rp" ? `${_t("<p class=\"live\" id=\"live\">Hãy nói bằng tiếng Anh...</p>")}` : ""}
+    <div class="row small"><button class="mini seg ${autoSpeak() ? "sel" : ""}${_t("\" data-a=\"autospeak\">🔈 Tự đọc câu của AI</button><button class=\"mini seg ")}${hideText() ? "sel" : ""}${_t("\" data-a=\"hidetext\">🙈 Ẩn chữ để luyện nghe</button>\n      ")}${SR ? `${_t("<span class=\"muted\">Bấm 🎤 Nói để trả lời bằng giọng nói.</span>")}` : `${_t("<span class=\"muted\">Mở bằng Chrome hoặc Edge để nói bằng micro.</span>")}`}${_t("</div>\n    <div class=\"row\"><button data-a=\"rpHint\">Gợi ý câu trả lời</button>")}${turns >= 3 ? `${_t("<button class=\"primary\" data-a=\"rpEnd\" id=\"rpEndBtn\">Kết thúc & chấm điểm</button>")}` : `${_t("<span class=\"muted small\">Trao đổi ít nhất 3 lượt để kết thúc (")}${turns}/3).</span>`}</div></section>`;
 }
 function scrollChat() { const c = $("#chat"); if (c) c.scrollTop = c.scrollHeight; }
 async function rpSend(arg) {
@@ -986,24 +973,20 @@ Return JSON {"reply":"your in-character reply IN ENGLISH","fix":"if the learner'
 async function rpHint() {
   const l = L(), rp = l.les.roleplay;
   const unused = l.les.words.find(w => !l.chat.some(m => m.role === "user" && clean(m.text).includes(clean(w.w))));
-  if (aiOn()) { try { l.hint = await gemini(TEACHER(), `Role-play: AI là ${rp.ai_role}, người học là ${rp.user_role}. Nhiệm vụ: ${(rp.tasks || []).join("; ")}.
-Hội thoại: ${l.chat.map(m => (m.role === "ai" ? "AI: " : "Học viên: ") + m.text).join("\n")}
-Gợi ý MỘT câu trả lời tiếp theo cho học viên, phù hợp trình độ ${S.level}${unused ? `, có dùng từ "${unused.w}"` : ""}. Trả JSON {"en":"câu tiếng Anh","vi":"nghĩa tiếng Việt"}`); save(); return render(); } catch (e) {} }
-  l.hint = unused ? {en:unused.ex, vi:unused.ex_vi || ""} : {en:"Could you tell me more about that?", vi:"Bạn có thể nói thêm về điều đó không?"};
+  if (aiOn()) { try { l.hint = await gemini(TEACHER(), `${_t("Role-play: AI là ")}${rp.ai_role}${_t(", người học là ")}${rp.user_role}${_t(". Nhiệm vụ: ")}${(rp.tasks || []).join("; ")}${_t(".\nHội thoại: ")}${l.chat.map(m => (m.role === "ai" ? "AI: " : _t("Học viên: ")) + m.text).join("\n")}${_t("\nGợi ý MỘT câu trả lời tiếp theo cho học viên, phù hợp trình độ ")}${S.level}${unused ? `${_t(", có dùng từ \"")}${unused.w}"` : ""}${_t(". Trả JSON {\"en\":\"câu tiếng Anh\",\"vi\":\"nghĩa tiếng Việt\"}")}`); save(); return render(); } catch (e) {} }
+  l.hint = unused ? {en:unused.ex, vi:unused.ex_vi || ""} : {en:"Could you tell me more about that?", vi:_t("Bạn có thể nói thêm về điều đó không?")};
   render();
 }
 async function rpEnd() {
-  const l = L(), rp = l.les.roleplay, btn = $("#rpEndBtn"); if (btn) { btn.disabled = true; btn.innerHTML = `<span class="spin"></span> Đang chấm`; }
+  const l = L(), rp = l.les.roleplay, btn = $("#rpEndBtn"); if (btn) { btn.disabled = true; btn.innerHTML = `${_t("<span class=\"spin\"></span> Đang chấm")}`; }
   const userMsgs = l.chat.filter(m => m.role === "user");
   const used = l.les.words.filter(w => userMsgs.some(m => clean(m.text).includes(clean(w.w)))).length;
   let e = null;
-  if (aiOn()) { try { e = await gemini(TEACHER(), `Đánh giá phần role-play của học viên (trình độ ${S.level}). AI đóng vai: ${rp.ai_role}. Nhiệm vụ: ${(rp.tasks || []).join("; ")}.
-Hội thoại (câu có [nói] là học viên nói bằng giọng, được máy chuyển thành chữ nên có thể sai chính tả do nhận dạng; đừng trừ điểm lỗi chính tả ở những câu đó): ${l.chat.map(m => (m.role === "ai" ? "AI: " : m.voice ? "Học viên [nói]: " : "Học viên: ") + m.text).join("\n")}
-Trả JSON {"fluency":0-10,"accuracy":0-10,"task_score":0-10,"comment_vi":"nhận xét 2 câu tiếng Việt","better_phrases":[{"you":"câu học viên đã nói","better":"cách nói tự nhiên hơn"}] (tối đa 3)}`); } catch (er) { e = null; } }
+  if (aiOn()) { try { e = await gemini(TEACHER(), `${_t("Đánh giá phần role-play của học viên (trình độ ")}${S.level}${_t("). AI đóng vai: ")}${rp.ai_role}${_t(". Nhiệm vụ: ")}${(rp.tasks || []).join("; ")}${_t(".\nHội thoại (câu có [nói] là học viên nói bằng giọng, được máy chuyển thành chữ nên có thể sai chính tả do nhận dạng; đừng trừ điểm lỗi chính tả ở những câu đó): ")}${l.chat.map(m => (m.role === "ai" ? "AI: " : m.voice ? _t("Học viên [nói]: ") : _t("Học viên: ")) + m.text).join("\n")}${_t("\nTrả JSON {\"fluency\":0-10,\"accuracy\":0-10,\"task_score\":0-10,\"comment_vi\":\"nhận xét 2 câu tiếng Việt\",\"better_phrases\":[{\"you\":\"câu học viên đã nói\",\"better\":\"cách nói tự nhiên hơn\"}] (tối đa 3)}")}`); } catch (er) { e = null; } }
   if (!e || typeof e.fluency !== "number") {
     const avgLen = avg(userMsgs.map(m => norm(m.text).length));
     e = {fluency:Math.min(10, Math.round(3 + avgLen / 2)), accuracy:Math.max(3, 10 - l.chat.filter(m => m.fix).length * 2), task_score:Math.round(l.tasksDone.length / Math.max(1, (rp.tasks || []).length) * 10),
-      comment_vi:`Bạn đã trao đổi ${userMsgs.length} lượt (${userMsgs.filter(m => m.voice).length} lượt nói bằng giọng) và dùng ${used}/${l.les.words.length} từ mới.`, better_phrases:l.chat.filter(m => m.fix).slice(0, 3).map(m => ({you:m.text, better:m.fix}))};
+      comment_vi:`${_t("Bạn đã trao đổi ")}${userMsgs.length}${_t(" lượt (")}${userMsgs.filter(m => m.voice).length}${_t(" lượt nói bằng giọng) và dùng ")}${used}/${l.les.words.length}${_t(" từ mới.")}`, better_phrases:l.chat.filter(m => m.fix).slice(0, 3).map(m => ({you:m.text, better:m.fix}))};
   }
   l.rpEval = e; l.scores.roleplay = Math.round((e.fluency + e.accuracy + e.task_score) / 3 * 10);
   save(); render();
@@ -1017,30 +1000,24 @@ function lessonMistakes(l) {
   ].slice(0, 6);
 }
 function step6() {
-  const l = L(), sc = l.scores, keys = [["review","Ôn bài cũ"],["vocab","Kiểm tra từ"],["speaking","Phát âm"],["sentence","Đặt câu"],["translation","Dịch"],["listening","Nghe chép"],["roleplay","Role-play"]];
+  const l = L(), sc = l.scores, keys = [["review",_t("Ôn bài cũ")],["vocab",_t("Kiểm tra từ")],["speaking",_t("Phát âm")],["sentence",_t("Đặt câu")],["translation",_t("Dịch")],["listening",_t("Nghe chép")],["roleplay","Role-play"]];
   const parts = keys.map(([k]) => sc[k]).filter(x => x != null), total = Math.round(avg(parts));
   const ms = lessonMistakes(l), g = l.les.grammar;
   const nextTest = (doneN() + 1) % 5 === 0;
   const stars = total >= 85 ? 3 : total >= 65 ? 2 : total >= 40 ? 1 : 0;
-  return `<section class="panel summary-hero">${total >= 75 ? confetti() : ""}<div class="row nowrap">${mascot(total >= 60 ? "cheer" : "think", 110, "bob")}
-     <div class="grow"><span class="eyebrow">Tổng kết buổi học</span><h2>${esc(l.les.topic)}</h2>
+  return `<section class="panel summary-hero">${total >= 75 ? confetti() : ""}<div class="row nowrap">${mascot(total >= 60 ? "cheer" : "think", 110, "bob")}${_t("\n     <div class=\"grow\"><span class=\"eyebrow\">Tổng kết buổi học</span><h2>")}${esc(l.les.topic)}</h2>
      <div class="stars">${[0, 1, 2].map(i => stk("star", 46, i < stars ? "" : "dim", (i - 1) * 12)).join("")}</div>
-     <p class="muted">${stars === 3 ? "Xuất sắc! Bạn làm rất tốt." : stars === 2 ? "Tốt lắm! Thêm chút nữa là đạt 3 sao." : stars === 1 ? "Khá ổn. Ôn lại phần chưa vững nhé." : "Đừng nản, buổi sau sẽ tốt hơn!"}</p></div></div>
-     <div class="scorebig"><b>${total}</b><span>điểm trung bình</span></div>
-     <div class="bars">${keys.map(([k, n]) => `<div class="bar"><span>${n}</span><div><i style="width:${sc[k] ?? 0}%"></i></div><b>${sc[k] ?? "–"}</b></div>`).join("")}</div></section>
-   <section class="panel"><h3>Từ vựng hôm nay (${l.les.words.length} từ, đã vào flashcard)</h3>
-     <div class="wordgrid">${l.les.words.map(w => `<div><b>${esc(w.w)}</b><span class="ipa">${esc(w.ipa || "")}</span><span class="muted">${esc(w.vi)}</span></div>`).join("")}</div></section>
-   <section class="panel"><h3>Ngữ pháp: ${esc(g.name)}</h3>${g.pattern ? `<div class="pattern">${esc(g.pattern)}</div>` : ""}<p class="muted">${twv(g.note || "")}</p></section>
-   ${ms.length ? `<section class="panel"><h3>Lỗi cần nhớ</h3>${ms.map(m => `<div class="fb bad"><s>${esc(m.text)}</s><br><b>${esc(m.fix)}</b></div>`).join("")}</section>` : ""}
-   <section class="panel"><p>${nextTest ? "<b>Buổi tới là bài kiểm tra định kỳ</b> sau 5 buổi học." : `Còn ${5 - (doneN() + 1) % 5} buổi nữa đến bài kiểm tra định kỳ.`} Bạn có ${dueCards().length} thẻ flashcard cần ôn.</p>
-     <button class="primary" data-a="finishLesson" data-v="${total}">Hoàn thành buổi học</button></section>`;
+     <p class="muted">${stars === 3 ? _t("Xuất sắc! Bạn làm rất tốt.") : stars === 2 ? _t("Tốt lắm! Thêm chút nữa là đạt 3 sao.") : stars === 1 ? _t("Khá ổn. Ôn lại phần chưa vững nhé.") : _t("Đừng nản, buổi sau sẽ tốt hơn!")}</p></div></div>
+     <div class="scorebig"><b>${total}${_t("</b><span>điểm trung bình</span></div>\n     <div class=\"bars\">")}${keys.map(([k, n]) => `<div class="bar"><span>${n}</span><div><i style="width:${sc[k] ?? 0}%"></i></div><b>${sc[k] ?? "–"}</b></div>`).join("")}${_t("</div></section>\n   <section class=\"panel\"><h3>Từ vựng hôm nay (")}${l.les.words.length}${_t(" từ, đã vào flashcard)</h3>\n     <div class=\"wordgrid\">")}${l.les.words.map(w => `<div><b>${esc(w.w)}</b><span class="ipa">${esc(w.ipa || "")}</span><span class="muted">${esc(w.vi)}</span></div>`).join("")}${_t("</div></section>\n   <section class=\"panel\"><h3>Ngữ pháp: ")}${esc(g.name)}</h3>${g.pattern ? `<div class="pattern">${esc(g.pattern)}</div>` : ""}<p class="muted">${twv(g.note || "")}</p></section>
+   ${ms.length ? `${_t("<section class=\"panel\"><h3>Lỗi cần nhớ</h3>")}${ms.map(m => `<div class="fb bad"><s>${esc(m.text)}</s><br><b>${esc(m.fix)}</b></div>`).join("")}</section>` : ""}
+   <section class="panel"><p>${nextTest ? _t("<b>Buổi tới là bài kiểm tra định kỳ</b> sau 5 buổi học.") : `${_t("Còn ")}${5 - (doneN() + 1) % 5}${_t(" buổi nữa đến bài kiểm tra định kỳ.")}`}${_t(" Bạn có ")}${dueCards().length}${_t(" thẻ flashcard cần ôn.</p>\n     <button class=\"primary\" data-a=\"finishLesson\" data-v=\"")}${total}${_t("\">Hoàn thành buổi học</button></section>")}`;
 }
 function finishLesson(total) {
   const l = L();
   S.sessions.push({idx:l.idx, course:l.course, date:today(), topic:l.les.topic, words:l.les.words.map(w => w.w), grammar:l.les.grammar?.name || "",
     scores:l.scores, total:Number(total), mistakes:lessonMistakes(l), dur:Math.round((Date.now() - l.started) / 60000), remedial:!!l.les.remedial, unit:Math.floor(Math.max(0, doneN() - (l.les.remedial ? 1 : 0)) / 5)});
   S.current = null; Q = null; checkBadges(); save(); view = "home"; render(); scrollTo(0, 0);
-  toast("Đã lưu buổi học. Giỏi lắm!");
+  toast(_t("Đã lưu buổi học. Giỏi lắm!"));
   prefetchNext();
 }
 
@@ -1055,8 +1032,8 @@ function startUnit() {
     ...shuffle(lessons.flatMap(l => l.grammar?.quiz || [])).slice(0, 5).map(gramQ),
     ...shuffle(words).slice(0, 4).map(spellQ),
     ...shuffle(lessons.flatMap(l => (l.translations || []).filter(t => t.dir === "vi-en"))).slice(0, 3).map(transQ),
-    ...shuffle(words).slice(0, 3).map(w => ({...meaningQ(w, pool, "listening"), q:"Nghe và chọn nghĩa đúng", speak:w.w, autoplay:true})),
-    ...shuffle(words.filter(w => w.ex)).slice(0, 2).map(w => ({type:"dict", q:"Nghe và chép lại câu", ans:w.ex, speak:w.ex, autoplay:true, skill:"listening"})),
+    ...shuffle(words).slice(0, 3).map(w => ({...meaningQ(w, pool, "listening"), q:_t("Nghe và chọn nghĩa đúng"), speak:w.w, autoplay:true})),
+    ...shuffle(words.filter(w => w.ex)).slice(0, 2).map(w => ({type:"dict", q:_t("Nghe và chép lại câu"), ans:w.ex, speak:w.ex, autoplay:true, skill:"listening"})),
     ...(SR ? shuffle(words.filter(w => w.ex)).slice(0, 2).map(w => ({type:"speak", q:w.ex, ans:w.ex, skill:"speaking"})) : [])
   ];
   Q = makeQuiz("unit", items, true); Q.unit = courseTests().length + 1; view = "quiz"; render();
@@ -1068,20 +1045,19 @@ function finishUnit(q) {
   const wrongWords = [...new Set(q.res.filter(r => !r.ok && r.word).map(r => r.word))];
   const ss = Object.fromEntries(Object.entries(skills).map(([k, [a, b]]) => [k, pct(a, b)]));
   let adj;
-  if (p >= 85) { S.difficulty = Math.min(1, S.difficulty + 1); adj = "Bạn nắm bài rất tốt. Các buổi tới sẽ khó hơn một chút."; }
-  else if (p >= 60) { adj = "Bạn đang theo kịp lộ trình. Giữ nguyên nhịp độ."; }
-  else { S.difficulty = Math.max(-1, S.difficulty - 1); S.remedial = wrongWords.map(w => S.cards[w.toLowerCase()]?.w).filter(Boolean); adj = "Hệ thống đã thêm 1 buổi ôn tập vào lộ trình để củng cố các từ còn sai."; }
+  if (p >= 85) { S.difficulty = Math.min(1, S.difficulty + 1); adj = _t("Bạn nắm bài rất tốt. Các buổi tới sẽ khó hơn một chút."); }
+  else if (p >= 60) { adj = _t("Bạn đang theo kịp lộ trình. Giữ nguyên nhịp độ."); }
+  else { S.difficulty = Math.max(-1, S.difficulty - 1); S.remedial = wrongWords.map(w => S.cards[w.toLowerCase()]?.w).filter(Boolean); adj = _t("Hệ thống đã thêm 1 buổi ôn tập vào lộ trình để củng cố các từ còn sai."); }
   const t = {course:S.path.id, unit:q.unit, date:today(), score:p, skills:ss, wrong:wrongWords, dur:Math.round((Date.now() - q.start) / 60000), adj};
   S.tests.push(t); checkBadges(); save();
   Q = null; view = "unitResult"; UI.lastTest = t; render();
 }
 function vUnitResult() {
   const t = UI.lastTest;
-  return `<div class="wrap narrow"><section class="panel summary-hero">${t.score >= 85 ? confetti(56) : ""}<div class="row nowrap">${mascot(t.score >= 60 ? "cheer" : "think", 110, "bob")}${stk(t.score >= 85 ? "trophy" : t.score >= 60 ? "star" : "book", 70, "", -8)}</div><span class="eyebrow">Kiểm tra định kỳ · Unit ${t.unit}</span><div class="scorebig"><b>${t.score}%</b><span>${t.score >= 85 ? "Xuất sắc" : t.score >= 60 ? "Đạt" : "Cần ôn thêm"}</span></div>
+  return `<div class="wrap narrow"><section class="panel summary-hero">${t.score >= 85 ? confetti(56) : ""}<div class="row nowrap">${mascot(t.score >= 60 ? "cheer" : "think", 110, "bob")}${stk(t.score >= 85 ? "trophy" : t.score >= 60 ? "star" : "book", 70, "", -8)}${_t("</div><span class=\"eyebrow\">Kiểm tra định kỳ · Unit ")}${t.unit}</span><div class="scorebig"><b>${t.score}%</b><span>${t.score >= 85 ? _t("Xuất sắc") : t.score >= 60 ? _t("Đạt") : _t("Cần ôn thêm")}</span></div>
     <div class="bars">${Object.entries(t.skills).map(([k, v]) => `<div class="bar"><span>${SKILL_VI[k] || k}</span><div><i style="width:${v}%"></i></div><b>${v}</b></div>`).join("")}</div>
     <p class="fb">${esc(t.adj)}</p>
-    ${t.wrong.length ? `<h3>Từ cần ôn lại</h3><p>${t.wrong.map(w => `<span class="chip">${esc(w)}</span>`).join(" ")}</p>` : ""}
-    <div class="row"><button class="primary" data-a="go" data-v="home">Về trang chủ</button>${t.wrong.length ? `<button data-a="go" data-v="review">Ôn flashcard ngay</button>` : ""}</div></section></div>`;
+    ${t.wrong.length ? `${_t("<h3>Từ cần ôn lại</h3><p>")}${t.wrong.map(w => `<span class="chip">${esc(w)}</span>`).join(" ")}</p>` : ""}${_t("\n    <div class=\"row\"><button class=\"primary\" data-a=\"go\" data-v=\"home\">Về trang chủ</button>")}${t.wrong.length ? `${_t("<button data-a=\"go\" data-v=\"review\">Ôn flashcard ngay</button>")}` : ""}</div></section></div>`;
 }
 
 /* =====================================================================
@@ -1090,70 +1066,45 @@ function vUnitResult() {
 const newSv = (p) => p ? Object.assign({subs:[], job:""}, JSON.parse(JSON.stringify(p))) : {name:ME?.name || "", goal:"communication", fields:[], subs:[], job:"", minutes:30, interest:"", weak:[], remind:"20:00", deadline:""};
 function vSurvey() {
   const s = SV, g = s.goal, edit = !!S.level;
-  return `<div class="wrap narrow"><section class="panel hero with-art"><div class="hero-art">${mascot("happy", 116, "bob")}</div><span class="eyebrow">${edit ? "Cập nhật mục tiêu" : "Bước 1/2 · Khảo sát"}</span><h1>Bạn học tiếng Anh để làm gì?</h1>
-    <p class="muted">Câu trả lời quyết định chủ đề, từ vựng và tình huống role-play trong từng buổi học.</p></section>
-   <section class="panel"><label for="sv-name"><h3>Bạn tên gì?</h3></label><input id="sv-name" data-sv="name" value="${esc(s.name)}" placeholder="Tên để app xưng hô">
-    <h3>Mục tiêu chính</h3><div class="choices">${GOALS.map(([k, t]) => `<button class="choice ${g === k ? "sel" : ""}" data-a="svGoal" data-v="${k}">${stk(GOAL_STK[k], 40, "", 0)}<span>${t}</span></button>`).join("")}</div>
-    <h3>${g === "exam" ? "Kỳ thi bạn nhắm tới" : g === "work" ? "Lĩnh vực công việc" : g === "travel" ? "Hình thức đi nước ngoài" : "Bạn muốn giao tiếp trong tình huống nào"} <span class="muted normal">(chọn một hoặc nhiều)</span></h3>
-    <div class="chips">${FIELDS[g].map(([f], k) => `<button class="chip-btn ${s.fields.includes(f) ? "sel" : ""}" data-a="svField" data-v="${k}">${f}</button>`).join("")}</div>
-    ${s.fields.length ? `<div class="subs"><h3>${g === "exam" ? "Kỹ năng cần luyện nhiều nhất" : "Tình huống cụ thể bạn hay gặp"} <span class="muted normal">(chọn càng đúng, bài học càng sát)</span></h3>
-      ${subGroups(s).map(f => `<div class="subgroup"><p class="eyebrow">${esc(f)}</p><div class="chips">${subsOf(g, f).map(x => { const key = f + ": " + x; return `<button class="chip-btn sm ${s.subs.includes(key) ? "sel" : ""}" data-a="svSub" data-v="${esc(key)}">${esc(x)}</button>`; }).join("")}</div></div>`).join("")}
-      <div class="row"><button class="mini" data-a="svSubAll">Chọn tất cả</button>${s.subs.length ? `<span class="muted small">Đã chọn ${s.subs.length} tình huống</span>` : ""}</div></div>` : ""}
-    ${g === "work" ? `<label for="sv-job"><h3>Vị trí công việc của bạn</h3></label><input id="sv-job" data-sv="job" value="${esc(s.job || "")}" placeholder="Ví dụ: QA Engineer, nhân viên lễ tân, kế toán">` : ""}
-    <label for="sv-int"><h3>${g === "exam" ? "Điểm mục tiêu và kỹ năng cần nhất" : "Mô tả cụ thể hơn"} <span class="muted normal">(không bắt buộc)</span></h3></label>
-    <input id="sv-int" data-sv="interest" placeholder="${DETAIL_HINT[g]}" value="${esc(s.interest)}">
-    ${g === "exam" ? `<label for="sv-dl"><h3>Ngày thi <span class="muted normal">(để tính độ dài khóa học)</span></h3></label><input id="sv-dl" type="date" data-sv="deadline" value="${esc(s.deadline)}" class="short">` : ""}
-    <h3>Thời gian học mỗi ngày</h3><div class="choices">${[15, 30, 45].map(m => `<button class="choice ${s.minutes === m ? "sel" : ""}" data-a="svMin" data-v="${m}">${m} phút</button>`).join("")}</div>
-    <h3>Kỹ năng muốn cải thiện</h3><div class="chips">${["Nghe","Nói","Đọc","Viết"].map(k => `<button class="chip-btn ${s.weak.includes(k) ? "sel" : ""}" data-a="svWeak" data-v="${k}">${k}</button>`).join("")}</div>
-    <label for="sv-rm"><h3>Nhắc tôi học từ lúc</h3></label><input id="sv-rm" type="time" data-sv="remind" value="${esc(s.remind)}" class="short">
-    <p class="muted small">Nếu chưa học, app nhắc mỗi tiếng từ giờ này đến 23:00. Đổi giờ và khoảng cách nhắc trong Cài đặt.</p>
-    <div class="row">${edit ? `<button data-a="go" data-v="settings">Hủy</button>` : ""}<button class="primary" data-a="svSubmit" ${s.fields.length ? "" : "disabled"}>${!s.fields.length ? "Chọn ít nhất một lĩnh vực" : edit ? "Lưu mục tiêu" : "Tiếp tục: kiểm tra trình độ"}</button></div></section></div>`;
+  return `<div class="wrap narrow"><section class="panel hero with-art"><div class="hero-art">${mascot("happy", 116, "bob")}</div><span class="eyebrow">${edit ? _t("Cập nhật mục tiêu") : _t("Bước 1/2 · Khảo sát")}${_t("</span><h1>Bạn học tiếng Anh để làm gì?</h1>\n    <p class=\"muted\">Câu trả lời quyết định chủ đề, từ vựng và tình huống role-play trong từng buổi học.</p></section>\n   <section class=\"panel\"><label for=\"sv-name\"><h3>Bạn tên gì?</h3></label><input id=\"sv-name\" data-sv=\"name\" value=\"")}${esc(s.name)}${_t("\" placeholder=\"Tên để app xưng hô\">\n    <h3>Mục tiêu chính</h3><div class=\"choices\">")}${GOALS.map(([k, t]) => `<button class="choice ${g === k ? "sel" : ""}" data-a="svGoal" data-v="${k}">${stk(GOAL_STK[k], 40, "", 0)}<span>${t}</span></button>`).join("")}</div>
+    <h3>${g === "exam" ? _t("Kỳ thi bạn nhắm tới") : g === "work" ? _t("Lĩnh vực công việc") : g === "travel" ? _t("Hình thức đi nước ngoài") : _t("Bạn muốn giao tiếp trong tình huống nào")}${_t(" <span class=\"muted normal\">(chọn một hoặc nhiều)</span></h3>\n    <div class=\"chips\">")}${FIELDS[g].map(([f], k) => `<button class="chip-btn ${s.fields.includes(f) ? "sel" : ""}" data-a="svField" data-v="${k}">${f}</button>`).join("")}</div>
+    ${s.fields.length ? `<div class="subs"><h3>${g === "exam" ? _t("Kỹ năng cần luyện nhiều nhất") : _t("Tình huống cụ thể bạn hay gặp")}${_t(" <span class=\"muted normal\">(chọn càng đúng, bài học càng sát)</span></h3>\n      ")}${subGroups(s).map(f => `<div class="subgroup"><p class="eyebrow">${esc(f)}</p><div class="chips">${subsOf(g, f).map(x => { const key = f + ": " + x; return `<button class="chip-btn sm ${s.subs.includes(key) ? "sel" : ""}" data-a="svSub" data-v="${esc(key)}">${esc(x)}</button>`; }).join("")}</div></div>`).join("")}${_t("\n      <div class=\"row\"><button class=\"mini\" data-a=\"svSubAll\">Chọn tất cả</button>")}${s.subs.length ? `${_t("<span class=\"muted small\">Đã chọn ")}${s.subs.length}${_t(" tình huống</span>")}` : ""}</div></div>` : ""}
+    ${g === "work" ? `${_t("<label for=\"sv-job\"><h3>Vị trí công việc của bạn</h3></label><input id=\"sv-job\" data-sv=\"job\" value=\"")}${esc(s.job || "")}${_t("\" placeholder=\"Ví dụ: QA Engineer, nhân viên lễ tân, kế toán\">")}` : ""}
+    <label for="sv-int"><h3>${g === "exam" ? _t("Điểm mục tiêu và kỹ năng cần nhất") : _t("Mô tả cụ thể hơn")}${_t(" <span class=\"muted normal\">(không bắt buộc)</span></h3></label>\n    <input id=\"sv-int\" data-sv=\"interest\" placeholder=\"")}${DETAIL_HINT[g]}" value="${esc(s.interest)}">
+    ${g === "exam" ? `${_t("<label for=\"sv-dl\"><h3>Ngày thi <span class=\"muted normal\">(để tính độ dài khóa học)</span></h3></label><input id=\"sv-dl\" type=\"date\" data-sv=\"deadline\" value=\"")}${esc(s.deadline)}" class="short">` : ""}${_t("\n    <h3>Thời gian học mỗi ngày</h3><div class=\"choices\">")}${[15, 30, 45].map(m => `<button class="choice ${s.minutes === m ? "sel" : ""}" data-a="svMin" data-v="${m}">${m}${_t(" phút</button>")}`).join("")}${_t("</div>\n    <h3>Kỹ năng muốn cải thiện</h3><div class=\"chips\">")}${["Nghe",_t("Nói"),_t("Đọc"),_t("Viết")].map(k => `<button class="chip-btn ${s.weak.includes(k) ? "sel" : ""}" data-a="svWeak" data-v="${k}">${k}</button>`).join("")}${_t("</div>\n    <label for=\"sv-rm\"><h3>Nhắc tôi học từ lúc</h3></label><input id=\"sv-rm\" type=\"time\" data-sv=\"remind\" value=\"")}${esc(s.remind)}${_t("\" class=\"short\">\n    <p class=\"muted small\">Nếu chưa học, app nhắc mỗi tiếng từ giờ này đến 23:00. Đổi giờ và khoảng cách nhắc trong Cài đặt.</p>\n    <div class=\"row\">")}${edit ? `${_t("<button data-a=\"go\" data-v=\"settings\">Hủy</button>")}` : ""}<button class="primary" data-a="svSubmit" ${s.fields.length ? "" : "disabled"}>${!s.fields.length ? _t("Chọn ít nhất một lĩnh vực") : edit ? _t("Lưu mục tiêu") : _t("Tiếp tục: kiểm tra trình độ")}</button></div></section></div>`;
 }
 // Lần đầu dùng app: hỏi có bật thông báo nhắc học không
 function pushAskCard() {
   if (S.profile?.pushAsked || PUSH.on) return "";
   const ios = isIOS() && !isStandalone();
-  return `<section class="panel pushask"><div class="row nowrap">${stk("calendar", 54, "", -8)}<div class="grow"><h3>🔔 Cho phép app nhắc bạn học mỗi ngày?</h3>
-    <p class="small">Nếu hôm đó bạn chưa học, app sẽ nhắc từ ${esc(S.profile.remind || "20:00")}. Đổi giờ hoặc tắt bất cứ lúc nào trong Cài đặt.</p>
-    ${ios ? `<p class="small muted">Trên iPhone: bấm <b>Chia sẻ</b> → <b>Thêm vào MH chính</b>, rồi mở app từ biểu tượng ngoài màn hình để bật được thông báo.</p>` : ""}</div></div>
-    <div class="row">${ios ? "" : `<button class="primary" data-a="pushAsk" data-v="1">Bật thông báo</button>`}<button class="ghost" data-a="pushAsk" data-v="0">${ios ? "Đã hiểu" : "Để sau"}</button></div></section>`;
+  return `<section class="panel pushask"><div class="row nowrap">${stk("calendar", 54, "", -8)}${_t("<div class=\"grow\"><h3>🔔 Cho phép app nhắc bạn học mỗi ngày?</h3>\n    <p class=\"small\">Nếu hôm đó bạn chưa học, app sẽ nhắc từ ")}${esc(S.profile.remind || "20:00")}${_t(". Đổi giờ hoặc tắt bất cứ lúc nào trong Cài đặt.</p>\n    ")}${ios ? `${_t("<p class=\"small muted\">Trên iPhone: bấm <b>Chia sẻ</b> → <b>Thêm vào MH chính</b>, rồi mở app từ biểu tượng ngoài màn hình để bật được thông báo.</p>")}` : ""}</div></div>
+    <div class="row">${ios ? "" : `${_t("<button class=\"primary\" data-a=\"pushAsk\" data-v=\"1\">Bật thông báo</button>")}`}<button class="ghost" data-a="pushAsk" data-v="0">${ios ? _t("Đã hiểu") : _t("Để sau")}</button></div></section>`;
 }
 function vPlaceIntro() {
-  return `<div class="wrap narrow">${pushAskCard()}<section class="panel hero with-art"><div class="hero-art">${mascot("think", 116, "bob")}</div><span class="eyebrow">Bước 2/2 · Kiểm tra trình độ</span><h1>Bài test đầu vào thích ứng</h1>
-    <p>${PLACEMENT_LEN} câu, khoảng 5 phút. Trả lời đúng thì câu sau khó hơn, sai thì dễ hơn, để xác định chính xác level của bạn từ A0 đến C1.</p>
-    <p class="muted">Không biết thì chọn "Tôi không biết", đừng đoán, kết quả sẽ chính xác hơn.</p>
-    <button class="primary" data-a="startPlacement">Bắt đầu kiểm tra</button>
-    <button class="ghost" data-a="skipPlacement">Tôi mới bắt đầu học, bỏ qua và học từ A0</button></section></div>`;
+  return `<div class="wrap narrow">${pushAskCard()}<section class="panel hero with-art"><div class="hero-art">${mascot("think", 116, "bob")}${_t("</div><span class=\"eyebrow\">Bước 2/2 · Kiểm tra trình độ</span><h1>Bài test đầu vào thích ứng</h1>\n    <p>")}${PLACEMENT_LEN}${_t(" câu, khoảng 5 phút. Trả lời đúng thì câu sau khó hơn, sai thì dễ hơn, để xác định chính xác level của bạn từ A0 đến C1.</p>\n    <p class=\"muted\">Không biết thì chọn \"Tôi không biết\", đừng đoán, kết quả sẽ chính xác hơn.</p>\n    <button class=\"primary\" data-a=\"startPlacement\">Bắt đầu kiểm tra</button>\n    <button class=\"ghost\" data-a=\"skipPlacement\">Tôi mới bắt đầu học, bỏ qua và học từ A0</button></section></div>")}`;
 }
 function vPlaceResult() {
   const p = S.placement, i = lvIdx(p.level), to = LEVELS[Math.min(5, i + 1)], weeks = courseWeeks(p.level, S.profile);
-  return `<div class="wrap narrow"><section class="panel hero with-art">${confetti(30)}<div class="hero-art">${mascot("cheer", 116, "bob")}</div><span class="eyebrow">Kết quả kiểm tra</span>
-    <div class="levelbadge">${p.level}</div><h1>${LEVEL_VI[p.level]}</h1>
-    <p>Bạn trả lời đúng ${p.correct}/${p.total} câu.</p>
-    <div class="ladder">${LEVELS.map((l, k) => `<span class="${k === i ? "cur" : k === i + 1 ? "next" : k < i ? "past" : ""}">${l}</span>`).join("")}</div>
-    <h3>Lộ trình đề xuất</h3>
-    <p><b>${p.level} → ${to}</b> trong <b>${weeks} tuần</b>: ${weeks * 5} buổi học (5 buổi mỗi tuần, mỗi buổi ${S.profile.minutes} phút), ${weeks} bài kiểm tra định kỳ. Nội dung xoay quanh <b>${esc(fieldName())}</b>.</p>
-    <button class="primary" data-a="confirmPath">Bắt đầu lộ trình</button><button class="ghost" data-a="startPlacement">Làm lại bài test</button></section></div>`;
+  return `<div class="wrap narrow"><section class="panel hero with-art">${confetti(30)}<div class="hero-art">${mascot("cheer", 116, "bob")}${_t("</div><span class=\"eyebrow\">Kết quả kiểm tra</span>\n    <div class=\"levelbadge\">")}${p.level}</div><h1>${LEVEL_VI[p.level]}${_t("</h1>\n    <p>Bạn trả lời đúng ")}${p.correct}/${p.total}${_t(" câu.</p>\n    <div class=\"ladder\">")}${LEVELS.map((l, k) => `<span class="${k === i ? "cur" : k === i + 1 ? "next" : k < i ? "past" : ""}">${l}</span>`).join("")}${_t("</div>\n    <h3>Lộ trình đề xuất</h3>\n    <p><b>")}${p.level} → ${to}</b> trong <b>${weeks}${_t(" tuần</b>: ")}${weeks * 5}${_t(" buổi học (5 buổi mỗi tuần, mỗi buổi ")}${S.profile.minutes}${_t(" phút), ")}${weeks}${_t(" bài kiểm tra định kỳ. Nội dung xoay quanh <b>")}${esc(fieldName())}${_t("</b>.</p>\n    <button class=\"primary\" data-a=\"confirmPath\">Bắt đầu lộ trình</button><button class=\"ghost\" data-a=\"startPlacement\">Làm lại bài test</button></section></div>")}`;
 }
 function vQuiz() {
   if (!Q) { view = "home"; return vHome(); }
   if (Q.mode === "review" && Q.done) {
     const ok = Q.res.filter(r => r.ok).length;
-    return `<div class="wrap narrow"><section class="panel center">${confetti(30)}${mascot("cheer", 110, "bob")}<h2>Xong phiên ôn tập</h2><div class="scorebig"><b>${ok}/${Q.res.length}</b><span>câu đúng</span></div>
-      <div class="row center"><button class="primary" data-a="go" data-v="review">Về trang Ôn tập</button></div></section></div>`;
+    return `<div class="wrap narrow"><section class="panel center">${confetti(30)}${mascot("cheer", 110, "bob")}${_t("<h2>Xong phiên ôn tập</h2><div class=\"scorebig\"><b>")}${ok}/${Q.res.length}${_t("</b><span>câu đúng</span></div>\n      <div class=\"row center\"><button class=\"primary\" data-a=\"go\" data-v=\"review\">Về trang Ôn tập</button></div></section></div>")}`;
   }
-  const title = Q.mode === "placement" ? "Kiểm tra trình độ" : Q.mode === "unit" ? `Kiểm tra định kỳ · Unit ${Q.unit}` : "Ôn tập flashcard";
+  const title = Q.mode === "placement" ? _t("Kiểm tra trình độ") : Q.mode === "unit" ? `${_t("Kiểm tra định kỳ · Unit ")}${Q.unit}` : _t("Ôn tập flashcard");
   return `<div class="wrap narrow"><p class="eyebrow center">${title}</p><section class="panel quiz">${vQuizBody(Q, {exit:"quitQuiz"})}</section>
-   ${Q.mode === "placement" && !Q.pick ? `<div class="center"><button class="ghost" data-a="pick" data-v="-1">Tôi không biết</button></div>` : ""}</div>`;
+   ${Q.mode === "placement" && !Q.pick ? `${_t("<div class=\"center\"><button class=\"ghost\" data-a=\"pick\" data-v=\"-1\">Tôi không biết</button></div>")}` : ""}</div>`;
 }
 
 function greetLine() {
   const h = new Date().getHours();
-  if (doneToday()) return "Hôm nay bạn đã học rồi, tuyệt vời! Ôn thêm vài thẻ flashcard cho nhớ lâu nhé.";
-  if (h < 11) return "Chào buổi sáng! Một buổi học ngắn giúp cả ngày nói tiếng Anh tự tin hơn.";
-  if (h < 14) return "Nghỉ trưa học một chút nhé, chỉ cần " + (S.profile?.minutes || 30) + " phút thôi.";
-  if (h < 18) return "Buổi chiều vui vẻ! Bài học hôm nay đang chờ bạn.";
-  return "Buổi tối thư thả là lúc học hiệu quả nhất. Bắt đầu thôi!";
+  if (doneToday()) return _t("Hôm nay bạn đã học rồi, tuyệt vời! Ôn thêm vài thẻ flashcard cho nhớ lâu nhé.");
+  if (h < 11) return _t("Chào buổi sáng! Một buổi học ngắn giúp cả ngày nói tiếng Anh tự tin hơn.");
+  if (h < 14) return _t("Nghỉ trưa học một chút nhé, chỉ cần ") + (S.profile?.minutes || 30) + _t(" phút thôi.");
+  if (h < 18) return _t("Buổi chiều vui vẻ! Bài học hôm nay đang chờ bạn.");
+  return _t("Buổi tối thư thả là lúc học hiệu quả nhất. Bắt đầu thôi!");
 }
 function vHome() {
   if (courseDone()) return vCourseDone();
@@ -1166,49 +1117,40 @@ function vHome() {
     const on = S.sessions.some(s => s.date === ds); return `<div class="day ${on ? "on" : ""} ${ds === today() ? "today" : ""}"><span>${k}</span><i>${on ? stk("flame", 22, "", 0) : ""}</i></div>`; }).join("");
   const due = dueCards().length, avgScore = Math.round(avg(courseSessions().slice(-5).map(s => s.total))), st = streak();
   const units = Math.ceil(p.total / 5), prog = pct(n, p.total);
-  const celebrate = UI.celebrate?.length ? `<section class="panel celebrate">${confetti()}<div class="row nowrap">${mascot("cheer", 100, "bob")}<div class="grow"><p class="eyebrow">Nhãn dán mới</p><h2>Bạn vừa mở khóa ${UI.celebrate.length} nhãn dán!</h2></div></div>
-     <div class="badge-row">${UI.celebrate.map(id => BADGE[id] ? badgeCard(BADGE[id]) : "").join("")}</div><div class="row"><button class="primary" data-a="closeCelebrate">Tuyệt quá!</button><a href="#" class="link" data-a="go" data-v="history">Xem bộ sưu tập →</a></div></section>` : "";
+  const celebrate = UI.celebrate?.length ? `<section class="panel celebrate">${confetti()}<div class="row nowrap">${mascot("cheer", 100, "bob")}${_t("<div class=\"grow\"><p class=\"eyebrow\">Nhãn dán mới</p><h2>Bạn vừa mở khóa ")}${UI.celebrate.length}${_t(" nhãn dán!</h2></div></div>\n     <div class=\"badge-row\">")}${UI.celebrate.map(id => BADGE[id] ? badgeCard(BADGE[id]) : "").join("")}${_t("</div><div class=\"row\"><button class=\"primary\" data-a=\"closeCelebrate\">Tuyệt quá!</button><a href=\"#\" class=\"link\" data-a=\"go\" data-v=\"history\">Xem bộ sưu tập →</a></div></section>")}` : "";
   return `<div class="wrap">
    ${festBanner()}${pushAskCard()}${celebrate}
    <section class="hero-home">
-     <div class="hh-text"><p class="eyebrow">${esc(focusName())}</p><h1>Chào ${esc(displayName() || "bạn")}!</h1><p class="hh-line">${greetLine()}</p>
-       <div class="hh-chips"><span>${stk("flame", 22, "", 0)} ${st} ngày liên tiếp</span><span>${stk("cap", 22, "", 0)} Khóa ${p.from} → ${p.to}</span><span>${stk("calendar", 22, "", 0)} Tuần ${Math.min(p.weeks, Math.floor(n / 5) + 1)}/${p.weeks}</span></div>
+     <div class="hh-text"><p class="eyebrow">${esc(focusName())}${_t("</p><h1>Chào ")}${esc(displayName() || _t("bạn"))}!</h1><p class="hh-line">${greetLine()}</p>
+       <div class="hh-chips"><span>${stk("flame", 22, "", 0)} ${st}${_t(" ngày liên tiếp</span><span>")}${stk("cap", 22, "", 0)}${_t(" Khóa ")}${p.from} → ${p.to}</span><span>${stk("calendar", 22, "", 0)}${_t(" Tuần ")}${Math.min(p.weeks, Math.floor(n / 5) + 1)}/${p.weeks}</span></div>
        <div class="week">${week}</div></div>
      <div class="hh-art">${mascot(doneToday() ? "cheer" : "happy", 168, "bob")}${stk("star", 40, "float f1", -12)}${stk("sparkle", 34, "float f2", 8)}${stk("book", 44, "float f3", -6)}</div>
    </section>
-   ${remindDue() ? `<section class="panel notice row nowrap">${stk("calendar", 40, "", -6)}<div><b>Đã đến giờ học (${remindTime()})</b><br><span class="muted">Bạn chưa học hôm nay. Chỉ cần ${S.profile.minutes} phút để giữ chuỗi ngày học.</span></div></section>` : ""}
+   ${remindDue() ? `<section class="panel notice row nowrap">${stk("calendar", 40, "", -6)}${_t("<div><b>Đã đến giờ học (")}${remindTime()}${_t(")</b><br><span class=\"muted\">Bạn chưa học hôm nay. Chỉ cần ")}${S.profile.minutes}${_t(" phút để giữ chuỗi ngày học.</span></div></section>")}` : ""}
    <div class="grid-main">
     <section class="panel todaycard hue-${hue}">
-     <div class="cover">${stk(ts, 104, "big")}<span class="cover-tag">${td ? "Kiểm tra định kỳ" : cur ? `Đang ở bước ${cur.step + 1}/6` : `Buổi ${n + 1}/${p.total}`}</span></div>
+     <div class="cover">${stk(ts, 104, "big")}<span class="cover-tag">${td ? _t("Kiểm tra định kỳ") : cur ? `${_t("Đang ở bước ")}${cur.step + 1}/6` : `${_t("Buổi ")}${n + 1}/${p.total}`}</span></div>
      <div class="today-body">
-     ${td ? `<span class="eyebrow">Đến hạn</span><h2>Kiểm tra định kỳ Unit ${n / 5}</h2>
-        <p class="muted">Bạn đã xong 5 buổi học. Bài kiểm tra gồm từ vựng, ngữ pháp, chính tả, dịch, nghe và nói, khoảng 15 phút.</p>
-        <button class="primary big" data-a="startUnit">Làm bài kiểm tra</button>`
-     : `<span class="eyebrow">${doneToday() && !cur ? "Bạn đã học hôm nay" : "Buổi học hôm nay"}</span>
-        <h2>${cur ? esc(cur.les.topic) : nextLes ? esc(nextLes.topic) : `Buổi ${n + 1}`}</h2>
-        ${!cur && nextLes ? `<p class="small"><span class="tag good">Đã soạn xong</span> ${nextLes.ai ? "Bài soạn riêng theo mục tiêu của bạn" : `Bài mẫu trình độ ${nextLes.level || S.level}${nextLes.review ? " · ôn lại" : ""}`}</p>` : !cur && INFLIGHT[S.sessions.length] ? `<p class="small muted"><span class="spin"></span> Gemini đang soạn sẵn buổi này...</p>` : ""}
+     ${td ? `${_t("<span class=\"eyebrow\">Đến hạn</span><h2>Kiểm tra định kỳ Unit ")}${n / 5}${_t("</h2>\n        <p class=\"muted\">Bạn đã xong 5 buổi học. Bài kiểm tra gồm từ vựng, ngữ pháp, chính tả, dịch, nghe và nói, khoảng 15 phút.</p>\n        <button class=\"primary big\" data-a=\"startUnit\">Làm bài kiểm tra</button>")}`
+     : `<span class="eyebrow">${doneToday() && !cur ? _t("Bạn đã học hôm nay") : _t("Buổi học hôm nay")}</span>
+        <h2>${cur ? esc(cur.les.topic) : nextLes ? esc(nextLes.topic) : `${_t("Buổi ")}${n + 1}`}</h2>
+        ${!cur && nextLes ? `${_t("<p class=\"small\"><span class=\"tag good\">Đã soạn xong</span> ")}${nextLes.ai ? _t("Bài soạn riêng theo mục tiêu của bạn") : `${_t("Bài mẫu trình độ ")}${nextLes.level || S.level}${nextLes.review ? _t(" · ôn lại") : ""}`}</p>` : !cur && INFLIGHT[S.sessions.length] ? `${_t("<p class=\"small muted\"><span class=\"spin\"></span> Gemini đang soạn sẵn buổi này...</p>")}` : ""}
         <ol class="steps-mini">${STEPS.map((t, k) => `<li class="${cur && k < cur.step ? "done" : cur && k === cur.step ? "cur" : ""}">${stk(STEP_STK[k], 30, "", 0)}<span>${t}</span></li>`).join("")}</ol>
-        <button class="primary big" data-a="startLesson">${cur ? "Học tiếp" : doneToday() ? "Học thêm buổi tiếp theo" : "Bắt đầu buổi học"}</button>`}
+        <button class="primary big" data-a="startLesson">${cur ? _t("Học tiếp") : doneToday() ? _t("Học thêm buổi tiếp theo") : _t("Bắt đầu buổi học")}</button>`}
      </div></section>
     <section class="tiles">
-      <div class="tile hue-coral">${stk("flame", 44)}<b>${st}</b><span>ngày học liên tiếp</span></div>
-      <div class="tile hue-mint">${stk("book", 44)}<b>${Object.keys(S.cards).length}</b><span>từ đã học</span></div>
-      <div class="tile hue-sun">${stk("star", 44)}<b>${avgScore || "–"}</b><span>điểm TB 5 buổi</span></div>
-      <button class="tile hue-sky" data-a="${due ? "startFlip" : "go"}" data-v="${due ? "due" : "review"}">${stk("headphones", 44)}<b>${due}</b><span>${due ? "thẻ cần ôn · bấm để ôn" : "thẻ cần ôn"}</span></button>
+      <div class="tile hue-coral">${stk("flame", 44)}<b>${st}${_t("</b><span>ngày học liên tiếp</span></div>\n      <div class=\"tile hue-mint\">")}${stk("book", 44)}<b>${Object.keys(S.cards).length}${_t("</b><span>từ đã học</span></div>\n      <div class=\"tile hue-sun\">")}${stk("star", 44)}<b>${avgScore || "–"}${_t("</b><span>điểm TB 5 buổi</span></div>\n      <button class=\"tile hue-sky\" data-a=\"")}${due ? "startFlip" : "go"}" data-v="${due ? "due" : "review"}">${stk("headphones", 44)}<b>${due}</b><span>${due ? _t("thẻ cần ôn · bấm để ôn") : _t("thẻ cần ôn")}</span></button>
     </section>
    </div>
-   <section class="panel"><div class="row between"><h3 class="row">${stk("map", 32, "", -4)} Hành trình khóa học</h3><a href="#" class="link" data-a="go" data-v="path">Xem lộ trình →</a></div>
-    <div class="track"><div class="track-fill" style="width:${prog}%"></div>
-     ${Array.from({length:units}, (_, u) => { const left = Math.min(100, (u + 1) * 5 / p.total * 100), done = courseTests()[u]; return `<span class="mile ${done ? "done" : ""}" style="left:${left}%" title="Kiểm tra Unit ${u + 1}">${stk(done ? "trophy" : "target", 26, "", 0)}</span>`; }).join("")}
+   <section class="panel"><div class="row between"><h3 class="row">${stk("map", 32, "", -4)}${_t(" Hành trình khóa học</h3><a href=\"#\" class=\"link\" data-a=\"go\" data-v=\"path\">Xem lộ trình →</a></div>\n    <div class=\"track\"><div class=\"track-fill\" style=\"width:")}${prog}%"></div>
+     ${Array.from({length:units}, (_, u) => { const left = Math.min(100, (u + 1) * 5 / p.total * 100), done = courseTests()[u]; return `<span class="mile ${done ? "done" : ""}" style="left:${left}${_t("%\" title=\"Kiểm tra Unit ")}${u + 1}">${stk(done ? "trophy" : "target", 26, "", 0)}</span>`; }).join("")}
      <span class="track-me" style="left:${prog}%">${mascot("happy", 44)}</span></div>
-    <p class="muted small">${n}/${p.total} buổi · ${courseTests().length}/${units} bài kiểm tra · cờ là các bài kiểm tra định kỳ</p></section></div>`;
+    <p class="muted small">${n}/${p.total}${_t(" buổi · ")}${courseTests().length}/${units}${_t(" bài kiểm tra · cờ là các bài kiểm tra định kỳ</p></section></div>")}`;
 }
 function vCourseDone() {
   const p = S.path, ts = courseTests(), ss = courseSessions(), i = lvIdx(p.to);
-  return `<div class="wrap narrow"><section class="panel hero center">${confetti(60)}${mascot("cheer", 140, "bob")}<span class="eyebrow">Hoàn thành khóa học</span><div class="levelbadge">${p.to}</div>
-    <h1>Chúc mừng ${esc(displayName() || "bạn")}!</h1><p>Bạn đã hoàn thành ${ss.length} buổi học và ${ts.length} bài kiểm tra của khóa ${p.from} → ${p.to}.</p>
-    <div class="stats"><div class="stat"><b>${Math.round(avg(ss.map(s => s.total)))}</b><span>điểm TB buổi học</span></div><div class="stat"><b>${Math.round(avg(ts.map(t => t.score)))}%</b><span>điểm TB kiểm tra</span></div><div class="stat"><b>${Object.keys(S.cards).length}</b><span>từ đã học</span></div></div>
-    ${i < 5 ? `<button class="primary big" data-a="nextCourse">Bắt đầu khóa ${p.to} → ${LEVELS[i + 1]}</button>` : `<button class="primary big" data-a="nextCourse">Tiếp tục nâng cao trình độ C1</button>`}</section></div>`;
+  return `<div class="wrap narrow"><section class="panel hero center">${confetti(60)}${mascot("cheer", 140, "bob")}${_t("<span class=\"eyebrow\">Hoàn thành khóa học</span><div class=\"levelbadge\">")}${p.to}${_t("</div>\n    <h1>Chúc mừng ")}${esc(displayName() || _t("bạn"))}${_t("!</h1><p>Bạn đã hoàn thành ")}${ss.length}${_t(" buổi học và ")}${ts.length}${_t(" bài kiểm tra của khóa ")}${p.from} → ${p.to}.</p>
+    <div class="stats"><div class="stat"><b>${Math.round(avg(ss.map(s => s.total)))}${_t("</b><span>điểm TB buổi học</span></div><div class=\"stat\"><b>")}${Math.round(avg(ts.map(t => t.score)))}${_t("%</b><span>điểm TB kiểm tra</span></div><div class=\"stat\"><b>")}${Object.keys(S.cards).length}${_t("</b><span>từ đã học</span></div></div>\n    ")}${i < 5 ? `${_t("<button class=\"primary big\" data-a=\"nextCourse\">Bắt đầu khóa ")}${p.to} → ${LEVELS[i + 1]}</button>` : `${_t("<button class=\"primary big\" data-a=\"nextCourse\">Tiếp tục nâng cao trình độ C1</button>")}`}</section></div>`;
 }
 function vPath() {
   const p = S.path, n = doneN(), units = Math.ceil(p.total / 5), tests = courseTests();
@@ -1220,164 +1162,126 @@ function vPath() {
       const s = regSessions()[no], les = s ? S.lessons[s.idx] : (no === n ? S.lessons[S.sessions.length] : null);
       const seq = bankSequence(), plan = !s && !les && seq.length ? seq[no % seq.length] : null;
       const st = s ? "done" : no === n && !testDue() ? "now" : "locked";
-      cells.push(`<li class="${st}"><span class="num">${no + 1}</span>${s || les || plan ? stk(topicStk(s?.topic || les?.topic || plan?.topic)[0], 32, "", 0) : ""}<div><b>${esc(s?.topic || les?.topic || plan?.topic || (st === "locked" ? "Chưa mở" : "Buổi tiếp theo"))}</b>${plan ? `<span class="muted small">Dự kiến · ${plan.level} · ${esc(plan.grammar?.name || "")}</span>` : ""}${s ? `<span class="muted small">${s.date} · ${s.total} điểm${s.remedial ? " · ôn tập" : ""}</span>` : ""}</div>${s ? `<em>${s.total}</em>` : st === "now" ? `<button class="mini primary" data-a="startLesson">Học</button>` : ""}</li>`);
+      cells.push(`<li class="${st}"><span class="num">${no + 1}</span>${s || les || plan ? stk(topicStk(s?.topic || les?.topic || plan?.topic)[0], 32, "", 0) : ""}<div><b>${esc(s?.topic || les?.topic || plan?.topic || (st === "locked" ? _t("Chưa mở") : _t("Buổi tiếp theo")))}</b>${plan ? `${_t("<span class=\"muted small\">Dự kiến · ")}${plan.level} · ${esc(plan.grammar?.name || "")}</span>` : ""}${s ? `<span class="muted small">${s.date} · ${s.total}${_t(" điểm")}${s.remedial ? _t(" · ôn tập") : ""}</span>` : ""}</div>${s ? `<em>${s.total}</em>` : st === "now" ? `${_t("<button class=\"mini primary\" data-a=\"startLesson\">Học</button>")}` : ""}</li>`);
     }
-    courseSessions().filter(s => s.remedial && s.unit === u).forEach(s => cells.push(`<li class="done"><span class="num">+</span><div><b>${esc(s.topic)}</b><span class="muted small">${s.date} · ${s.total} điểm</span></div><em>${s.total}</em></li>`));
+    courseSessions().filter(s => s.remedial && s.unit === u).forEach(s => cells.push(`<li class="done"><span class="num">+</span><div><b>${esc(s.topic)}</b><span class="muted small">${s.date} · ${s.total}${_t(" điểm</span></div><em>")}${s.total}</em></li>`));
     const t = tests[u], tst = t ? "done" : (n >= (u + 1) * 5 ? "now" : "locked");
-    html += `<section class="panel unit ${n >= u * 5 && n < (u + 1) * 5 + 1 ? "active" : ""}"><div class="row between"><h3 class="row">${stk(WEEK_STK[u % WEEK_STK.length], 34, "", 0)} Tuần ${u + 1}</h3><span class="muted small">${Math.min(5, Math.max(0, n - u * 5))}/5 buổi</span></div>
-      <ol class="sessions">${cells.join("")}<li class="test ${tst}"><span class="num">✓</span><div><b>Kiểm tra định kỳ Unit ${u + 1}</b>${t ? `<span class="muted small">${t.date}</span>` : ""}</div>${t ? `<em>${t.score}%</em>` : tst === "now" ? `<button class="mini primary" data-a="startUnit">Làm bài</button>` : ""}</li></ol></section>`;
+    html += `<section class="panel unit ${n >= u * 5 && n < (u + 1) * 5 + 1 ? "active" : ""}"><div class="row between"><h3 class="row">${stk(WEEK_STK[u % WEEK_STK.length], 34, "", 0)}${_t(" Tuần ")}${u + 1}</h3><span class="muted small">${Math.min(5, Math.max(0, n - u * 5))}${_t("/5 buổi</span></div>\n      <ol class=\"sessions\">")}${cells.join("")}<li class="test ${tst}${_t("\"><span class=\"num\">✓</span><div><b>Kiểm tra định kỳ Unit ")}${u + 1}</b>${t ? `<span class="muted small">${t.date}</span>` : ""}</div>${t ? `<em>${t.score}%</em>` : tst === "now" ? `${_t("<button class=\"mini primary\" data-a=\"startUnit\">Làm bài</button>")}` : ""}</li></ol></section>`;
   }
-  return `<div class="wrap"><section class="hello">${stk("map", 72, "", -6)}<div><p class="eyebrow">Lộ trình của bạn</p><h1>${p.from} → ${p.to}</h1><p class="muted">${p.weeks} tuần · ${p.total} buổi · bắt đầu ${p.start} · ${esc(focusName())}</p><p class="muted small">Các buổi chưa học hiện bài dự kiến trong kho bài mẫu ${p.from}${p.to !== p.from ? " → " + p.to : ""}. Khi Gemini hoạt động, bài sẽ được soạn riêng theo lĩnh vực của bạn ở cùng trình độ.</p></div>
-    <div class="ladder">${LEVELS.map((l, k) => `<span class="${l === p.from ? "cur" : l === p.to ? "next" : k < lvIdx(p.from) ? "past" : ""}">${l}</span>`).join("")}</div></section>
+  return `<div class="wrap"><section class="hello">${stk("map", 72, "", -6)}${_t("<div><p class=\"eyebrow\">Lộ trình của bạn</p><h1>")}${p.from} → ${p.to}</h1><p class="muted">${p.weeks}${_t(" tuần · ")}${p.total}${_t(" buổi · bắt đầu ")}${p.start} · ${esc(focusName())}${_t("</p><p class=\"muted small\">Các buổi chưa học hiện bài dự kiến trong kho bài mẫu ")}${p.from}${p.to !== p.from ? " → " + p.to : ""}${_t(". Khi Gemini hoạt động, bài sẽ được soạn riêng theo lĩnh vực của bạn ở cùng trình độ.</p></div>\n    <div class=\"ladder\">")}${LEVELS.map((l, k) => `<span class="${l === p.from ? "cur" : l === p.to ? "next" : k < lvIdx(p.from) ? "past" : ""}">${l}</span>`).join("")}</div></section>
     <div class="progress"><i style="width:${pct(n, p.total)}%"></i></div>${html}</div>`;
 }
 function vReview() {
   const all = cardList(), due = dueCards(), hard = hardCards();
   const tab = UI.rtab;
-  const tabs = `<div class="tabs">${[["due", `Đến hạn (${due.length})`], ["hard", `Từ khó (${hard.length})`], ["all", `Tất cả (${all.length})`]].map(([k, t]) => `<button class="${tab === k ? "sel" : ""}" data-a="rtab" data-v="${k}">${t}</button>`).join("")}</div>`;
-  if (!all.length) return `<div class="wrap narrow"><section class="panel center">${mascot("think", 120, "bob")}<h2>Chưa có flashcard</h2><p class="muted">Từ vựng trong mỗi buổi học và từ bạn tra sẽ tự động được thêm vào đây.</p></section></div>`;
-  const counts = {"Mới":0, "Đang học":0, "Đang nhớ":0, "Đã thuộc":0}; all.forEach(c => counts[cardState(c)]++);
+  const tabs = `<div class="tabs">${[["due", `${_t("Đến hạn (")}${due.length})`], ["hard", `${_t("Từ khó (")}${hard.length})`], ["all", `${_t("Tất cả (")}${all.length})`]].map(([k, t]) => `<button class="${tab === k ? "sel" : ""}" data-a="rtab" data-v="${k}">${t}</button>`).join("")}</div>`;
+  if (!all.length) return `<div class="wrap narrow"><section class="panel center">${mascot("think", 120, "bob")}${_t("<h2>Chưa có flashcard</h2><p class=\"muted\">Từ vựng trong mỗi buổi học và từ bạn tra sẽ tự động được thêm vào đây.</p></section></div>")}`;
+  const counts = {[_t("Mới")]:0, [_t("Đang học")]:0, [_t("Đang nhớ")]:0, [_t("Đã thuộc")]:0}; all.forEach(c => counts[cardState(c)]++);
   let body;
   if (tab === "all") {
     const q = UI.q.toLowerCase(), list = all.filter(c => !q || c.w.w.toLowerCase().includes(q) || (c.w.vi || "").toLowerCase().includes(q)).sort((a, b) => a.w.w.localeCompare(b.w.w));
-    body = `<input id="rq" data-live="rq" placeholder="Tìm từ hoặc nghĩa..." value="${esc(UI.q)}">
-      <div class="table-wrap"><table class="cards"><thead><tr><th>Từ</th><th>Nghĩa</th><th>Trạng thái</th><th>Ôn lại</th><th></th></tr></thead><tbody>
-      ${list.map(c => `<tr><td><b>${esc(c.w.w)}</b><br><span class="ipa">${esc(c.w.ipa || "")}</span></td><td>${esc(c.w.vi)}</td><td><span class="tag">${cardState(c)}</span></td>
-        <td class="small">${c.due <= Date.now() ? "Đến hạn" : new Date(c.due).toLocaleDateString("vi-VN")}</td><td><button class="mini" data-a="cdel" data-v="${esc(c.w.w.toLowerCase())}" aria-label="Xóa ${esc(c.w.w)}">Xóa</button></td></tr>`).join("")}
+    body = `${_t("<input id=\"rq\" data-live=\"rq\" placeholder=\"Tìm từ hoặc nghĩa...\" value=\"")}${esc(UI.q)}${_t("\">\n      <div class=\"table-wrap\"><table class=\"cards\"><thead><tr><th>Từ</th><th>Nghĩa</th><th>Trạng thái</th><th>Ôn lại</th><th></th></tr></thead><tbody>\n      ")}${list.map(c => `<tr><td><b>${esc(c.w.w)}</b><br><span class="ipa">${esc(c.w.ipa || "")}</span></td><td>${esc(c.w.vi)}</td><td><span class="tag">${cardState(c)}</span></td>
+        <td class="small">${c.due <= Date.now() ? _t("Đến hạn") : new Date(c.due).toLocaleDateString("vi-VN")}</td><td><button class="mini" data-a="cdel" data-v="${esc(c.w.w.toLowerCase())}${_t("\" aria-label=\"Xóa ")}${esc(c.w.w)}${_t("\">Xóa</button></td></tr>")}`).join("")}
       </tbody></table></div>`;
   } else {
     const set = tab === "due" ? due : hard;
-    body = set.length ? `<p>${set.length} thẻ. Chọn cách ôn:</p><div class="modes">
-      <button class="mode" data-a="startFlip" data-v="${tab}"><b>Lật thẻ</b><span>Tự đánh giá Quên / Khó / Nhớ / Dễ</span></button>
-      <button class="mode" data-a="startRQuiz" data-v="${tab}:mcq"><b>Trắc nghiệm</b><span>Chọn nghĩa đúng của từ</span></button>
-      <button class="mode" data-a="startRQuiz" data-v="${tab}:type"><b>Gõ từ</b><span>Nhìn nghĩa, viết lại từ tiếng Anh</span></button>
-      <button class="mode" data-a="startRQuiz" data-v="${tab}:listen"><b>Nghe & gõ</b><span>Nghe phát âm, gõ lại từ</span></button>
-      ${SR ? `<button class="mode" data-a="startRQuiz" data-v="${tab}:speak"><b>Đọc to</b><span>Đọc từ và câu ví dụ, máy chấm phát âm</span></button>` : ""}</div>`
-      : `<p class="muted">${tab === "due" ? "Bạn đã ôn hết thẻ đến hạn. Quay lại sau nhé." : "Chưa có từ nào bị quên nhiều lần."}</p>
-         ${tab === "due" ? `<button data-a="startFlip" data-v="all">Ôn tự do 20 thẻ bất kỳ</button>` : ""}`;
+    body = set.length ? `<p>${set.length}${_t(" thẻ. Chọn cách ôn:</p><div class=\"modes\">\n      <button class=\"mode\" data-a=\"startFlip\" data-v=\"")}${tab}${_t("\"><b>Lật thẻ</b><span>Tự đánh giá Quên / Khó / Nhớ / Dễ</span></button>\n      <button class=\"mode\" data-a=\"startRQuiz\" data-v=\"")}${tab}${_t(":mcq\"><b>Trắc nghiệm</b><span>Chọn nghĩa đúng của từ</span></button>\n      <button class=\"mode\" data-a=\"startRQuiz\" data-v=\"")}${tab}${_t(":type\"><b>Gõ từ</b><span>Nhìn nghĩa, viết lại từ tiếng Anh</span></button>\n      <button class=\"mode\" data-a=\"startRQuiz\" data-v=\"")}${tab}${_t(":listen\"><b>Nghe & gõ</b><span>Nghe phát âm, gõ lại từ</span></button>\n      ")}${SR ? `<button class="mode" data-a="startRQuiz" data-v="${tab}${_t(":speak\"><b>Đọc to</b><span>Đọc từ và câu ví dụ, máy chấm phát âm</span></button>")}` : ""}</div>`
+      : `<p class="muted">${tab === "due" ? _t("Bạn đã ôn hết thẻ đến hạn. Quay lại sau nhé.") : _t("Chưa có từ nào bị quên nhiều lần.")}</p>
+         ${tab === "due" ? `${_t("<button data-a=\"startFlip\" data-v=\"all\">Ôn tự do 20 thẻ bất kỳ</button>")}` : ""}`;
   }
-  return `<div class="wrap"><section class="hello">${stk("headphones", 72, "", -8)}<div><p class="eyebrow">Ôn tập</p><h1>Flashcard của bạn</h1><p class="muted">Lặp lại ngắt quãng: từ bạn nhớ tốt sẽ xuất hiện thưa dần (1, 3, 7, 16... ngày), từ hay quên sẽ quay lại sớm.</p></div></section>
-   <section class="panel"><div class="stats">${Object.entries(counts).map(([k, v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join("")}</div></section>
+  return `<div class="wrap"><section class="hello">${stk("headphones", 72, "", -8)}${_t("<div><p class=\"eyebrow\">Ôn tập</p><h1>Flashcard của bạn</h1><p class=\"muted\">Lặp lại ngắt quãng: từ bạn nhớ tốt sẽ xuất hiện thưa dần (1, 3, 7, 16... ngày), từ hay quên sẽ quay lại sớm.</p></div></section>\n   <section class=\"panel\"><div class=\"stats\">")}${Object.entries(counts).map(([k, v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join("")}</div></section>
    <section class="panel">${tabs}${body}</section></div>`;
 }
 function vFlip() {
   if (!FC || FC.i >= FC.keys.length) {
     const n = FC?.keys.length || 0; FC = null;
-    return `<div class="wrap narrow"><section class="panel center"><h2>Xong phiên ôn tập</h2><p>Bạn đã ôn ${n} thẻ.</p><button class="primary" data-a="go" data-v="review">Về trang Ôn tập</button></section></div>`;
+    return `${_t("<div class=\"wrap narrow\"><section class=\"panel center\"><h2>Xong phiên ôn tập</h2><p>Bạn đã ôn ")}${n}${_t(" thẻ.</p><button class=\"primary\" data-a=\"go\" data-v=\"review\">Về trang Ôn tập</button></section></div>")}`;
   }
   const c = S.cards[FC.keys[FC.i]]; if (!c) { FC.i++; return vFlip(); }
   const w = c.w;
-  return `<div class="wrap narrow"><div class="row between"><button class="ghost" data-a="go" data-v="review">← Thoát</button><span class="eyebrow">Thẻ ${FC.i + 1}/${FC.keys.length}</span><span></span></div>
-   <section class="flash ${FC.flip ? "back" : ""}" data-a="flip" tabindex="0" role="button" aria-label="Lật thẻ">
-    ${FC.flip ? `<div class="word">${esc(w.w)}</div><div class="ipa">${esc(w.ipa || "")}${w.pos ? " · " + esc(w.pos) : ""}</div><p class="meaning">${esc(w.vi)}</p>
-      ${w.ex ? `<p>${tw(w.ex)}</p>` : ""}${c.example && c.example !== w.ex ? `<p class="muted">Câu của bạn: ${tw(c.example)}</p>` : ""}`
-     : `<div class="word">${esc(w.w)}</div><div class="ipa">${esc(w.ipa || "")}</div><p class="muted">Bấm để xem nghĩa (phím Space)</p>`}</section>
-   ${FC.flip ? `<div class="rate">${[[1, "Quên", "<1 phút"], [3, "Khó", ""], [4, "Nhớ", ""], [5, "Dễ", ""]].map(([q, t]) => `<button data-a="rate" data-v="${q}"><b>${t}</b><span class="small muted">phím ${q === 1 ? 1 : q === 3 ? 2 : q === 4 ? 3 : 4}</span></button>`).join("")}</div>`
-     : `<div class="row center"><button data-a="speak" data-v="${esc(w.w)}">🔊 Nghe</button><button class="primary" data-a="flip">Xem nghĩa</button></div>`}</div>`;
+  return `${_t("<div class=\"wrap narrow\"><div class=\"row between\"><button class=\"ghost\" data-a=\"go\" data-v=\"review\">← Thoát</button><span class=\"eyebrow\">Thẻ ")}${FC.i + 1}/${FC.keys.length}</span><span></span></div>
+   <section class="flash ${FC.flip ? "back" : ""}${_t("\" data-a=\"flip\" tabindex=\"0\" role=\"button\" aria-label=\"Lật thẻ\">\n    ")}${FC.flip ? `<div class="word">${esc(w.w)}</div><div class="ipa">${esc(w.ipa || "")}${w.pos ? " · " + esc(w.pos) : ""}</div><p class="meaning">${esc(w.vi)}</p>
+      ${w.ex ? `<p>${tw(w.ex)}</p>` : ""}${c.example && c.example !== w.ex ? `${_t("<p class=\"muted\">Câu của bạn: ")}${tw(c.example)}</p>` : ""}`
+     : `<div class="word">${esc(w.w)}</div><div class="ipa">${esc(w.ipa || "")}${_t("</div><p class=\"muted\">Bấm để xem nghĩa (phím Space)</p>")}`}</section>
+   ${FC.flip ? `<div class="rate">${[[1, _t("Quên"), _t("<1 phút")], [3, _t("Khó"), ""], [4, _t("Nhớ"), ""], [5, _t("Dễ"), ""]].map(([q, t]) => `<button data-a="rate" data-v="${q}"><b>${t}${_t("</b><span class=\"small muted\">phím ")}${q === 1 ? 1 : q === 3 ? 2 : q === 4 ? 3 : 4}</span></button>`).join("")}</div>`
+     : `<div class="row center"><button data-a="speak" data-v="${esc(w.w)}${_t("\">🔊 Nghe</button><button class=\"primary\" data-a=\"flip\">Xem nghĩa</button></div>")}`}</div>`;
 }
 function vHistory() {
   const ss = S.sessions.slice().reverse(), ts = S.tests.slice().reverse();
   const chart = S.sessions.slice(-20);
-  return `<div class="wrap"><section class="hello">${stk("trophy", 72, "", 8)}<div><p class="eyebrow">Lịch sử</p><h1>Kết quả học tập</h1>
-    <p class="muted">${S.sessions.length} buổi học · ${S.tests.length} bài kiểm tra · tổng ${S.sessions.reduce((a, s) => a + (s.dur || 0), 0)} phút</p></div></section>
-   <section class="panel"><div class="row between"><h3>Bộ sưu tập nhãn dán</h3><span class="tag">${Object.keys(S.badges || {}).length}/${BADGES.length}</span></div>
+  return `<div class="wrap"><section class="hello">${stk("trophy", 72, "", 8)}${_t("<div><p class=\"eyebrow\">Lịch sử</p><h1>Kết quả học tập</h1>\n    <p class=\"muted\">")}${S.sessions.length}${_t(" buổi học · ")}${S.tests.length}${_t(" bài kiểm tra · tổng ")}${S.sessions.reduce((a, s) => a + (s.dur || 0), 0)}${_t(" phút</p></div></section>\n   <section class=\"panel\"><div class=\"row between\"><h3>Bộ sưu tập nhãn dán</h3><span class=\"tag\">")}${Object.keys(S.badges || {}).length}/${BADGES.length}</span></div>
      <div class="badge-grid">${BADGES.map(b => badgeCard(b, !!S.badges?.[b.id], S.badges?.[b.id])).join("")}</div></section>
-   ${chart.length > 1 ? `<section class="panel"><h3>Điểm 20 buổi gần nhất</h3><div class="spark">${chart.map(s => `<i style="height:${Math.max(4, s.total)}%" title="${esc(s.topic)}: ${s.total}"></i>`).join("")}</div></section>` : ""}
-   <section class="panel"><h3>Hành trình level</h3><ul class="timeline">
-     ${S.placement ? `<li><b>${S.placement.level}</b> Test đầu vào · ${S.placement.date}</li>` : ""}
-     ${S.courses.map(c => `<li><b>${c.to}</b> Hoàn thành khóa ${c.from} → ${c.to} · ${c.end}</li>`).join("")}
-     ${S.path ? `<li class="cur"><b>${S.path.from} → ${S.path.to}</b> Khóa hiện tại, bắt đầu ${S.path.start}</li>` : ""}</ul></section>
-   <section class="panel"><h3>Bài kiểm tra định kỳ</h3>${ts.length ? ts.map(t => `<div class="hrow"><div><b>Unit ${t.unit}</b> <span class="muted small">${t.date}</span>
+   ${chart.length > 1 ? `${_t("<section class=\"panel\"><h3>Điểm 20 buổi gần nhất</h3><div class=\"spark\">")}${chart.map(s => `<i style="height:${Math.max(4, s.total)}%" title="${esc(s.topic)}: ${s.total}"></i>`).join("")}</div></section>` : ""}${_t("\n   <section class=\"panel\"><h3>Hành trình level</h3><ul class=\"timeline\">\n     ")}${S.placement ? `<li><b>${S.placement.level}${_t("</b> Test đầu vào · ")}${S.placement.date}</li>` : ""}
+     ${S.courses.map(c => `<li><b>${c.to}${_t("</b> Hoàn thành khóa ")}${c.from} → ${c.to} · ${c.end}</li>`).join("")}
+     ${S.path ? `<li class="cur"><b>${S.path.from} → ${S.path.to}${_t("</b> Khóa hiện tại, bắt đầu ")}${S.path.start}</li>` : ""}${_t("</ul></section>\n   <section class=\"panel\"><h3>Bài kiểm tra định kỳ</h3>")}${ts.length ? ts.map(t => `<div class="hrow"><div><b>Unit ${t.unit}</b> <span class="muted small">${t.date}</span>
       <div class="minibars">${Object.entries(t.skills || {}).map(([k, v]) => `<span>${SKILL_VI[k] || k} <b>${v}</b></span>`).join("")}</div></div><em class="score">${t.score}%</em></div>`).join("")
-     : `<p class="muted">Bài kiểm tra đầu tiên mở sau 5 buổi học.</p>`}</section>
-   <section class="panel"><h3>Các buổi học</h3>${ss.length ? ss.map(s => `<div class="hrow click" data-a="hx" data-v="${s.idx}"><div><b>${esc(s.topic)}</b><br><span class="muted small">${s.date} · ${s.dur || "?"} phút${s.grammar ? " · " + esc(s.grammar) : ""}</span></div><em class="score">${s.total}</em></div>
+     : `${_t("<p class=\"muted\">Bài kiểm tra đầu tiên mở sau 5 buổi học.</p>")}`}${_t("</section>\n   <section class=\"panel\"><h3>Các buổi học</h3>")}${ss.length ? ss.map(s => `<div class="hrow click" data-a="hx" data-v="${s.idx}"><div><b>${esc(s.topic)}</b><br><span class="muted small">${s.date} · ${s.dur || "?"}${_t(" phút")}${s.grammar ? " · " + esc(s.grammar) : ""}</span></div><em class="score">${s.total}</em></div>
       ${UI.hx === s.idx ? `<div class="hdetail"><p>${(s.words || []).map(w => `<span class="chip">${esc(w)}</span>`).join(" ")}</p>
-        <div class="minibars">${Object.entries(s.scores || {}).map(([k, v]) => `<span>${{review:"Ôn bài",vocab:"Từ vựng",speaking:"Phát âm",sentence:"Đặt câu",translation:"Dịch",listening:"Nghe chép",roleplay:"Role-play"}[k] || k} <b>${v}</b></span>`).join("")}</div>
+        <div class="minibars">${Object.entries(s.scores || {}).map(([k, v]) => `<span>${{review:_t("Ôn bài"),vocab:_t("Từ vựng"),speaking:_t("Phát âm"),sentence:_t("Đặt câu"),translation:_t("Dịch"),listening:_t("Nghe chép"),roleplay:"Role-play"}[k] || k} <b>${v}</b></span>`).join("")}</div>
         ${(s.mistakes || []).map(m => `<div class="fb bad small"><s>${esc(m.text)}</s> → <b>${esc(m.fix)}</b></div>`).join("")}</div>` : ""}`).join("")
-     : `<p class="muted">Chưa có buổi học nào.</p>`}</section></div>`;
+     : `${_t("<p class=\"muted\">Chưa có buổi học nào.</p>")}`}</section></div>`;
 }
 // Cài đặt kiểu ứng dụng: trang chính là danh sách gọn, bấm vào từng mục để mở trang con
 const APP_VERSION = "1.0";
 const SET_PAGES = {
-  goal:["🎯", "Mục tiêu học"], remind:["🔔", "Nhắc học & thông báo"], look:["🎨", "Giao diện & ngày sinh"], voice:["🔊", "Giọng đọc & micro"],
-  help:["📖", "Hướng dẫn sử dụng"], feedback:["💬", "Gửi phản hồi"], about:["🌱", "Về SEED & người sáng lập"], data:["🗂️", "Dữ liệu"],
+  goal:["🎯", _t("Mục tiêu học")], remind:["🔔", _t("Nhắc học & thông báo")], look:["🎨", _t("Giao diện & ngày sinh")], voice:["🔊", _t("Giọng đọc & micro")],
+  lang:["🌐", "Language / Ngôn ngữ"],
+  help:["📖", _t("Hướng dẫn sử dụng")], feedback:["💬", _t("Gửi phản hồi")], about:["🌱", _t("Về SEED & người sáng lập")], data:["🗂️", _t("Dữ liệu")],
 };
 function setRow(k, value = "") { const [ic, t] = SET_PAGES[k]; return `<button class="setitem" data-a="setPage" data-v="${k}"><span class="si-ic">${ic}</span><span class="si-t">${t}</span><span class="si-v">${value}</span><span class="si-go">›</span></button>`; }
 function vSettings() {
   const pg = UI.sp;
-  if (pg && SET_PAGES[pg]) return `<div class="wrap narrow"><div class="sethead"><button class="mini ghost" data-a="setPage" data-v="">‹ Cài đặt</button><h2>${SET_PAGES[pg][0]} ${SET_PAGES[pg][1]}</h2></div>${setPage(pg)}</div>`;
+  if (pg && SET_PAGES[pg]) return `${_t("<div class=\"wrap narrow\"><div class=\"sethead\"><button class=\"mini ghost\" data-a=\"setPage\" data-v=\"\">‹ Cài đặt</button><h2>")}${SET_PAGES[pg][0]} ${SET_PAGES[pg][1]}</h2></div>${setPage(pg)}</div>`;
   const rc = remindCfg();
   return `<div class="wrap narrow">
    <section class="panel account"><div class="row nowrap">
      <div class="bigavatar">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc((displayName() || ME?.email || "?")[0].toUpperCase())}</div>
-     <div class="who grow"><b>${esc(displayName() || "Chưa đặt tên")}</b><span>${esc(ME?.email || "")}</span></div><span class="tag">${esc(S.level || "")}</span></div></section>
-   <div class="setlist">${setRow("goal", esc(focusName()))}${setRow("remind", rc.on ? (PUSH.on ? rc.start : "Chưa bật trên máy này") : "Đang tắt")}${setRow("look", esc(FEST[festiveTheme()]?.name || "Mặc định"))}${setRow("voice")}</div>
-   <div class="setlist">${setRow("help")}${setRow("feedback")}${setRow("about")}</div>
-   <div class="setlist">${setRow("data")}<button class="setitem" data-a="logout"><span class="si-ic">🚪</span><span class="si-t danger-t">Đăng xuất</span><span class="si-v"></span><span class="si-go"></span></button></div>
-   <p class="muted small center">SEED · phiên bản ${APP_VERSION} · <a href="/privacy">Quyền riêng tư</a></p></div>`;
+     <div class="who grow"><b>${esc(displayName() || _t("Chưa đặt tên"))}</b><span>${esc(ME?.email || "")}</span></div><span class="tag">${esc(S.level || "")}</span></div></section>
+   <div class="setlist">${setRow("goal", esc(focusName()))}${setRow("remind", rc.on ? (PUSH.on ? rc.start : _t("Chưa bật trên máy này")) : _t("Đang tắt"))}${setRow("look", esc(FEST[festiveTheme()]?.name || _t("Mặc định")))}${setRow("voice")}</div>
+   <div class="setlist">${setRow("lang", LANG === "en" ? "English" : "Tiếng Việt")}${setRow("help")}${setRow("feedback")}${setRow("about")}</div>
+   <div class="setlist">${setRow("data")}${_t("<button class=\"setitem\" data-a=\"logout\"><span class=\"si-ic\">🚪</span><span class=\"si-t danger-t\">Đăng xuất</span><span class=\"si-v\"></span><span class=\"si-go\"></span></button></div>\n   <p class=\"muted small center\">SEED · phiên bản ")}${APP_VERSION}${_t(" · <a href=\"/privacy\">Quyền riêng tư</a></p></div>")}`;
 }
 function setPage(pg) {
   const fs = pref("ep_fs") || "m", th = pref("ep_theme") || "auto", rc = remindCfg();
   const seg = (list, cur, act) => `<div class="row">${list.map(([k, t]) => `<button class="seg ${String(cur) === String(k) ? "sel" : ""}" data-a="${act}" data-v="${k}">${t}</button>`).join("")}</div>`;
   if (pg === "goal") return `<section class="panel"><p><b>${esc(focusName())}</b>${S.profile.job ? ` · ${esc(S.profile.job)}` : ""}</p>${subList().length ? `<p class="small">${subList().map(esc).join(" · ")}</p>` : ""}
-    <p class="muted small">${S.profile.minutes} phút/ngày · Trình độ ${S.level} · Khóa ${S.path?.from} → ${S.path?.to}</p><button class="primary" data-a="editGoal">Sửa mục tiêu</button></section>`;
-  if (pg === "remind") return `<section class="panel">
-    <div class="row between"><b>Nhắc khi hôm đó chưa học</b><button class="mini seg ${rc.on ? "sel" : ""}" data-a="remToggle">${rc.on ? "Bật" : "Tắt"}</button></div>
-    ${rc.on ? `<div class="row timerow"><div class="tfield"><label for="remindSet">Từ</label><input id="remindSet" type="time" value="${rc.start}" data-change="setRemind"></div>
-     <div class="tfield"><label for="remindEnd">Đến</label><input id="remindEnd" type="time" value="${rc.end}" data-change="setRemindEnd"></div></div>
-    <div class="setrow"><span>Nhắc mỗi</span>${seg([[30, "30 phút"], [60, "1 giờ"], [120, "2 giờ"], [180, "3 giờ"]], rc.every, "remEvery")}</div>
-    <div class="setrow"><span>Giọng nhắc</span>${seg([["spicy", "😈 Lầy lội"], ["soft", "🙂 Nhẹ nhàng"]], S.profile.remindTone || "spicy", "remTone")}</div>` : ""}</section>
-   <section class="panel"><b>Thiết bị này</b>
-    ${PUSH.on ? `<div class="row"><span class="tag good">Đang nhận thông báo</span><button class="mini" data-a="pushTest">Gửi thử</button><button class="mini" data-a="pushOff">Tắt</button></div>`
-      : isIOS() && !isStandalone() ? `<p class="small">Trên iPhone, hãy thêm app vào màn hình chính trước (xem Hướng dẫn sử dụng).</p>` : `<button class="primary" data-a="pushOn">Bật thông báo</button>`}</section>`;
-  if (pg === "look") return `<section class="panel">
-    <div class="tfield"><label for="bday">Ngày sinh</label><input id="bday" type="date" value="${esc(S.profile.birthday && S.profile.birthday.length === 10 ? S.profile.birthday : "")}" data-change="setBday"></div>
-    <label for="festSel">Chủ đề</label><select id="festSel" data-change="setFest"><option value="auto" ${(S.profile.festive || "auto") === "auto" ? "selected" : ""}>Tự động theo mùa & ngày lễ</option><option value="off" ${S.profile.festive === "off" ? "selected" : ""}>Mặc định</option>
-      ${Object.entries(FEST).map(([k, f]) => `<option value="${k}" ${S.profile.festive === k ? "selected" : ""}>Xem thử: ${esc(f.name)}</option>`).join("")}</select>
-    <div class="setrow"><span>Hiệu ứng rơi</span>${seg([[true, "Bật"], [false, "Tắt"]], S.profile.festFx !== false, "festFx")}</div>
-    <div class="setrow"><span>Cỡ chữ</span>${seg([["s", "Nhỏ"], ["m", "Vừa"], ["l", "Lớn"]], fs, "fs")}</div>
-    <div class="setrow"><span>Chế độ</span>${seg([["auto", "Theo máy"], ["light", "Sáng"], ["dark", "Tối"]], th, "theme")}</div></section>`;
-  if (pg === "voice") return `<section class="panel">
-    <label for="voiceSel">Giọng đọc</label><select id="voiceSel" data-change="setVoice">${VOICES.length ? VOICES.map(v => `<option value="${esc(v.name)}" ${pickVoice()?.name === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("") : `<option>Giọng mặc định</option>`}</select>
-    <div class="setrow"><span>Tốc độ</span>${seg([["0.6", "Rất chậm"], ["0.7", "Chậm"], ["0.8", "Vừa"], ["0.95", "Nhanh"]], ttsRate(), "ttsRate")}</div>
-    <div class="row"><button data-a="speak" data-v="Hello! This is how I sound. Let's practise English together.">🔊 Nghe thử</button><button class="mic ${UI.rec === "test" ? "on" : ""}" data-a="micTest" ${SR ? "" : "disabled"}>${UI.rec === "test" ? "● Đang nghe..." : "🎤 Thử micro"}</button></div>
-    ${UI.rec === "test" ? `<p class="live" id="live">Hãy nói một câu tiếng Anh...</p>` : ""}</section>`;
+    <p class="muted small">${S.profile.minutes}${_t(" phút/ngày · Trình độ ")}${S.level}${_t(" · Khóa ")}${S.path?.from} → ${S.path?.to}${_t("</p><button class=\"primary\" data-a=\"editGoal\">Sửa mục tiêu</button></section>")}`;
+  if (pg === "remind") return `${_t("<section class=\"panel\">\n    <div class=\"row between\"><b>Nhắc khi hôm đó chưa học</b><button class=\"mini seg ")}${rc.on ? "sel" : ""}" data-a="remToggle">${rc.on ? _t("Bật") : _t("Tắt")}</button></div>
+    ${rc.on ? `${_t("<div class=\"row timerow\"><div class=\"tfield\"><label for=\"remindSet\">Từ</label><input id=\"remindSet\" type=\"time\" value=\"")}${rc.start}${_t("\" data-change=\"setRemind\"></div>\n     <div class=\"tfield\"><label for=\"remindEnd\">Đến</label><input id=\"remindEnd\" type=\"time\" value=\"")}${rc.end}${_t("\" data-change=\"setRemindEnd\"></div></div>\n    <div class=\"setrow\"><span>Nhắc mỗi</span>")}${seg([[30, _t("30 phút")], [60, _t("1 giờ")], [120, _t("2 giờ")], [180, _t("3 giờ")]], rc.every, "remEvery")}${_t("</div>\n    <div class=\"setrow\"><span>Giọng nhắc</span>")}${seg([["spicy", _t("😈 Lầy lội")], ["soft", _t("🙂 Nhẹ nhàng")]], S.profile.remindTone || "spicy", "remTone")}</div>` : ""}${_t("</section>\n   <section class=\"panel\"><b>Thiết bị này</b>\n    ")}${PUSH.on ? `${_t("<div class=\"row\"><span class=\"tag good\">Đang nhận thông báo</span><button class=\"mini\" data-a=\"pushTest\">Gửi thử</button><button class=\"mini\" data-a=\"pushOff\">Tắt</button></div>")}`
+      : isIOS() && !isStandalone() ? `${_t("<p class=\"small\">Trên iPhone, hãy thêm app vào màn hình chính trước (xem Hướng dẫn sử dụng).</p>")}` : `${_t("<button class=\"primary\" data-a=\"pushOn\">Bật thông báo</button>")}`}</section>`;
+  if (pg === "look") return `${_t("<section class=\"panel\">\n    <div class=\"tfield\"><label for=\"bday\">Ngày sinh</label><input id=\"bday\" type=\"date\" value=\"")}${esc(S.profile.birthday && S.profile.birthday.length === 10 ? S.profile.birthday : "")}${_t("\" data-change=\"setBday\"></div>\n    <label for=\"festSel\">Chủ đề</label><select id=\"festSel\" data-change=\"setFest\"><option value=\"auto\" ")}${(S.profile.festive || "auto") === "auto" ? "selected" : ""}${_t(">Tự động theo mùa & ngày lễ</option><option value=\"off\" ")}${S.profile.festive === "off" ? "selected" : ""}${_t(">Mặc định</option>\n      ")}${Object.entries(FEST).map(([k, f]) => `<option value="${k}" ${S.profile.festive === k ? "selected" : ""}${_t(">Xem thử: ")}${esc(f.name)}</option>`).join("")}${_t("</select>\n    <div class=\"setrow\"><span>Hiệu ứng rơi</span>")}${seg([[true, _t("Bật")], [false, _t("Tắt")]], S.profile.festFx !== false, "festFx")}${_t("</div>\n    <div class=\"setrow\"><span>Cỡ chữ</span>")}${seg([["s", _t("Nhỏ")], ["m", _t("Vừa")], ["l", _t("Lớn")]], fs, "fs")}${_t("</div>\n    <div class=\"setrow\"><span>Chế độ</span>")}${seg([["auto", _t("Theo máy")], ["light", _t("Sáng")], ["dark", _t("Tối")]], th, "theme")}</div></section>`;
+  if (pg === "voice") return `${_t("<section class=\"panel\">\n    <label for=\"voiceSel\">Giọng đọc</label><select id=\"voiceSel\" data-change=\"setVoice\">")}${VOICES.length ? VOICES.map(v => `<option value="${esc(v.name)}" ${pickVoice()?.name === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("") : `${_t("<option>Giọng mặc định</option>")}`}${_t("</select>\n    <div class=\"setrow\"><span>Tốc độ</span>")}${seg([["0.6", _t("Rất chậm")], ["0.7", _t("Chậm")], ["0.8", _t("Vừa")], ["0.95", "Nhanh"]], ttsRate(), "ttsRate")}${_t("</div>\n    <div class=\"row\"><button data-a=\"speak\" data-v=\"Hello! This is how I sound. Let's practise English together.\">🔊 Nghe thử</button><button class=\"mic ")}${UI.rec === "test" ? "on" : ""}" data-a="micTest" ${SR ? "" : "disabled"}>${UI.rec === "test" ? _t("● Đang nghe...") : _t("🎤 Thử micro")}</button></div>
+    ${UI.rec === "test" ? `${_t("<p class=\"live\" id=\"live\">Hãy nói một câu tiếng Anh...</p>")}` : ""}</section>`;
+  if (pg === "lang") return `<section class="panel"><div class="langpick">${[["en", "🇬🇧", "English"], ["vi", "🇻🇳", "Tiếng Việt"]].map(([k, f, n]) => `<button class="setitem ${LANG === k ? "sel" : ""}" data-a="setLang" data-v="${k}"><span class="si-ic">${f}</span><span class="si-t">${n}</span><span class="si-v"></span><span class="si-go">${LANG === k ? "✓" : ""}</span></button>`).join("")}</div>
+    <p class="muted small">${LANG === "en" ? "Lesson content such as Vietnamese meanings and translation exercises stays the same." : "Nội dung học như nghĩa tiếng Việt và bài dịch vẫn giữ nguyên."}</p></section>`;
   if (pg === "help") return HELP.map(([q, a], i) => `<details class="panel help" ${i === 0 ? "open" : ""}><summary>${q}</summary><div class="small">${a}</div></details>`).join("");
-  if (pg === "feedback") return `<section class="panel">
-    <p>Bạn thấy SEED thế nào? Mọi góp ý đều được đọc và dùng để làm app tốt hơn 💚</p>
-    <div class="setrow"><span>Loại</span>${seg([["idea", "💡 Góp ý"], ["bug", "🐞 Báo lỗi"], ["love", "💚 Khen"], ["other", "Khác"]], UI.fbKind || "idea", "fbKind")}</div>
-    <div class="setrow"><span>Đánh giá</span><div class="row stars">${[1, 2, 3, 4, 5].map(n => `<button class="star ${n <= (UI.fbRate || 0) ? "on" : ""}" data-a="fbRate" data-v="${n}" aria-label="${n} sao">★</button>`).join("")}</div></div>
-    <label for="fbMsg">Nội dung</label><textarea id="fbMsg" rows="5" maxlength="2000" placeholder="Bạn thích điều gì, gặp lỗi ở đâu, muốn có thêm tính năng gì..."></textarea>
-    <button class="primary" data-a="fbSend" ${UI.fbBusy ? "disabled" : ""}>${UI.fbBusy ? "Đang gửi..." : "Gửi phản hồi"}</button></section>`;
-  if (pg === "about") return `<section class="panel about center">
-    <img src="/logo-full.png?v=5" alt="SEED" width="240" height="240" class="logo-lg"><h2>SEED</h2><p class="muted">Học tiếng Anh theo đúng mục tiêu của bạn, mỗi ngày một chút.</p></section>
-   <section class="panel founder"><p class="eyebrow">Người sáng lập</p><h3>${esc(FOUNDER.name)}</h3>
+  if (pg === "feedback") return `${_t("<section class=\"panel\">\n    <p>Bạn thấy SEED thế nào? Mọi góp ý đều được đọc và dùng để làm app tốt hơn 💚</p>\n    <div class=\"setrow\"><span>Loại</span>")}${seg([["idea", _t("💡 Góp ý")], ["bug", _t("🐞 Báo lỗi")], ["love", "💚 Khen"], ["other", _t("Khác")]], UI.fbKind || "idea", "fbKind")}${_t("</div>\n    <div class=\"setrow\"><span>Đánh giá</span><div class=\"row stars\">")}${[1, 2, 3, 4, 5].map(n => `<button class="star ${n <= (UI.fbRate || 0) ? "on" : ""}" data-a="fbRate" data-v="${n}" aria-label="${n} sao">★</button>`).join("")}${_t("</div></div>\n    <label for=\"fbMsg\">Nội dung</label><textarea id=\"fbMsg\" rows=\"5\" maxlength=\"2000\" placeholder=\"Bạn thích điều gì, gặp lỗi ở đâu, muốn có thêm tính năng gì...\"></textarea>\n    <button class=\"primary\" data-a=\"fbSend\" ")}${UI.fbBusy ? "disabled" : ""}>${UI.fbBusy ? _t("Đang gửi...") : _t("Gửi phản hồi")}</button></section>`;
+  if (pg === "about") return `${_t("<section class=\"panel about center\">\n    <img src=\"/logo-full.png?v=5\" alt=\"SEED\" width=\"240\" height=\"240\" class=\"logo-lg\"><h2>SEED</h2><p class=\"muted\">Học tiếng Anh theo đúng mục tiêu của bạn, mỗi ngày một chút.</p></section>\n   <section class=\"panel founder\"><p class=\"eyebrow\">Người sáng lập</p><h3>")}${esc(FOUNDER.name)}</h3>
     <p>${FOUNDER.bio}</p>
     <div class="row">${FOUNDER.loves.map(t => `<span class="tag">${t}</span>`).join("")}</div>
-    <blockquote>“${FOUNDER.quote}”</blockquote></section>
-   <section class="panel"><p class="small muted">Phiên bản ${APP_VERSION} · Sinh nhật SEED cùng ngày với người sáng lập (18/3).<br><a href="/privacy">Chính sách quyền riêng tư</a> · <a href="/data-deletion">Xoá dữ liệu</a></p></section>`;
-  if (pg === "data") return `<section class="panel"><p>Xoá toàn bộ tiến độ học để bắt đầu lại từ đầu. Không thể hoàn tác.</p><button class="danger" data-a="reset" id="resetBtn">Xóa tiến độ và làm lại</button></section>`;
+    <blockquote>“${FOUNDER.quote}${_t("”</blockquote></section>\n   <section class=\"panel\"><p class=\"small muted\">Phiên bản ")}${APP_VERSION}${_t(" · Sinh nhật SEED cùng ngày với người sáng lập (18/3).<br><a href=\"/privacy\">Chính sách quyền riêng tư</a> · <a href=\"/data-deletion\">Xoá dữ liệu</a></p></section>")}`;
+  if (pg === "data") return `${_t("<section class=\"panel\"><p>Xoá toàn bộ tiến độ học để bắt đầu lại từ đầu. Không thể hoàn tác.</p><button class=\"danger\" data-a=\"reset\" id=\"resetBtn\">Xóa tiến độ và làm lại</button></section>")}`;
   return "";
 }
 // Thông tin người sáng lập (sửa tại đây)
 const FOUNDER = {
   name: "Hồ Quốc Huy",
-  bio: "Một người yêu cái đẹp: yêu thiên nhiên, cây cối, những bức tranh và từng nốt nhạc, và yêu con người. SEED được tạo ra từ mong muốn giúp mỗi người học tiếng Anh nhẹ nhàng như chăm một mầm cây: mỗi ngày tưới một chút, rồi đến lúc sẽ nở hoa.",
-  loves: ["🌿 Thiên nhiên", "🎨 Hội hoạ", "🎵 Âm nhạc", "🎻 Nhạc cụ", "💚 Con người"],
-  quote: "Ngôn ngữ cũng như âm nhạc: không cần hoàn hảo, chỉ cần mỗi ngày được cất lên.",
+  bio: _t("Một người yêu cái đẹp: yêu thiên nhiên, cây cối, những bức tranh và từng nốt nhạc, và yêu con người. SEED được tạo ra từ mong muốn giúp mỗi người học tiếng Anh nhẹ nhàng như chăm một mầm cây: mỗi ngày tưới một chút, rồi đến lúc sẽ nở hoa."),
+  loves: [_t("🌿 Thiên nhiên"), _t("🎨 Hội hoạ"), _t("🎵 Âm nhạc"), _t("🎻 Nhạc cụ"), _t("💚 Con người")],
+  quote: _t("Ngôn ngữ cũng như âm nhạc: không cần hoàn hảo, chỉ cần mỗi ngày được cất lên."),
 };
 // Hướng dẫn sử dụng (gom tất cả chú thích chi tiết về đây)
 const HELP = [
-  ["Một buổi học gồm những gì?", "6 bước: Ôn bài cũ → Từ vựng mới → Tự đặt câu → Dịch câu → Role-play với AI → Tổng kết. Bấm thanh tiến trình trên đầu bài để quay lại xem bước đã học. Cứ 5 buổi có một bài kiểm tra ngắn."],
-  ["Tra nghĩa và nghe phát âm", "Bấm vào bất kỳ từ tiếng Anh nào để xem nghĩa, từ loại, phiên âm IPA và ví dụ. Bấm 🔊 để nghe, 🌐 Dịch để dịch cả câu ngay trong trang. Đổi giọng đọc và tốc độ trong Cài đặt → Giọng đọc & micro."],
-  ["Luyện nói bằng micro", "Bấm 🎤 rồi nói. App chấm phát âm theo từng từ. Nhận giọng nói chạy tốt nhất trên Chrome hoặc Edge, cần có Internet."],
-  ["Flashcard và ôn tập", "Từ đã học tự vào flashcard. App nhắc ôn đúng lúc bạn sắp quên (lặp lại ngắt quãng). Vào tab Ôn tập để lật thẻ hoặc làm bài ôn."],
-  ["Bật thông báo nhắc học", "Cài đặt → Nhắc học & thông báo → Bật thông báo. Mỗi thiết bị bật riêng một lần. Học xong (hoặc đã vào học, ôn flashcard) trong ngày thì app không nhắc nữa."],
-  ["Dùng trên iPhone", "Mở bằng Safari → nút Chia sẻ → Thêm vào MH chính → mở app từ biểu tượng ngoài màn hình. Sau đó mới bật được thông báo (iOS 16.4 trở lên)."],
-  ["Cộng đồng: trò chuyện ẩn danh", "Phòng chung theo trình độ để hỏi đáp; Ghép đôi 1-1 để luyện nói, kể cả khi người kia đang offline. Mọi người chỉ thấy biệt danh. Không chia sẻ số điện thoại, mạng xã hội hay đường link (app sẽ chặn)."],
-  ["Giữ cuộc trò chuyện, thu hồi, chặn", "⭐ Giữ: khi cả hai cùng bấm, hai bạn thành bạn chat và tin nhắn không bị xoá (cuộc trò chuyện thường tự xoá sau 30 ngày). Bấm ⋯ ở tin của mình để thu hồi. Bấm ⋯ trên đầu cuộc trò chuyện để tắt thông báo, kết thúc hoặc chặn. Bỏ chặn: Ghép đôi 1-1 → Người đã chặn."],
-  ["Giao diện theo mùa và sinh nhật", "Giao diện tự đổi theo 4 mùa và các ngày lễ (Tết, 14/2, 8/3, 18/3, 1/6, Trung thu, 14/10, 20/11, Giáng Sinh…). Nhập ngày sinh để nhận lời chúc riêng đúng ngày sinh nhật."],
-  ["Đổi tài khoản", "Cài đặt → Đăng xuất, rồi chọn tài khoản khác khi đăng nhập lại. Tiến độ được lưu theo tài khoản và đồng bộ giữa các thiết bị."],
+  [_t("Một buổi học gồm những gì?"), _t("6 bước: Ôn bài cũ → Từ vựng mới → Tự đặt câu → Dịch câu → Role-play với AI → Tổng kết. Bấm thanh tiến trình trên đầu bài để quay lại xem bước đã học. Cứ 5 buổi có một bài kiểm tra ngắn.")],
+  [_t("Tra nghĩa và nghe phát âm"), _t("Bấm vào bất kỳ từ tiếng Anh nào để xem nghĩa, từ loại, phiên âm IPA và ví dụ. Bấm 🔊 để nghe, 🌐 Dịch để dịch cả câu ngay trong trang. Đổi giọng đọc và tốc độ trong Cài đặt → Giọng đọc & micro.")],
+  [_t("Luyện nói bằng micro"), _t("Bấm 🎤 rồi nói. App chấm phát âm theo từng từ. Nhận giọng nói chạy tốt nhất trên Chrome hoặc Edge, cần có Internet.")],
+  [_t("Flashcard và ôn tập"), _t("Từ đã học tự vào flashcard. App nhắc ôn đúng lúc bạn sắp quên (lặp lại ngắt quãng). Vào tab Ôn tập để lật thẻ hoặc làm bài ôn.")],
+  [_t("Bật thông báo nhắc học"), _t("Cài đặt → Nhắc học & thông báo → Bật thông báo. Mỗi thiết bị bật riêng một lần. Học xong (hoặc đã vào học, ôn flashcard) trong ngày thì app không nhắc nữa.")],
+  [_t("Dùng trên iPhone"), _t("Mở bằng Safari → nút Chia sẻ → Thêm vào MH chính → mở app từ biểu tượng ngoài màn hình. Sau đó mới bật được thông báo (iOS 16.4 trở lên).")],
+  [_t("Cộng đồng: trò chuyện ẩn danh"), _t("Phòng chung theo trình độ để hỏi đáp; Ghép đôi 1-1 để luyện nói, kể cả khi người kia đang offline. Mọi người chỉ thấy biệt danh. Không chia sẻ số điện thoại, mạng xã hội hay đường link (app sẽ chặn).")],
+  [_t("Giữ cuộc trò chuyện, thu hồi, chặn"), _t("⭐ Giữ: khi cả hai cùng bấm, hai bạn thành bạn chat và tin nhắn không bị xoá (cuộc trò chuyện thường tự xoá sau 30 ngày). Bấm ⋯ ở tin của mình để thu hồi. Bấm ⋯ trên đầu cuộc trò chuyện để tắt thông báo, kết thúc hoặc chặn. Bỏ chặn: Ghép đôi 1-1 → Người đã chặn.")],
+  [_t("Giao diện theo mùa và sinh nhật"), _t("Giao diện tự đổi theo 4 mùa và các ngày lễ (Tết, 14/2, 8/3, 18/3, 1/6, Trung thu, 14/10, 20/11, Giáng Sinh…). Nhập ngày sinh để nhận lời chúc riêng đúng ngày sinh nhật.")],
+  [_t("Đổi tài khoản"), _t("Cài đặt → Đăng xuất, rồi chọn tài khoản khác khi đăng nhập lại. Tiến độ được lưu theo tài khoản và đồng bộ giữa các thiết bị.")],
 ];
 /* =====================================================================
    TRA TỪ
@@ -1391,7 +1295,7 @@ function knownWord(w) {
 async function openWord(el) {
   closePop(); POPERR = "";
   const word = el.dataset.w.replace(/[’']s$/, ""), ctx = (el.closest(".msg,.example,.src,.flash,.fb,.qtext,p") || el).textContent.trim().slice(0, 200);
-  const pop = document.createElement("div"); pop.id = "pop"; pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", "Tra từ " + word); document.body.appendChild(pop); POP = pop;
+  const pop = document.createElement("div"); pop.id = "pop"; pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", _t("Tra từ ") + word); document.body.appendChild(pop); POP = pop;
   const r = el.getBoundingClientRect();
   if (innerWidth >= 600) { pop.style.top = (r.bottom + scrollY + 10) + "px"; pop.style.left = Math.max(12, Math.min(r.left + scrollX - 24, innerWidth - 384)) + "px"; }
   else pop.classList.add("sheet");
@@ -1402,9 +1306,7 @@ async function openWord(el) {
   setTimeout(() => pop.scrollIntoView?.({block:"nearest", behavior:"smooth"}), 30);
   if (S.dict[k]) return;
   let full = null;
-  if (aiOn()) { try { full = await gemini(TEACHER(), `Tra từ tiếng Anh "${word}" trong ngữ cảnh: "${ctx}".
-Trả JSON {"headword":"dạng gốc","ipa":"phiên âm IPA","pos":"từ loại tiếng Việt (Danh từ, Động từ, Tính từ...)","meaning":"nghĩa tiếng Việt đúng ngữ cảnh; thêm 1-2 nghĩa phổ biến khác nếu có",
-"examples":[{"en":"câu ví dụ","vi":"dịch"}] (3 câu, ưu tiên lĩnh vực của người học),"collocations":["cụm hay đi kèm"] (tối đa 3)}`); if (!full?.meaning) full = null; } catch (e) { full = null; POPERR = e.message; } }
+  if (aiOn()) { try { full = await gemini(TEACHER(), `${_t("Tra từ tiếng Anh \"")}${word}${_t("\" trong ngữ cảnh: \"")}${ctx}${_t("\".\nTrả JSON {\"headword\":\"dạng gốc\",\"ipa\":\"phiên âm IPA\",\"pos\":\"từ loại tiếng Việt (Danh từ, Động từ, Tính từ...)\",\"meaning\":\"nghĩa tiếng Việt đúng ngữ cảnh; thêm 1-2 nghĩa phổ biến khác nếu có\",\n\"examples\":[{\"en\":\"câu ví dụ\",\"vi\":\"dịch\"}] (3 câu, ưu tiên lĩnh vực của người học),\"collocations\":[\"cụm hay đi kèm\"] (tối đa 3)}")}`); if (!full?.meaning) full = null; } catch (e) { full = null; POPERR = e.message; } }
   if (!full) { try { const r2 = await fetch("/api/dict?w=" + encodeURIComponent(k));
     if (r2.ok) { const j = (await r2.json())[0], m = j.meanings?.[0], defs = (j.meanings || []).flatMap(x => x.definitions || []);
       full = {headword:j.word, ipa:j.phonetic || j.phonetics?.find(p => p.text)?.text || "", pos:m?.partOfSpeech || "", meaning:d?.meaning || m?.definitions?.[0]?.definition || "", meaningEn:!d,
@@ -1415,16 +1317,14 @@ Trả JSON {"headword":"dạng gốc","ipa":"phiên âm IPA","pos":"từ loại 
 function drawPop(word, d, loading) {
   if (!POP) return;
   const hw = d?.headword || word, inCards = !!S.cards[hw.toLowerCase()];
-  POP.innerHTML = `<div class="row between nowrap"><div><div class="word sm">${esc(hw)}</div><div class="ipa">${esc(d?.ipa || "")}${d?.pos ? ` · <span class="tag">${esc(d.pos)}</span>` : ""}</div></div>
-     <button class="mini" data-a="closePop" aria-label="Đóng">✕</button></div>
-   ${d ? `<p class="meaning sm">${esc(d.meaning)}${d.meaningEn ? ' <span class="muted small">(định nghĩa tiếng Anh)</span>' : ""}</p>` : ""}
+  POP.innerHTML = `<div class="row between nowrap"><div><div class="word sm">${esc(hw)}</div><div class="ipa">${esc(d?.ipa || "")}${d?.pos ? ` · <span class="tag">${esc(d.pos)}</span>` : ""}${_t("</div></div>\n     <button class=\"mini\" data-a=\"closePop\" aria-label=\"Đóng\">✕</button></div>\n   ")}${d ? `<p class="meaning sm">${esc(d.meaning)}${d.meaningEn ? _t(" <span class=\"muted small\">(định nghĩa tiếng Anh)</span>") : ""}</p>` : ""}
    ${(d?.examples || []).filter(x => x.en).map(x => `<div class="ex">${esc(x.en)}${x.vi ? `<br><span class="muted">${esc(x.vi)}</span>` : ""}</div>`).join("")}
-   ${d?.collocations?.length ? `<p class="muted small">Hay đi với: ${d.collocations.map(esc).join(" · ")}</p>` : ""}
-   ${loading ? `<p class="muted small"><span class="spin"></span> Đang tra...</p>` : ""}${!d && !loading ? `<p class="muted">Chưa tra được từ này${AI.on ? (POPERR ? ` (${esc(POPERR)})` : "") : " vì AI đang nghỉ"}. Thử nút Dịch hoặc Cambridge bên dưới.</p>` : ""}
+   ${d?.collocations?.length ? `${_t("<p class=\"muted small\">Hay đi với: ")}${d.collocations.map(esc).join(" · ")}</p>` : ""}
+   ${loading ? `${_t("<p class=\"muted small\"><span class=\"spin\"></span> Đang tra...</p>")}` : ""}${!d && !loading ? `${_t("<p class=\"muted\">Chưa tra được từ này")}${AI.on ? (POPERR ? ` (${esc(POPERR)})` : "") : _t(" vì AI đang nghỉ")}${_t(". Thử nút Dịch hoặc Cambridge bên dưới.</p>")}` : ""}
    <div class="row"><button class="mini" data-a="speak" data-v="${esc(hw)}">🔊 Nghe</button>
-    ${d ? `<button class="mini ${inCards ? "" : "primary"}" data-a="addLooked" data-v="${esc(word.toLowerCase())}" ${inCards ? "disabled" : ""}>${inCards ? "Đã có trong flashcard" : "+ Thêm vào flashcard"}</button>` : ""}
+    ${d ? `<button class="mini ${inCards ? "" : "primary"}" data-a="addLooked" data-v="${esc(word.toLowerCase())}" ${inCards ? "disabled" : ""}>${inCards ? _t("Đã có trong flashcard") : _t("+ Thêm vào flashcard")}</button>` : ""}
     <a class="mini btn" target="_blank" rel="noopener" href="https://dictionary.cambridge.org/dictionary/english-vietnamese/${encodeURIComponent(hw.toLowerCase())}">Cambridge ↗</a>
-    <button class="mini" data-a="popTr" data-v="${esc(hw)}" data-sl="en">🌐 Dịch</button></div><div class="pop-tr"></div>`;
+    <button class="mini" data-a="popTr" data-v="${esc(hw)}${_t("\" data-sl=\"en\">🌐 Dịch</button></div><div class=\"pop-tr\"></div>")}`;
 }
 
 // Bấm vào chữ tiếng Việt: tìm từ (có thể nhiều âm tiết) và từ tiếng Anh tương ứng
@@ -1442,7 +1342,7 @@ async function openVi(el) {
   closePop(); POPERR = "";
   const box = el.closest(".src,.example p,.fb,.panel p,h3,p") || el.parentElement;
   const sylls = [...box.querySelectorAll(".wv")], i = sylls.indexOf(el), words = sylls.map(x => x.dataset.s), sent = words.join(" ");
-  const pop = document.createElement("div"); pop.id = "pop"; pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", "Tra từ tiếng Việt"); document.body.appendChild(pop); POP = pop;
+  const pop = document.createElement("div"); pop.id = "pop"; pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", _t("Tra từ tiếng Việt")); document.body.appendChild(pop); POP = pop;
   const r = el.getBoundingClientRect();
   if (innerWidth >= 600) { pop.style.top = (r.bottom + scrollY + 10) + "px"; pop.style.left = Math.max(12, Math.min(r.left + scrollX - 24, innerWidth - 384)) + "px"; } else pop.classList.add("sheet");
   const key = sent + "|" + i;
@@ -1452,9 +1352,7 @@ async function openVi(el) {
   setTimeout(() => pop.scrollIntoView?.({block:"nearest", behavior:"smooth"}), 30);
   if (VI_CACHE[key] || !aiOn()) return;
   try {
-    const j = await gemini(TEACHER(), `Câu tiếng Việt: "${sent}". Người học bấm vào âm tiết thứ ${i + 1} là "${words[i]}".
-Xác định TỪ tiếng Việt chứa âm tiết đó (có thể là từ ghép nhiều âm tiết, ví dụ "hành lý", "kỹ sư phần mềm").
-Trả JSON {"word_vi":"từ tiếng Việt","start":vị trí âm tiết đầu tiên của từ (đếm từ 1),"length":số âm tiết,"en":"từ hoặc cụm tiếng Anh tương đương đúng ngữ cảnh câu","alts":["cách nói khác"] (tối đa 2),"pos":"từ loại tiếng Việt","ipa":"IPA của từ tiếng Anh chính","note":"lưu ý cách dùng ngắn, nếu có","examples":[{"en":"câu ví dụ","vi":"dịch"}] (2 câu)}`);
+    const j = await gemini(TEACHER(), `${_t("Câu tiếng Việt: \"")}${sent}${_t("\". Người học bấm vào âm tiết thứ ")}${i + 1}${_t(" là \"")}${words[i]}${_t("\".\nXác định TỪ tiếng Việt chứa âm tiết đó (có thể là từ ghép nhiều âm tiết, ví dụ \"hành lý\", \"kỹ sư phần mềm\").\nTrả JSON {\"word_vi\":\"từ tiếng Việt\",\"start\":vị trí âm tiết đầu tiên của từ (đếm từ 1),\"length\":số âm tiết,\"en\":\"từ hoặc cụm tiếng Anh tương đương đúng ngữ cảnh câu\",\"alts\":[\"cách nói khác\"] (tối đa 2),\"pos\":\"từ loại tiếng Việt\",\"ipa\":\"IPA của từ tiếng Anh chính\",\"note\":\"lưu ý cách dùng ngắn, nếu có\",\"examples\":[{\"en\":\"câu ví dụ\",\"vi\":\"dịch\"}] (2 câu)}")}`);
     if (j?.en) { d = j; VI_CACHE[key] = j; }
   } catch (e) { POPERR = e.message; }
   if (POP === pop) { mark(d); drawViPop(el.dataset.s, sent, d, false); }
@@ -1463,16 +1361,14 @@ function drawViPop(syl, sent, d, loading) {
   if (!POP) return;
   const inCards = d?.en && !!S.cards[d.en.toLowerCase()];
   POP.dataset.vi = d ? JSON.stringify(d) : "";
-  POP.innerHTML = `<div class="row between nowrap"><div><p class="eyebrow">Tiếng Việt → Tiếng Anh</p><div class="word sm">${esc(d?.word_vi || syl)}</div></div><button class="mini" data-a="closePop" aria-label="Đóng">✕</button></div>
-   ${d ? `<div class="en-ans"><b>${esc(d.en)}</b> <button class="mini" data-a="speak" data-v="${esc(d.en)}" aria-label="Nghe">🔊</button></div>
+  POP.innerHTML = `${_t("<div class=\"row between nowrap\"><div><p class=\"eyebrow\">Tiếng Việt → Tiếng Anh</p><div class=\"word sm\">")}${esc(d?.word_vi || syl)}${_t("</div></div><button class=\"mini\" data-a=\"closePop\" aria-label=\"Đóng\">✕</button></div>\n   ")}${d ? `<div class="en-ans"><b>${esc(d.en)}</b> <button class="mini" data-a="speak" data-v="${esc(d.en)}" aria-label="${_t("Nghe")}">🔊</button></div>
      <div class="ipa">${esc(d.ipa || "")}${d.pos ? ` · <span class="tag">${esc(d.pos)}</span>` : ""}</div>
-     ${d.alts?.length ? `<p class="small">Cách nói khác: ${d.alts.map(esc).join(" · ")}</p>` : ""}${d.note ? `<p class="small muted">${esc(d.note)}</p>` : ""}
+     ${d.alts?.length ? `${_t("<p class=\"small\">Cách nói khác: ")}${d.alts.map(esc).join(" · ")}</p>` : ""}${d.note ? `<p class="small muted">${esc(d.note)}</p>` : ""}
      ${(d.examples || []).filter(x => x.en).map(x => `<div class="ex">${esc(x.en)}${x.vi ? `<br><span class="muted">${esc(x.vi)}</span>` : ""}</div>`).join("")}` : ""}
-   ${loading ? `<p class="muted small"><span class="spin"></span> Đang tra theo ngữ cảnh câu...</p>` : ""}
-   ${!d && !loading ? `<p class="muted">${AI.on ? `Chưa tra được${POPERR ? ` (${esc(POPERR)})` : ""}.` : "Tra từng từ tiếng Việt cần AI đang hoạt động."} Bạn vẫn có thể dịch cả câu bên dưới.</p>` : ""}
-   <div class="row">${d?.en ? `<button class="mini ${inCards ? "" : "primary"}" data-a="addVi" ${inCards ? "disabled" : ""}>${inCards ? "Đã có trong flashcard" : "+ Thêm vào flashcard"}</button>` : ""}
-    <button class="mini" data-a="popTr" data-v="${esc(sent)}">🌐 Dịch cả câu</button></div>
-   <div class="pop-tr"></div>`;
+   ${loading ? `${_t("<p class=\"muted small\"><span class=\"spin\"></span> Đang tra theo ngữ cảnh câu...</p>")}` : ""}
+   ${!d && !loading ? `<p class="muted">${AI.on ? `${_t("Chưa tra được")}${POPERR ? ` (${esc(POPERR)})` : ""}.` : _t("Tra từng từ tiếng Việt cần AI đang hoạt động.")}${_t(" Bạn vẫn có thể dịch cả câu bên dưới.</p>")}` : ""}
+   <div class="row">${d?.en ? `<button class="mini ${inCards ? "" : "primary"}" data-a="addVi" ${inCards ? "disabled" : ""}>${inCards ? _t("Đã có trong flashcard") : _t("+ Thêm vào flashcard")}</button>` : ""}
+    <button class="mini" data-a="popTr" data-v="${esc(sent)}${_t("\">🌐 Dịch cả câu</button></div>\n   <div class=\"pop-tr\"></div>")}`;
 }
 
 /* =====================================================================
@@ -1487,16 +1383,16 @@ function remindDue() { if (!S.profile || !S.path || !remindCfg().on) return fals
 function remindLoop() {
   if (PUSH.on || !remindDue() || pref("ep_notified") === today()) return;
   if ("Notification" in window && Notification.permission === "granted") {
-    try { new Notification("Đến giờ học tiếng Anh", {body:`Buổi ${doneN() + 1} đang chờ bạn. ${dueCards().length} thẻ flashcard cần ôn.`}); pref("ep_notified", today()); } catch (e) {}
+    try { new Notification(_t("Đến giờ học tiếng Anh"), {body:`${_t("Buổi ")}${doneN() + 1}${_t(" đang chờ bạn. ")}${dueCards().length}${_t(" thẻ flashcard cần ôn.")}`}); pref("ep_notified", today()); } catch (e) {}
   }
 }
 function calTimes() { const [h, m] = remindTime().split(":").map(Number), d = new Date(); d.setHours(h, m, 0, 0); const e = new Date(d.getTime() + (S.profile?.minutes || 30) * 60e3);
   const f = x => `${x.getFullYear()}${String(x.getMonth() + 1).padStart(2, "0")}${String(x.getDate()).padStart(2, "0")}T${String(x.getHours()).padStart(2, "0")}${String(x.getMinutes()).padStart(2, "0")}00`; return [f(d), f(e)]; }
-function gcalLink() { const [a, b] = calTimes(); return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent("Học tiếng Anh") + "&details=" + encodeURIComponent("Mở app: " + location.origin) + "&dates=" + a + "/" + b + "&ctz=Asia/Ho_Chi_Minh&recur=" + encodeURIComponent("RRULE:FREQ=DAILY"); }
+function gcalLink() { const [a, b] = calTimes(); return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(_t("Học tiếng Anh")) + "&details=" + encodeURIComponent(_t("Mở app: ") + location.origin) + "&dates=" + a + "/" + b + "&ctz=Asia/Ho_Chi_Minh&recur=" + encodeURIComponent("RRULE:FREQ=DAILY"); }
 function downloadIcs() { const [a, b] = calTimes();
   const ics = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//LoTrinhTiengAnh//VI","BEGIN:VEVENT","UID:" + Date.now() + "@lotrinh","DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z",
-    "DTSTART;TZID=Asia/Ho_Chi_Minh:" + a, "DTEND;TZID=Asia/Ho_Chi_Minh:" + b, "RRULE:FREQ=DAILY", "SUMMARY:Học tiếng Anh", "DESCRIPTION:Mở app: " + location.origin,
-    "BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Đến giờ học tiếng Anh","TRIGGER:-PT0M","END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
+    "DTSTART;TZID=Asia/Ho_Chi_Minh:" + a, "DTEND;TZID=Asia/Ho_Chi_Minh:" + b, "RRULE:FREQ=DAILY", _t("SUMMARY:Học tiếng Anh"), _t("DESCRIPTION:Mở app: ") + location.origin,
+    "BEGIN:VALARM","ACTION:DISPLAY",_t("DESCRIPTION:Đến giờ học tiếng Anh"),"TRIGGER:-PT0M","END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
   const u = URL.createObjectURL(new Blob([ics], {type:"text/calendar"})), el = document.createElement("a"); el.href = u; el.download = "hoc-tieng-anh.ics"; document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000); }
 
 /* =====================================================================
@@ -1520,41 +1416,42 @@ async function logout() {
 }
 function b64ToBytes(b) { const p = "=".repeat((4 - b.length % 4) % 4), s = atob((b + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(s, c => c.charCodeAt(0)); }
 async function enablePush(btn) {
-  if (isIOS() && !isStandalone()) return toast("Trên iPhone: mở app bằng Safari, bấm Chia sẻ → Thêm vào MH chính, rồi mở app từ biểu tượng ngoài màn hình để bật thông báo.");
-  if (!pushSupported()) return toast("Trình duyệt này không hỗ trợ thông báo đẩy. Hãy dùng Chrome (Android/máy tính) hoặc Safari (iPhone, iOS 16.4 trở lên).");
-  btn.disabled = true; btn.innerHTML = `<span class="spin"></span> Đang bật...`;
+  if (isIOS() && !isStandalone()) return toast(_t("Trên iPhone: mở app bằng Safari, bấm Chia sẻ → Thêm vào MH chính, rồi mở app từ biểu tượng ngoài màn hình để bật thông báo."));
+  if (!pushSupported()) return toast(_t("Trình duyệt này không hỗ trợ thông báo đẩy. Hãy dùng Chrome (Android/máy tính) hoặc Safari (iPhone, iOS 16.4 trở lên)."));
+  btn.disabled = true; btn.innerHTML = `${_t("<span class=\"spin\"></span> Đang bật...")}`;
   try {
     const perm = await Notification.requestPermission();
-    if (perm !== "granted") throw new Error("Bạn chưa cho phép thông báo. Vào cài đặt trình duyệt/điện thoại để cho phép thông báo của trang này.");
+    if (perm !== "granted") throw new Error(_t("Bạn chưa cho phép thông báo. Vào cài đặt trình duyệt/điện thoại để cho phép thông báo của trang này."));
     const reg = await swReg() || await navigator.serviceWorker.ready;
     await navigator.serviceWorker.ready;
-    const kr = await fetch("/api/push"); const kd = await kr.json(); if (!kd.publicKey) throw new Error(kd.error || "Server chưa cấu hình khóa thông báo");
+    const kr = await fetch("/api/push"); const kd = await kr.json(); if (!kd.publicKey) throw new Error(kd.error || _t("Server chưa cấu hình khóa thông báo"));
     const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64ToBytes(kd.publicKey)});
     const r = await fetch("/api/push", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({subscription:sub.toJSON()})});
-    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Không lưu được thiết bị");
-    PUSH.on = true; toast("Đã bật nhắc học trên thiết bị này");
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || _t("Không lưu được thiết bị"));
+    PUSH.on = true; toast(_t("Đã bật nhắc học trên thiết bị này"));
   } catch (e) { toast(e.message); }
   render();
 }
 async function disablePush() {
   try { const reg = await navigator.serviceWorker.getRegistration(); const sub = await reg?.pushManager.getSubscription();
     if (sub) { await fetch("/api/push", {method:"DELETE", headers:{"Content-Type":"application/json"}, body:JSON.stringify({endpoint:sub.endpoint})}); await sub.unsubscribe(); } } catch (e) {}
-  PUSH.on = false; toast("Đã tắt nhắc học trên thiết bị này"); render();
+  PUSH.on = false; toast(_t("Đã tắt nhắc học trên thiết bị này")); render();
 }
 async function testPush(btn) { btn.disabled = true; const r = await fetch("/api/push", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({test:true})}); const d = await r.json().catch(() => ({}));
-  toast(r.ok ? "Đã gửi thông báo thử, kiểm tra thanh thông báo" : (d.error || "Gửi thử thất bại")); btn.disabled = false; }
+  toast(r.ok ? _t("Đã gửi thông báo thử, kiểm tra thanh thông báo") : (d.error || _t("Gửi thử thất bại"))); btn.disabled = false; }
 
 /* =====================================================================
    HÀNH ĐỘNG (data-a)
    ===================================================================== */
 const ACT = {
+  setLang: async v => { if (v === LANG) return; try { localStorage.setItem("ep_lang", v); } catch (e) {} S.profile.lang = v; save(); if (DIRTY || saveTimer) await pushState().catch(() => {}); location.reload(); },
   setPage: v => { UI.sp = v || ""; render(); scrollTo(0, 0); },
   fbKind: v => { UI.fbKind = v; render(); }, fbRate: v => { UI.fbRate = Number(v); render(); },
-  fbSend: async () => { const msg = $("#fbMsg")?.value.trim(); if (!msg && !UI.fbRate) return toast("Hãy viết vài dòng hoặc chọn số sao nhé");
+  fbSend: async () => { const msg = $("#fbMsg")?.value.trim(); if (!msg && !UI.fbRate) return toast(_t("Hãy viết vài dòng hoặc chọn số sao nhé"));
     UI.fbBusy = true; render();
     try { const r = await timeoutFetch("/api/feedback", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({kind:UI.fbKind || "idea", rating:UI.fbRate || null, message:msg, level:S.level, ua:navigator.userAgent})}, 15000);
-      const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || "Không gửi được");
-      UI.fbRate = 0; UI.fbBusy = false; UI.sp = ""; render(); toast("Cảm ơn bạn đã góp ý 💚"); }
+      const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || _t("Không gửi được"));
+      UI.fbRate = 0; UI.fbBusy = false; UI.sp = ""; render(); toast(_t("Cảm ơn bạn đã góp ý 💚")); }
     catch (e) { UI.fbBusy = false; render(); toast(e.message); } },
   logout: () => logout(),
   pushAsk: async (v, btn) => { S.profile.pushAsked = true; save(); if (v === "1") await enablePush(btn); else render(); },
@@ -1563,25 +1460,25 @@ const ACT = {
   chRoom: v => { CH.room = v; CH.msgs = []; CH.last = 0; render(); chPoll(true); },
   chSend: () => chSend(),
   chRec: () => chRecStart(), chRecStop: () => chRecStop(false), chRecCancel: () => chRecStop(true),
-  chMatch: async () => { CH.lastMatch = Date.now(); try { const d = await chApi({action:"match", level:S.level || "A1"}); if (d.room) { toast("Đã ghép! Bạn ấy có thể chưa online, cứ chào trước nhé 👋"); chOpen(d.room.id); } else { CH.waiting = true; render(); } } catch (e) { toast(e.message); } },
+  chMatch: async () => { CH.lastMatch = Date.now(); try { const d = await chApi({action:"match", level:S.level || "A1"}); if (d.room) { toast(_t("Đã ghép! Bạn ấy có thể chưa online, cứ chào trước nhé 👋")); chOpen(d.room.id); } else { CH.waiting = true; render(); } } catch (e) { toast(e.message); } },
   chCancel: async () => { try { await chApi({action:"cancel"}); } catch (e) {} CH.waiting = false; render(); },
   chOpen: v => chOpen(v),
   chBlocks: async () => { CH.showBlocks = !CH.showBlocks; if (CH.showBlocks) { try { const r = await timeoutFetch("/api/chat?blocks=1", {}, 10000); CH.blocks = (await r.json()).blocks || []; } catch (e) { CH.blocks = []; } } render(); },
-  chUnblock: async v => { const [key, reopen] = String(v).split("|"); try { const d = await chApi({action:"unblock", key, reopen:reopen === "1"}); CH.blocks = (CH.blocks || []).filter(b => b.key !== key); toast("Đã bỏ chặn"); if (d.room) return chOpen(d.room); render(); chPoll(true); } catch (e) { toast(e.message); } },
+  chUnblock: async v => { const [key, reopen] = String(v).split("|"); try { const d = await chApi({action:"unblock", key, reopen:reopen === "1"}); CH.blocks = (CH.blocks || []).filter(b => b.key !== key); toast(_t("Đã bỏ chặn")); if (d.room) return chOpen(d.room); render(); chPoll(true); } catch (e) { toast(e.message); } },
   chHMenu: () => { CH.hmenu = !CH.hmenu; render(); },
-  chMute: async v => { try { await chApi({action:"mute", room:CH.pair.id, on:v === "1"}); if (CH.pairInfo) CH.pairInfo.muted = v === "1"; CH.hmenu = false; toast(v === "1" ? "🔕 Đã tắt thông báo của cuộc trò chuyện này. Tin nhắn vẫn hiện trong hộp thư." : "🔔 Đã bật lại thông báo"); render(); } catch (e) { toast(e.message); } },
-  chBlockRoom: async (v, btn) => { if (!btn.dataset.c) { btn.dataset.c = 1; btn.textContent = "Bấm lần nữa để chặn"; btn.classList.add("danger"); return; }
-    try { await chApi({action:"blockRoom", room:v}); toast("Đã chặn. Bạn sẽ không bao giờ thấy tin, bị ghép hay nhận thông báo từ người này nữa."); } catch (e) { return toast(e.message); }
+  chMute: async v => { try { await chApi({action:"mute", room:CH.pair.id, on:v === "1"}); if (CH.pairInfo) CH.pairInfo.muted = v === "1"; CH.hmenu = false; toast(v === "1" ? _t("🔕 Đã tắt thông báo của cuộc trò chuyện này. Tin nhắn vẫn hiện trong hộp thư.") : _t("🔔 Đã bật lại thông báo")); render(); } catch (e) { toast(e.message); } },
+  chBlockRoom: async (v, btn) => { if (!btn.dataset.c) { btn.dataset.c = 1; btn.textContent = _t("Bấm lần nữa để chặn"); btn.classList.add("danger"); return; }
+    try { await chApi({action:"blockRoom", room:v}); toast(_t("Đã chặn. Bạn sẽ không bao giờ thấy tin, bị ghép hay nhận thông báo từ người này nữa.")); } catch (e) { return toast(e.message); }
     CH.inbox = (CH.inbox || []).filter(r => r.id !== v); CH.pair = null; CH.msgs = []; CH.last = 0; render(); chPoll(true); },
   chBack: () => { CH.pair = null; CH.msgs = []; CH.last = 0; render(); chPoll(true); },
-  chKeep: async v => { try { const d = await chApi({action:"keep", room:CH.pair.id, on:v === "1"}); toast(d.saved ? "⭐ Hai bạn đã là bạn chat!" : v === "1" ? "Đã bấm giữ. Chờ bạn ấy đồng ý nhé." : "Đã bỏ giữ"); chPoll(false); if (CH.pairInfo) { CH.pairInfo.mineKeep = v === "1"; CH.pairInfo.saved = !!d.saved; } render(); } catch (e) { toast(e.message); } },
-  chLeave: async (v, btn) => { if (!btn.dataset.c) { btn.dataset.c = 1; btn.textContent = "Bấm lần nữa để xác nhận"; return; }
+  chKeep: async v => { try { const d = await chApi({action:"keep", room:CH.pair.id, on:v === "1"}); toast(d.saved ? _t("⭐ Hai bạn đã là bạn chat!") : v === "1" ? _t("Đã bấm giữ. Chờ bạn ấy đồng ý nhé.") : _t("Đã bỏ giữ")); chPoll(false); if (CH.pairInfo) { CH.pairInfo.mineKeep = v === "1"; CH.pairInfo.saved = !!d.saved; } render(); } catch (e) { toast(e.message); } },
+  chLeave: async (v, btn) => { if (!btn.dataset.c) { btn.dataset.c = 1; btn.textContent = _t("Bấm lần nữa để xác nhận"); return; }
     try { await chApi({action:"leave", room:CH.pair?.id}); } catch (e) {} CH.pair = null; CH.msgs = []; CH.last = 0; render(); chPoll(true); },
   chRecall: async v => { try { await chApi({action:"recall", id:Number(v)}); const m = CH.msgs.find(x => x.id === Number(v)); if (m) { m.recalled = true; m.text = ""; m.audio = null; } CH.menu = null; render(); } catch (e) { toast(e.message); } },
   chMenu: v => { CH.menu = v ? Number(v) : null; render(); },
-  chReport: async v => { const [id, reason] = String(v).split("|"); try { await chApi({action:"report", id:Number(id), reason}); CH.menu = null; toast("Đã gửi báo cáo. Cảm ơn bạn!"); chPoll(true); } catch (e) { toast(e.message); } },
-  chBlock: async v => { try { await chApi({action:"block", id:Number(v)}); CH.menu = null; CH.msgs = CH.msgs.filter(m => m.id !== Number(v)); toast("Đã chặn. Bạn sẽ không thấy tin nhắn của người này nữa."); if (CH.tab === "pair") { CH.pair = null; CH.msgs = []; CH.last = 0; } chPoll(true); } catch (e) { toast(e.message); } },
-  festFx: v => { S.profile.festFx = v === "true"; save(); applyFestive(); render(); toast(v === "true" ? "Đã bật hiệu ứng rơi" : "Đã tắt hiệu ứng rơi"); },
+  chReport: async v => { const [id, reason] = String(v).split("|"); try { await chApi({action:"report", id:Number(id), reason}); CH.menu = null; toast(_t("Đã gửi báo cáo. Cảm ơn bạn!")); chPoll(true); } catch (e) { toast(e.message); } },
+  chBlock: async v => { try { await chApi({action:"block", id:Number(v)}); CH.menu = null; CH.msgs = CH.msgs.filter(m => m.id !== Number(v)); toast(_t("Đã chặn. Bạn sẽ không thấy tin nhắn của người này nữa.")); if (CH.tab === "pair") { CH.pair = null; CH.msgs = []; CH.last = 0; } chPoll(true); } catch (e) { toast(e.message); } },
+  festFx: v => { S.profile.festFx = v === "true"; save(); applyFestive(); render(); toast(v === "true" ? _t("Đã bật hiệu ứng rơi") : _t("Đã tắt hiệu ứng rơi")); },
   go: v => { if (v === "settings") UI.sp = ""; view = v; Q = null; FC = null; closePop(); UI.menu = false; render(); scrollTo(0, 0); if (v === "chat") chPoll(true); },
   speak: v => say(v),
   slow: v => say(v, Math.max(0.45, ttsRate() - 0.25)),
@@ -1589,7 +1486,7 @@ const ACT = {
     startRec(v, r => { l.pron[v] = pronScore(target, r.text, r.alts); l.scores.speaking = Math.round(avg(Object.values(l.pron).map(x => x.score))); save(); }); },
   qMic: () => startRec("q", r => answer(r)),
   rpMic: () => startRec("rp", r => rpSend(r.text)),
-  micTest: () => startRec("test", r => toast(`Máy nghe được: "${r.text}"`)),
+  micTest: () => startRec("test", r => toast(`${_t("Máy nghe được: \"")}${r.text}"`)),
   autospeak: () => { pref("ep_autospeak", autoSpeak() ? "0" : "1"); render(); },
   hidetext: () => { pref("ep_hidetext", hideText() ? "0" : "1"); render(); },
   reveal: v => { const l = L(); l.reveal = [...(l.reveal || []), Number(v)]; render(); },
@@ -1598,7 +1495,7 @@ const ACT = {
   pick: v => answer(v), submitQ: () => answer($("#qin")?.value || ""), nextQ: () => nextQ(),
   quitQuiz: () => { const m = Q?.mode; Q = null; view = m === "review" ? "review" : "home"; render(); },
   startPlacement, skipPlacement: () => { S.placement = {level:"A0", correct:0, total:0, date:today()}; save(); view = "placeResult"; render(); },
-  confirmPath: () => { S.level = S.placement.level; buildPath(); view = "home"; render(); toast("Đã tạo lộ trình. Bắt đầu buổi 1 thôi!"); prefetchNext(); },
+  confirmPath: () => { S.level = S.placement.level; buildPath(); view = "home"; render(); toast(_t("Đã tạo lộ trình. Bắt đầu buổi 1 thôi!")); prefetchNext(); },
   svGoal: v => { SV.goal = v; SV.fields = []; SV.subs = []; render(); },
   svField: v => { const f = FIELDS[SV.goal][v][0];
     if (SV.fields.includes(f)) { SV.fields = SV.fields.filter(x => x !== f); SV.subs = SV.subs.filter(x => !x.startsWith(f + ": ")); } else SV.fields = [...SV.fields, f]; render(); },
@@ -1606,7 +1503,7 @@ const ACT = {
   svSubAll: () => { SV.subs = subGroups(SV).flatMap(f => subsOf(SV.goal, f).map(x => f + ": " + x)); render(); },
   svMin: v => { SV.minutes = Number(v); render(); },
   svWeak: v => { SV.weak = SV.weak.includes(v) ? SV.weak.filter(x => x !== v) : [...SV.weak, v]; render(); },
-  svSubmit: () => { S.profile = {...SV}; save(); SV = null; view = S.level ? "settings" : "home"; render(); if (S.level) toast("Đã lưu mục tiêu. Các buổi học tới sẽ theo lĩnh vực mới."); },
+  svSubmit: () => { S.profile = {...SV}; save(); SV = null; view = S.level ? "settings" : "home"; render(); if (S.level) toast(_t("Đã lưu mục tiêu. Các buổi học tới sẽ theo lĩnh vực mới.")); },
   editGoal: () => { SV = newSv(S.profile); view = "survey"; render(); },
   startLesson, startUnit, exitLesson: () => { save(); Q = null; view = "home"; render(); },
   step: v => setStep(Number(v)),
@@ -1614,7 +1511,7 @@ const ACT = {
   vprev: () => { const l = L(); l.vi = Math.max(0, l.vi - 1); render(); },
   grade3, grade4, rpSend, rpHint, rpEnd, rpAgain: () => { L().rpEval = null; render(); },
   finishLesson: v => finishLesson(v),
-  nextCourse: () => { S.courses.push({...S.path, end:today()}); checkBadges(); S.level = S.path.to; S.difficulty = 0; buildPath(); view = "home"; render(); toast("Bắt đầu khóa mới!"); },
+  nextCourse: () => { S.courses.push({...S.path, end:today()}); checkBadges(); S.level = S.path.to; S.difficulty = 0; buildPath(); view = "home"; render(); toast(_t("Bắt đầu khóa mới!")); },
   rtab: v => { UI.rtab = v; render(); },
   startFlip: v => { const set = v === "hard" ? hardCards() : v === "all" ? shuffle(cardList()).slice(0, 20) : dueCards();
     FC = {keys:set.slice(0, 30).map(c => c.w.w.toLowerCase()), i:0, flip:false}; view = "flip"; render(); },
@@ -1622,43 +1519,43 @@ const ACT = {
   rate: v => { review(FC.keys[FC.i], Number(v)); FC.i++; FC.flip = false; render(); },
   startRQuiz: v => { const [set, mode] = v.split(":"), cards = (set === "hard" ? hardCards() : dueCards()).slice(0, 15), pool = cardList().map(c => c.w);
     Q = makeQuiz("review", shuffle(cards).map(c => mode === "type" ? spellQ(c.w)
-      : mode === "listen" ? {type:"type", q:"Nghe và gõ lại từ", ans:c.w.w, speak:c.w.w, autoplay:true, skill:"listening", word:c.w.w, hint:"nghĩa là " + c.w.vi}
+      : mode === "listen" ? {type:"type", q:_t("Nghe và gõ lại từ"), ans:c.w.w, speak:c.w.w, autoplay:true, skill:"listening", word:c.w.w, hint:_t("nghĩa là ") + c.w.vi}
       : mode === "speak" ? {type:"speak", q:c.w.ex || c.w.w, ans:c.w.ex || c.w.w, skill:"speaking", word:c.w.w}
       : meaningQ(c.w, pool)), true); view = "quiz"; render(); },
   cdel: v => { delete S.cards[v]; save(); render(); },
   hx: v => { UI.hx = UI.hx === Number(v) ? null : Number(v); render(); },
   addLooked: (v, btn) => { const d = S.dict[v] || (() => { const kw = knownWord(v); return kw && {headword:kw.w, ipa:kw.ipa, pos:kw.pos, meaning:kw.vi, examples:[{en:kw.ex, vi:kw.ex_vi}]}; })(); if (!d) return;
-    addCard({w:d.headword, ipa:d.ipa || "", pos:d.pos || "", vi:d.meaning, ex:d.examples?.[0]?.en || "", ex_vi:d.examples?.[0]?.vi || ""}, "lookup"); save(); btn.textContent = "Đã thêm vào flashcard"; btn.disabled = true; btn.classList.remove("primary"); renderHeader(); },
+    addCard({w:d.headword, ipa:d.ipa || "", pos:d.pos || "", vi:d.meaning, ex:d.examples?.[0]?.en || "", ex_vi:d.examples?.[0]?.vi || ""}, "lookup"); save(); btn.textContent = _t("Đã thêm vào flashcard"); btn.disabled = true; btn.classList.remove("primary"); renderHeader(); },
   addVi: (v, btn) => { let d; try { d = JSON.parse(POP?.dataset.vi || "null"); } catch (e) {} if (!d?.en) return;
     addCard({w:d.en, ipa:d.ipa || "", pos:d.pos || "", vi:d.word_vi, ex:d.examples?.[0]?.en || "", ex_vi:d.examples?.[0]?.vi || ""}, "lookup"); save();
-    btn.textContent = "Đã thêm vào flashcard"; btn.disabled = true; btn.classList.remove("primary"); renderHeader(); },
+    btn.textContent = _t("Đã thêm vào flashcard"); btn.disabled = true; btn.classList.remove("primary"); renderHeader(); },
   skipWait: () => cancelWait?.(),
   pushOn: (v, btn) => enablePush(btn), pushOff: disablePush, pushTest: (v, btn) => testPush(btn),
   remEvery: v => { S.profile.remindEvery = Number(v); save(); render(); },
   probeAI: () => probeAI(),
-  remTone: v => { S.profile.remindTone = v; save(); render(); toast(v === "soft" ? "Lời nhắc sẽ nhẹ nhàng" : "Lời nhắc sẽ lầy lội 😈"); },
-  remToggle: () => { S.profile.remindOn = !remindCfg().on; save(); render(); toast(S.profile.remindOn ? "Đã bật nhắc học" : "Đã tắt nhắc học"); },
+  remTone: v => { S.profile.remindTone = v; save(); render(); toast(v === "soft" ? _t("Lời nhắc sẽ nhẹ nhàng") : _t("Lời nhắc sẽ lầy lội 😈")); },
+  remToggle: () => { S.profile.remindOn = !remindCfg().on; save(); render(); toast(S.profile.remindOn ? _t("Đã bật nhắc học") : _t("Đã tắt nhắc học")); },
   closeCelebrate: () => { UI.celebrate = []; render(); },
   tr: v => doTranslate(v),
   popTr: async (v, btn) => { const sl = btn.dataset.sl || "vi", tl = sl === "vi" ? "en" : "vi", out = POP?.querySelector(".pop-tr"); if (!out) return;
-    btn.disabled = true; out.innerHTML = `<span class="spin"></span> Đang dịch...`;
+    btn.disabled = true; out.innerHTML = `${_t("<span class=\"spin\"></span> Đang dịch...")}`;
     try { const r = await timeoutFetch(`/api/translate?sl=${sl}&tl=${tl}&q=${encodeURIComponent(v)}`, {}, 15000); const d = await r.json(); if (!r.ok) throw new Error(d.error);
-      const ipa = await sentIPA(sl === "en" ? v : d.text); out.innerHTML = `<div class="tr-out">${esc(d.text)}${ipa ? `<span class="ipa tr-ipa">${esc(ipa)}</span>` : ""}<em>${esc(d.engine)}</em></div>`; } catch (e) { out.innerHTML = `<p class="muted small">Chưa dịch được: ${esc(e.message || "lỗi")}</p>`; }
+      const ipa = await sentIPA(sl === "en" ? v : d.text); out.innerHTML = `<div class="tr-out">${esc(d.text)}${ipa ? `<span class="ipa tr-ipa">${esc(ipa)}</span>` : ""}<em>${esc(d.engine)}</em></div>`; } catch (e) { out.innerHTML = `${_t("<p class=\"muted small\">Chưa dịch được: ")}${esc(e.message || _t("lỗi"))}</p>`; }
     btn.disabled = false; },
   ics: downloadIcs,
   notify: async () => { try { await Notification.requestPermission(); } catch (e) {} render(); },
-  checkAI: async (v, btn) => { btn.innerHTML = `<span class="spin"></span>`; await checkAI(); render(); toast(AI.on ? "Key và model hợp lệ" : "Gemini chưa dùng được: " + AI.msg); },
+  checkAI: async (v, btn) => { btn.innerHTML = `<span class="spin"></span>`; await checkAI(); render(); toast(AI.on ? _t("Key và model hợp lệ") : _t("Gemini chưa dùng được: ") + AI.msg); },
   fs: v => { pref("ep_fs", v); applyPrefs(); render(); },
   theme: v => { pref("ep_theme", v); applyPrefs(); render(); },
   menu: () => { UI.menu = !UI.menu; renderHeader(); },
-  reset: (v, btn) => { if (!btn.dataset.c) { btn.dataset.c = 1; btn.textContent = "Bấm lần nữa để xác nhận xóa"; return; }
-    S = blank(); Q = null; FC = null; SV = null; pushState(); view = "home"; render(); toast("Đã xóa tiến độ"); },
+  reset: (v, btn) => { if (!btn.dataset.c) { btn.dataset.c = 1; btn.textContent = _t("Bấm lần nữa để xác nhận xóa"); return; }
+    S = blank(); Q = null; FC = null; SV = null; pushState(); view = "home"; render(); toast(_t("Đã xóa tiến độ")); },
 };
 const CHANGE = {
-  setBday: v => { S.profile.birthday = v || ""; save(); applyFestive(); render(); toast(v ? "Đã lưu ngày sinh 🎂" : "Đã xoá ngày sinh"); },
+  setBday: v => { S.profile.birthday = v || ""; save(); applyFestive(); render(); toast(v ? _t("Đã lưu ngày sinh 🎂") : _t("Đã xoá ngày sinh")); },
   setFest: v => { S.profile.festive = v; save(); applyFestive(); render(); },
-  setRemind: v => { S.profile.remind = v; if (toMin(S.profile.remindEnd || "23:00") < toMin(v)) S.profile.remindEnd = v; save(); render(); toast("Đã lưu giờ nhắc"); },
-  setRemindEnd: v => { S.profile.remindEnd = toMin(v) < toMin(remindTime()) ? remindTime() : v; save(); render(); toast("Đã lưu giờ nhắc"); }, setVoice: v => { pref("ep_voice", v); say("Hello! Nice to meet you."); } };
+  setRemind: v => { S.profile.remind = v; if (toMin(S.profile.remindEnd || "23:00") < toMin(v)) S.profile.remindEnd = v; save(); render(); toast(_t("Đã lưu giờ nhắc")); },
+  setRemindEnd: v => { S.profile.remindEnd = toMin(v) < toMin(remindTime()) ? remindTime() : v; save(); render(); toast(_t("Đã lưu giờ nhắc")); }, setVoice: v => { pref("ep_voice", v); say("Hello! Nice to meet you."); } };
 
 document.addEventListener("click", e => {
   const w = e.target.closest(".w");
@@ -1706,7 +1603,7 @@ function ageYears() { const b = S.profile?.birthday || ""; if (!/^\d{4}-\d\d-\d\
 const chRoomId = () => CH.tab === "pair" ? CH.pair?.id : (CH.room || "lv-" + (CH_LEVELS.includes(S.level) ? S.level : "A1"));
 async function chApi(body) {
   const r = await timeoutFetch("/api/chat", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)}, 30000);
-  const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || "lỗi " + r.status); return d;
+  const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || _t("lỗi ") + r.status); return d;
 }
 async function chPoll(reset) {
   if (view !== "chat" || document.visibilityState !== "visible" || !S.profile?.chatOK) return chBadge();
@@ -1715,7 +1612,7 @@ async function chPoll(reset) {
     if (CH.tab === "pair" && !CH.pair) {           // danh sách cuộc trò chuyện 1-1
       const r = await timeoutFetch(`/api/chat?inbox=1&lv=${lv}`, {}, 10000), d = await r.json(); if (!r.ok) throw new Error(d.error);
       // Đang chờ: cứ 15 giây thử ghép lại
-      if (d.waiting && Date.now() - (CH.lastMatch || 0) > 15000) { CH.lastMatch = Date.now(); try { const m = await chApi({action:"match", level:S.level || "A1"}); if (m.room) { toast("Đã ghép với một bạn luyện tập 🎉"); return chOpen(m.room.id); } } catch (e) {} }
+      if (d.waiting && Date.now() - (CH.lastMatch || 0) > 15000) { CH.lastMatch = Date.now(); try { const m = await chApi({action:"match", level:S.level || "A1"}); if (m.room) { toast(_t("Đã ghép với một bạn luyện tập 🎉")); return chOpen(m.room.id); } } catch (e) {} }
       CH.inbox = d.rooms; CH.waiting = d.waiting; CH.unread = d.unread; CH.err = ""; return render();
     }
     const room = chRoomId(); if (!room) return render();
@@ -1749,7 +1646,7 @@ async function chSend() {
 }
 // Ghi âm: MediaRecorder (Chrome/Android: webm, iPhone: mp4), tối đa 60 giây
 async function chRecStart() {
-  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) return toast("Trình duyệt này chưa hỗ trợ ghi âm");
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) return toast(_t("Trình duyệt này chưa hỗ trợ ghi âm"));
   try {
     const stream = await navigator.mediaDevices.getUserMedia({audio:true});
     const type = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"].find(t => MediaRecorder.isTypeSupported?.(t)) || "";
@@ -1760,7 +1657,7 @@ async function chRecStart() {
       stream.getTracks().forEach(t => t.stop()); clearInterval(CH.timer);
       const rec = CH.rec; CH.rec = null; render();
       if (rec.cancel || !chunks.length) return;
-      const sec = (Date.now() - rec.start) / 1000; if (sec < 1) return toast("Đoạn ghi âm quá ngắn");
+      const sec = (Date.now() - rec.start) / 1000; if (sec < 1) return toast(_t("Đoạn ghi âm quá ngắn"));
       const blob = new Blob(chunks, {type:mr.mimeType || type || "audio/webm"});
       const b64 = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.readAsDataURL(blob); });
       CH.sending = true; render();
@@ -1769,72 +1666,55 @@ async function chRecStart() {
     };
     mr.start(); CH.timer = setInterval(() => { const el = $("#recT"); const s = Math.floor((Date.now() - CH.rec.start) / 1000); if (el) el.textContent = `0:${String(s).padStart(2, "0")}`; if (s >= 60) mr.stop(); }, 250);
     render();
-  } catch (e) { toast("Chưa có quyền dùng micro"); }
+  } catch (e) { toast(_t("Chưa có quyền dùng micro")); }
 }
 function chRecStop(cancel) { if (!CH.rec) return; CH.rec.cancel = !!cancel; CH.rec.mr.stop(); }
 
 function vChat() {
   const age = ageYears();
-  if (age !== null && age < 16) return `<div class="wrap narrow"><section class="panel center">${mascot("happy", 90)}<h2>Cộng đồng dành cho người từ 16 tuổi</h2>
-    <p class="muted">Phần trò chuyện với người lạ chỉ mở cho người từ 16 tuổi trở lên. Bạn vẫn có thể luyện nói với AI trong bước Role-play của mỗi bài học nhé!</p></section></div>`;
-  if (!S.profile.chatOK) return `<div class="wrap narrow"><section class="panel">${stk("chat", 64, "corner", 8)}<p class="eyebrow">Cộng đồng</p><h2>Trò chuyện ẩn danh để cùng luyện tiếng Anh</h2>
-    <p>Gặp những người cũng đang học, cùng luyện nói, hỏi đáp và động viên nhau. Không ai biết bạn là ai: mỗi ngày bạn có một biệt danh ngẫu nhiên.</p>
-    <h3>Nội quy</h3><ul class="rules">
-     <li>🙂 Tôn trọng và lịch sự. Không xúc phạm, quấy rối, phân biệt đối xử.</li>
-     <li>🔒 Không chia sẻ thông tin cá nhân: số điện thoại, địa chỉ, mạng xã hội, đường link (app sẽ chặn).</li>
-     <li>🚫 Không nội dung người lớn, bạo lực, lừa đảo, quảng cáo.</li>
-     <li>🗣️ Ưu tiên nói tiếng Anh; dùng tiếng Việt khi cần hỏi bài.</li>
-     <li>🚩 Gặp người vi phạm: bấm ⋯ ở tin nhắn để <b>Báo cáo</b> hoặc <b>Chặn</b>. Người bị nhiều báo cáo sẽ bị khoá chat.</li>
-     <li>🎤 Tin nhắn giọng nói được lưu tối đa 30 ngày rồi tự xoá.</li></ul>
-    <p class="muted small">Chỉ dành cho người từ 16 tuổi trở lên.</p>
-    <button class="primary big" data-a="chAgree">Tôi đồng ý, vào cộng đồng</button></section></div>`;
+  if (age !== null && age < 16) return `<div class="wrap narrow"><section class="panel center">${mascot("happy", 90)}${_t("<h2>Cộng đồng dành cho người từ 16 tuổi</h2>\n    <p class=\"muted\">Phần trò chuyện với người lạ chỉ mở cho người từ 16 tuổi trở lên. Bạn vẫn có thể luyện nói với AI trong bước Role-play của mỗi bài học nhé!</p></section></div>")}`;
+  if (!S.profile.chatOK) return `<div class="wrap narrow"><section class="panel">${stk("chat", 64, "corner", 8)}${_t("<p class=\"eyebrow\">Cộng đồng</p><h2>Trò chuyện ẩn danh để cùng luyện tiếng Anh</h2>\n    <p>Gặp những người cũng đang học, cùng luyện nói, hỏi đáp và động viên nhau. Không ai biết bạn là ai: mỗi ngày bạn có một biệt danh ngẫu nhiên.</p>\n    <h3>Nội quy</h3><ul class=\"rules\">\n     <li>🙂 Tôn trọng và lịch sự. Không xúc phạm, quấy rối, phân biệt đối xử.</li>\n     <li>🔒 Không chia sẻ thông tin cá nhân: số điện thoại, địa chỉ, mạng xã hội, đường link (app sẽ chặn).</li>\n     <li>🚫 Không nội dung người lớn, bạo lực, lừa đảo, quảng cáo.</li>\n     <li>🗣️ Ưu tiên nói tiếng Anh; dùng tiếng Việt khi cần hỏi bài.</li>\n     <li>🚩 Gặp người vi phạm: bấm ⋯ ở tin nhắn để <b>Báo cáo</b> hoặc <b>Chặn</b>. Người bị nhiều báo cáo sẽ bị khoá chat.</li>\n     <li>🎤 Tin nhắn giọng nói được lưu tối đa 30 ngày rồi tự xoá.</li></ul>\n    <p class=\"muted small\">Chỉ dành cho người từ 16 tuổi trở lên.</p>\n    <button class=\"primary big\" data-a=\"chAgree\">Tôi đồng ý, vào cộng đồng</button></section></div>")}`;
   const room = chRoomId(), lv = (CH.room || "lv-" + S.level).replace("lv-", "");
-  const tabs = `<div class="row chtabs"><button class="seg ${CH.tab === "room" ? "sel" : ""}" data-a="chTab" data-v="room">💬 Phòng chung</button><button class="seg ${CH.tab === "pair" ? "sel" : ""}" data-a="chTab" data-v="pair">🤝 Ghép đôi 1-1</button>
-    ${CH.me ? `<span class="muted small">Hôm nay bạn là <b>${CH.me.icon} ${esc(CH.me.name)}</b></span>` : ""}</div>`;
+  const tabs = `<div class="row chtabs"><button class="seg ${CH.tab === "room" ? "sel" : ""}${_t("\" data-a=\"chTab\" data-v=\"room\">💬 Phòng chung</button><button class=\"seg ")}${CH.tab === "pair" ? "sel" : ""}${_t("\" data-a=\"chTab\" data-v=\"pair\">🤝 Ghép đôi 1-1</button>\n    ")}${CH.me ? `${_t("<span class=\"muted small\">Hôm nay bạn là <b>")}${CH.me.icon} ${esc(whoName(CH.me))}</b></span>` : ""}</div>`;
   let head = "";
-  if (CH.tab === "room") head = `<div class="row">${[...CH_LEVELS, "ALL"].map(k => `<button class="mini seg ${(CH.room || "lv-" + (CH_LEVELS.includes(S.level) ? S.level : "A1")) === "lv-" + k ? "sel" : ""}" data-a="chRoom" data-v="lv-${k}">${k === "ALL" ? "Mọi trình độ" : k}</button>`).join("")}</div>`;
+  if (CH.tab === "room") head = `<div class="row">${[...CH_LEVELS, "ALL"].map(k => `<button class="mini seg ${(CH.room || "lv-" + (CH_LEVELS.includes(S.level) ? S.level : "A1")) === "lv-" + k ? "sel" : ""}" data-a="chRoom" data-v="lv-${k}">${k === "ALL" ? _t("Mọi trình độ") : k}</button>`).join("")}</div>`;
   else if (!CH.pair) {
     const list = (CH.inbox || []).map(r => `<div class="inbox-item"><button class="inbox-row" data-a="chOpen" data-v="${r.id}"><span class="cav" style="--h:${r.partner.hue}">${r.partner.icon}</span>
-      <span class="grow"><b>${esc(r.partner.name)}</b>${r.saved ? ` <span class="tag good">⭐ Bạn chat</span>` : r.theirKeep ? ` <span class="tag">muốn giữ cuộc trò chuyện</span>` : ""}<br><span class="muted small">${esc(r.preview || "Chưa có tin nhắn, hãy chào bạn ấy nhé!")}</span></span>
-      ${r.muted ? `<span title="Đã tắt thông báo">🔕</span>` : ""}${r.unread ? `<span class="badge">${r.unread}</span>` : ""}</button>
-      <button class="mini ghost inbox-x" data-a="chBlockRoom" data-v="${r.id}" title="Chặn người này, không bao giờ thấy tin của họ nữa">⛔</button></div>`).join("");
-    return `<div class="wrap narrow">${tabs}<section class="panel">
-      <div class="row between nowrap"><div><h2>Ghép đôi 1-1</h2></div>${mascot(CH.waiting ? "think" : "cheer", 70, CH.waiting ? "bob" : "")}</div>
-      ${CH.waiting ? `<div class="row"><span class="spin"></span><span>Đang tìm bạn phù hợp...</span><button class="mini" data-a="chCancel">Huỷ tìm</button></div>`
-        : `<button class="primary big" data-a="chMatch">🔍 Tìm bạn luyện tập mới</button>`}
-      <h3>Cuộc trò chuyện của bạn</h3>
-      ${list ? `<div class="inbox">${list}</div>` : `<p class="muted">Chưa có cuộc trò chuyện nào.</p>`}
-      <p class="small"><a href="#" data-a="chBlocks">${CH.showBlocks ? "Ẩn người đã chặn" : "Người đã chặn"}</a></p>
-      ${CH.showBlocks ? `<div class="inbox">${(CH.blocks || []).length ? CH.blocks.map(b => `<div class="inbox-item blk"><span class="cav" style="--h:${b.who.hue}">${b.who.icon}</span><span class="grow"><b>${esc(b.who.name)}</b><br><span class="muted small">Chặn lúc ${new Date(b.at).toLocaleString("vi-VN")}</span></span>
-        <button class="mini" data-a="chUnblock" data-v="${b.key}|0">Bỏ chặn</button>${b.room ? `<button class="mini" data-a="chUnblock" data-v="${b.key}|1">Bỏ chặn & mở lại chat</button>` : ""}</div>`).join("") : `<p class="muted small">Bạn chưa chặn ai.</p>`}</div>` : ""}</section></div>`;
+      <span class="grow"><b>${esc(whoName(r.partner))}</b>${r.saved ? `${_t(" <span class=\"tag good\">⭐ Bạn chat</span>")}` : r.theirKeep ? `${_t(" <span class=\"tag\">muốn giữ cuộc trò chuyện</span>")}` : ""}<br><span class="muted small">${esc(prevTr(r.preview) || _t("Chưa có tin nhắn, hãy chào bạn ấy nhé!"))}</span></span>
+      ${r.muted ? `${_t("<span title=\"Đã tắt thông báo\">🔕</span>")}` : ""}${r.unread ? `<span class="badge">${r.unread}</span>` : ""}</button>
+      <button class="mini ghost inbox-x" data-a="chBlockRoom" data-v="${r.id}${_t("\" title=\"Chặn người này, không bao giờ thấy tin của họ nữa\">⛔</button></div>")}`).join("");
+    return `<div class="wrap narrow">${tabs}${_t("<section class=\"panel\">\n      <div class=\"row between nowrap\"><div><h2>Ghép đôi 1-1</h2></div>")}${mascot(CH.waiting ? "think" : "cheer", 70, CH.waiting ? "bob" : "")}</div>
+      ${CH.waiting ? `${_t("<div class=\"row\"><span class=\"spin\"></span><span>Đang tìm bạn phù hợp...</span><button class=\"mini\" data-a=\"chCancel\">Huỷ tìm</button></div>")}`
+        : `${_t("<button class=\"primary big\" data-a=\"chMatch\">🔍 Tìm bạn luyện tập mới</button>")}`}${_t("\n      <h3>Cuộc trò chuyện của bạn</h3>\n      ")}${list ? `<div class="inbox">${list}</div>` : `${_t("<p class=\"muted\">Chưa có cuộc trò chuyện nào.</p>")}`}
+      <p class="small"><a href="#" data-a="chBlocks">${CH.showBlocks ? _t("Ẩn người đã chặn") : _t("Người đã chặn")}</a></p>
+      ${CH.showBlocks ? `<div class="inbox">${(CH.blocks || []).length ? CH.blocks.map(b => `<div class="inbox-item blk"><span class="cav" style="--h:${b.who.hue}">${b.who.icon}</span><span class="grow"><b>${esc(whoName(b.who))}${_t("</b><br><span class=\"muted small\">Chặn lúc ")}${new Date(b.at).toLocaleString("vi-VN")}</span></span>
+        <button class="mini" data-a="chUnblock" data-v="${b.key}${_t("|0\">Bỏ chặn</button>")}${b.room ? `<button class="mini" data-a="chUnblock" data-v="${b.key}${_t("|1\">Bỏ chặn & mở lại chat</button>")}` : ""}</div>`).join("") : `${_t("<p class=\"muted small\">Bạn chưa chặn ai.</p>")}`}</div>` : ""}</section></div>`;
   }
   else {
     const P = CH.pairInfo || {}, w = P.partner;
-    head = `<div class="phead"><button class="mini ghost" data-a="chBack" aria-label="Quay lại">←</button>${w ? `<span class="cav" style="--h:${w.hue}">${w.icon}</span><span class="pname"><b>${esc(w.name)}</b>${P.level ? ` <span class="tag">${esc(P.level)}</span>` : ""}${P.muted ? " 🔕" : ""}</span>` : `<span class="pname"></span>`}
-      ${P.saved ? `<span class="tag good">⭐ Bạn chat</span>` : `<button class="mini ${P.mineKeep ? "sel" : ""}" data-a="chKeep" data-v="${P.mineKeep ? 0 : 1}" title="Giữ cuộc trò chuyện">${P.mineKeep ? "✓ Đã giữ" : "⭐ Giữ"}</button>`}
-      <button class="mini" data-a="chHMenu" aria-label="Tuỳ chọn" aria-expanded="${CH.hmenu ? "true" : "false"}">⋯</button></div>
-      ${CH.hmenu ? `<div class="cmenu row hmenu"><button class="mini" data-a="chMute" data-v="${P.muted ? 0 : 1}">${P.muted ? "🔔 Bật lại thông báo" : "🔕 Tắt thông báo"}</button>
-        <button class="mini" data-a="chLeave">${P.saved ? "Huỷ bạn chat" : "Kết thúc"}</button><button class="mini danger" data-a="chBlockRoom" data-v="${CH.pair.id}">⛔ Chặn</button></div>` : ""}
-      ${!P.saved && P.mineKeep ? `` : !P.saved && P.theirKeep ? `<p class="fb small">⭐ Bạn ấy muốn giữ cuộc trò chuyện. Bấm “Giữ” để thành bạn chat.</p>` : ""}
-      ${CH.closed ? `<p class="fb small">Cuộc trò chuyện đã kết thúc.</p>` : ""}`;
+    head = `${_t("<div class=\"phead\"><button class=\"mini ghost\" data-a=\"chBack\" aria-label=\"Quay lại\">←</button>")}${w ? `<span class="cav" style="--h:${w.hue}">${w.icon}</span><span class="pname"><b>${esc(whoName(w))}</b>${P.level ? ` <span class="tag">${esc(P.level)}</span>` : ""}${P.muted ? " 🔕" : ""}</span>` : `<span class="pname"></span>`}
+      ${P.saved ? `${_t("<span class=\"tag good\">⭐ Bạn chat</span>")}` : `<button class="mini ${P.mineKeep ? "sel" : ""}" data-a="chKeep" data-v="${P.mineKeep ? 0 : 1}${_t("\" title=\"Giữ cuộc trò chuyện\">")}${P.mineKeep ? _t("✓ Đã giữ") : _t("⭐ Giữ")}</button>`}${_t("\n      <button class=\"mini\" data-a=\"chHMenu\" aria-label=\"Tuỳ chọn\" aria-expanded=\"")}${CH.hmenu ? "true" : "false"}">⋯</button></div>
+      ${CH.hmenu ? `<div class="cmenu row hmenu"><button class="mini" data-a="chMute" data-v="${P.muted ? 0 : 1}">${P.muted ? _t("🔔 Bật lại thông báo") : _t("🔕 Tắt thông báo")}</button>
+        <button class="mini" data-a="chLeave">${P.saved ? _t("Huỷ bạn chat") : _t("Kết thúc")}</button><button class="mini danger" data-a="chBlockRoom" data-v="${CH.pair.id}${_t("\">⛔ Chặn</button></div>")}` : ""}
+      ${!P.saved && P.mineKeep ? `` : !P.saved && P.theirKeep ? `${_t("<p class=\"fb small\">⭐ Bạn ấy muốn giữ cuộc trò chuyện. Bấm “Giữ” để thành bạn chat.</p>")}` : ""}
+      ${CH.closed ? `${_t("<p class=\"fb small\">Cuộc trò chuyện đã kết thúc.</p>")}` : ""}`;
   }
   const bubble = m => {
     const ws = (m.text || "").split(/\s+/).filter(Boolean), vi = ws.filter(w => VIx.test(w)).length > Math.max(1, ws.length * 0.3); // chủ yếu là tiếng Việt
-    const body = m.recalled ? `<span class="muted"><i>${m.mine ? "Bạn đã thu hồi một tin nhắn" : "Tin nhắn đã được thu hồi"}</i></span>` : m.hidden ? `<span class="muted">(Tin nhắn đã bị ẩn do vi phạm)</span>`
+    const body = m.recalled ? `<span class="muted"><i>${m.mine ? _t("Bạn đã thu hồi một tin nhắn") : _t("Tin nhắn đã được thu hồi")}</i></span>` : m.hidden ? `${_t("<span class=\"muted\">(Tin nhắn đã bị ẩn do vi phạm)</span>")}`
       : m.audio ? `<audio controls preload="none" src="${esc(m.audio)}"></audio><span class="muted small"> ${m.sec}s</span>`
-      : vi ? esc(m.text) + trBtn(m.text, "vi", "en", "Xem tiếng Anh") : tw(m.text) + ` <button class="mini" data-a="speak" data-v="${esc(m.text)}" aria-label="Nghe">🔊</button>${trBtn(m.text, "en", "vi")}`;
-    return `<div class="cmsg ${m.mine ? "mine" : ""}">${m.mine ? "" : `<span class="cav" style="--h:${m.who.hue}">${m.who.icon}</span>`}<div class="cbody">${m.mine ? "" : `<b class="cname">${esc(m.who.name)}</b>`}<div class="msg ${m.mine ? "user" : "ai"}${m.recalled ? " recalled" : ""}">${body}</div>
+      : vi ? esc(m.text) + trBtn(m.text, "vi", "en", _t("Xem tiếng Anh")) : tw(m.text) + ` <button class="mini" data-a="speak" data-v="${esc(m.text)}" aria-label="${_t("Nghe")}">🔊</button>${trBtn(m.text, "en", "vi")}`;
+    return `<div class="cmsg ${m.mine ? "mine" : ""}">${m.mine ? "" : `<span class="cav" style="--h:${m.who.hue}">${m.who.icon}</span>`}<div class="cbody">${m.mine ? "" : `<b class="cname">${esc(whoName(m.who))}</b>`}<div class="msg ${m.mine ? "user" : "ai"}${m.recalled ? " recalled" : ""}">${body}</div>
       <span class="ctime">${new Date(m.at).toLocaleTimeString("vi-VN", {hour:"2-digit", minute:"2-digit"})}${m.hidden || m.recalled ? "" : ` · <a href="#" data-a="chMenu" data-v="${m.id}">⋯</a>`}</span>
-      ${CH.menu === m.id && m.mine ? `<div class="row cmenu"><button class="mini danger" data-a="chRecall" data-v="${m.id}">↩️ Thu hồi</button><button class="mini ghost" data-a="chMenu" data-v="">Đóng</button></div>` : ""}
-      ${CH.menu === m.id && !m.mine ? `<div class="row cmenu"><span class="small">🚩 Báo cáo:</span>${["Thô tục", "Quấy rối", "Nội dung người lớn", "Lừa đảo/quảng cáo", "Khác"].map(r => `<button class="mini" data-a="chReport" data-v="${m.id}|${r}">${r}</button>`).join("")}<button class="mini" data-a="chBlock" data-v="${m.id}">⛔ Chặn người này</button><button class="mini ghost" data-a="chMenu" data-v="">Đóng</button></div>` : ""}</div></div>`;
+      ${CH.menu === m.id && m.mine ? `<div class="row cmenu"><button class="mini danger" data-a="chRecall" data-v="${m.id}${_t("\">↩️ Thu hồi</button><button class=\"mini ghost\" data-a=\"chMenu\" data-v=\"\">Đóng</button></div>")}` : ""}
+      ${CH.menu === m.id && !m.mine ? `${_t("<div class=\"row cmenu\"><span class=\"small\">🚩 Báo cáo:</span>")}${[_t("Thô tục"), _t("Quấy rối"), _t("Nội dung người lớn"), _t("Lừa đảo/quảng cáo"), _t("Khác")].map(r => `<button class="mini" data-a="chReport" data-v="${m.id}|${r}">${r}</button>`).join("")}<button class="mini" data-a="chBlock" data-v="${m.id}${_t("\">⛔ Chặn người này</button><button class=\"mini ghost\" data-a=\"chMenu\" data-v=\"\">Đóng</button></div>")}` : ""}</div></div>`;
   };
   const canSend = room && !CH.closed && !CH.ban;
   return `<div class="wrap narrow">${tabs}<section class="panel">${head}
-    <div class="chat cbox" id="chbox">${CH.msgs.length ? CH.msgs.map(bubble).join("") : `<p class="muted center">${CH.err ? esc(CH.err) : "Chưa có tin nhắn nào. Hãy chào mọi người nhé: “Hi everyone! 👋”"}</p>`}</div>
-    ${CH.ban ? `<p class="fb small">Bạn đang bị tạm khoá trò chuyện đến ${new Date(CH.ban.until).toLocaleString("vi-VN")} do bị báo cáo vi phạm.</p>` : ""}
-    ${canSend ? (CH.rec ? `<div class="row recbar"><span class="recdot"></span><b id="recT">0:00</b><span class="muted small">Đang ghi âm (tối đa 60 giây)</span><button class="ghost" data-a="chRecCancel">Huỷ</button><button class="primary" data-a="chRecStop">Dừng & gửi</button></div>`
-      : `<div class="row nowrap"><label class="sr" for="chIn">Tin nhắn</label><input id="chIn" data-enter="chSend" maxlength="500" placeholder="Viết bằng tiếng Anh (hoặc hỏi bằng tiếng Việt)..." autocomplete="off">
-         <button class="round" data-a="chRec" aria-label="Ghi âm" title="Gửi tin nhắn giọng nói">🎤</button><button class="primary" data-a="chSend" ${CH.sending ? "disabled" : ""}>${CH.sending ? "..." : "Gửi"}</button></div>`) : ""}</section></div>`;
+    <div class="chat cbox" id="chbox">${CH.msgs.length ? CH.msgs.map(bubble).join("") : `<p class="muted center">${CH.err ? esc(CH.err) : _t("Chưa có tin nhắn nào. Hãy chào mọi người nhé: “Hi everyone! 👋”")}</p>`}</div>
+    ${CH.ban ? `${_t("<p class=\"fb small\">Bạn đang bị tạm khoá trò chuyện đến ")}${new Date(CH.ban.until).toLocaleString("vi-VN")}${_t(" do bị báo cáo vi phạm.</p>")}` : ""}
+    ${canSend ? (CH.rec ? `${_t("<div class=\"row recbar\"><span class=\"recdot\"></span><b id=\"recT\">0:00</b><span class=\"muted small\">Đang ghi âm (tối đa 60 giây)</span><button class=\"ghost\" data-a=\"chRecCancel\">Huỷ</button><button class=\"primary\" data-a=\"chRecStop\">Dừng & gửi</button></div>")}`
+      : `${_t("<div class=\"row nowrap\"><label class=\"sr\" for=\"chIn\">Tin nhắn</label><input id=\"chIn\" data-enter=\"chSend\" maxlength=\"500\" placeholder=\"Viết bằng tiếng Anh (hoặc hỏi bằng tiếng Việt)...\" autocomplete=\"off\">\n         <button class=\"round\" data-a=\"chRec\" aria-label=\"Ghi âm\" title=\"Gửi tin nhắn giọng nói\">🎤</button><button class=\"primary\" data-a=\"chSend\" ")}${CH.sending ? "disabled" : ""}>${CH.sending ? "..." : _t("Gửi")}</button></div>`) : ""}</section></div>`;
 }
 /* =====================================================================
    GIAO DIỆN THEO MÙA / NGÀY LỄ + SINH NHẬT NGƯỜI DÙNG
@@ -1845,22 +1725,22 @@ const TET = {2026:"02-17", 2027:"02-06", 2028:"01-26", 2029:"02-13", 2030:"02-03
 // Rằm tháng 8 (Trung thu)
 const TRUNGTHU = {2026:"09-25", 2027:"09-15", 2028:"10-03", 2029:"09-22", 2030:"09-12", 2031:"10-01", 2032:"09-19", 2033:"09-08", 2034:"09-27", 2035:"09-16"};
 const FEST = {
-  tet:      {name:"Tết Nguyên Đán", emo:["🧧","🌸","🏮","🎆"], msg:"Chúc mừng năm mới! Năm mới học tiếng Anh tiến bộ vượt bậc nhé 🧧"},
-  valentine:{name:"Lễ Tình nhân 14/2", emo:["💖","💌","🌹","💕"], msg:"Happy Valentine's Day! Học thêm vài câu tỏ tình bằng tiếng Anh nào 💌"},
-  women83:  {name:"Quốc tế Phụ nữ 8/3", emo:["🌷","💐","🌸","💗"], msg:"Chúc mừng ngày 8/3! Gửi lời chúc tới những người phụ nữ tuyệt vời 💐"},
-  founder:  {name:"Sinh nhật người sáng lập 18/3", emo:["🎨","🎵","🎻","🖌️","🎹","🎶","🌿","🎂"], msg:"Hôm nay 18/3 là sinh nhật người tạo ra app này, một người yêu hội họa, âm nhạc và thiên nhiên. Cảm ơn bạn đã cùng học, cùng yêu cái đẹp! 🎨🎵"},
-  kids:     {name:"Quốc tế Thiếu nhi 1/6", emo:["🎈","🍭","🧸","🪁"], msg:"Happy Children's Day! Ai cũng có một đứa trẻ bên trong, học vui như chơi nhé 🎈"},
-  midautumn:{name:"Tết Trung thu", emo:["🏮","🥮","🌕","⭐"], msg:"Trung thu vui vẻ! Thử kể về Tết Trung thu bằng tiếng Anh xem 🥮"},
-  special1410:{name:"Ngày đặc biệt 14/10", emo:["💝","🌹","🎀","✨"], msg:"Happy birthday to someone very special 💝"},
-  teacher:  {name:"Ngày Nhà giáo Việt Nam 20/11", emo:["📚","💐","🍎","✏️"], msg:"Chúc mừng ngày Nhà giáo Việt Nam 20/11! Tri ân những người thầy, người cô 💐"},
-  newyear:  {name:"Tết Dương lịch", emo:["🎆","🥂","🎇","✨","🎉"], msg:"Happy New Year! Năm mới, mục tiêu mới: mỗi ngày thêm vài từ, cuối năm nói tiếng Anh thật tự tin 🎆"},
-  xmas:     {name:"Giáng Sinh", emo:["🎄","❄️","🎁","⛄"], msg:"Merry Christmas! Giáng Sinh an lành và ấm áp 🎄"},
-  birthday: {name:"Sinh nhật của bạn", emo:["🎂","🎉","🎈","🎁"], msg:""},
+  tet:      {name:_t("Tết Nguyên Đán"), emo:["🧧","🌸","🏮","🎆"], msg:_t("Chúc mừng năm mới! Năm mới học tiếng Anh tiến bộ vượt bậc nhé 🧧")},
+  valentine:{name:_t("Lễ Tình nhân 14/2"), emo:["💖","💌","🌹","💕"], msg:_t("Happy Valentine's Day! Học thêm vài câu tỏ tình bằng tiếng Anh nào 💌")},
+  women83:  {name:_t("Quốc tế Phụ nữ 8/3"), emo:["🌷","💐","🌸","💗"], msg:_t("Chúc mừng ngày 8/3! Gửi lời chúc tới những người phụ nữ tuyệt vời 💐")},
+  founder:  {name:_t("Sinh nhật người sáng lập 18/3"), emo:["🎨","🎵","🎻","🖌️","🎹","🎶","🌿","🎂"], msg:_t("Hôm nay 18/3 là sinh nhật người tạo ra app này, một người yêu hội họa, âm nhạc và thiên nhiên. Cảm ơn bạn đã cùng học, cùng yêu cái đẹp! 🎨🎵")},
+  kids:     {name:_t("Quốc tế Thiếu nhi 1/6"), emo:["🎈","🍭","🧸","🪁"], msg:_t("Happy Children's Day! Ai cũng có một đứa trẻ bên trong, học vui như chơi nhé 🎈")},
+  midautumn:{name:_t("Tết Trung thu"), emo:["🏮","🥮","🌕","⭐"], msg:_t("Trung thu vui vẻ! Thử kể về Tết Trung thu bằng tiếng Anh xem 🥮")},
+  special1410:{name:_t("Ngày đặc biệt 14/10"), emo:["💝","🌹","🎀","✨"], msg:"Happy birthday to someone very special 💝"},
+  teacher:  {name:_t("Ngày Nhà giáo Việt Nam 20/11"), emo:["📚","💐","🍎","✏️"], msg:_t("Chúc mừng ngày Nhà giáo Việt Nam 20/11! Tri ân những người thầy, người cô 💐")},
+  newyear:  {name:_t("Tết Dương lịch"), emo:["🎆","🥂","🎇","✨","🎉"], msg:_t("Happy New Year! Năm mới, mục tiêu mới: mỗi ngày thêm vài từ, cuối năm nói tiếng Anh thật tự tin 🎆")},
+  xmas:     {name:_t("Giáng Sinh"), emo:["🎄","❄️","🎁","⛄"], msg:_t("Merry Christmas! Giáng Sinh an lành và ấm áp 🎄")},
+  birthday: {name:_t("Sinh nhật của bạn"), emo:["🎂","🎉","🎈","🎁"], msg:""},
   // 4 mùa: thiên nhiên + nốt nhạc + nét cọ (tinh thần nghệ thuật của app), rơi thưa và nhẹ hơn ngày lễ
-  spring:   {name:"Mùa xuân", emo:["🌸","🌱","🎵","🌼","🦋"], msg:"Xuân về, hoa nở. Gieo vài từ mới hôm nay, mai sẽ nở thành câu nói 🌸"},
-  summer:   {name:"Mùa hè", emo:["🌻","🎶","🦋","🌊","☀️"], msg:"Hè rực rỡ! Học một bài nhẹ rồi nghe một bản nhạc tiếng Anh nhé ☀️🎶"},
-  autumn:   {name:"Mùa thu", emo:["🍁","🍂","🎵","🎻"], msg:"Thu dịu dàng như một bản violin. Pha tách trà và học vài câu mới nào 🍂🎻"},
-  winter:   {name:"Mùa đông", emo:["❄️","🎶","🎹","⛄"], msg:"Đông về, ngoài kia lạnh nhưng tiếng Anh của bạn vẫn ấm. Vào học thôi ❄️🎹"},
+  spring:   {name:_t("Mùa xuân"), emo:["🌸","🌱","🎵","🌼","🦋"], msg:_t("Xuân về, hoa nở. Gieo vài từ mới hôm nay, mai sẽ nở thành câu nói 🌸")},
+  summer:   {name:_t("Mùa hè"), emo:["🌻","🎶","🦋","🌊","☀️"], msg:_t("Hè rực rỡ! Học một bài nhẹ rồi nghe một bản nhạc tiếng Anh nhé ☀️🎶")},
+  autumn:   {name:_t("Mùa thu"), emo:["🍁","🍂","🎵","🎻"], msg:_t("Thu dịu dàng như một bản violin. Pha tách trà và học vài câu mới nào 🍂🎻")},
+  winter:   {name:_t("Mùa đông"), emo:["❄️","🎶","🎹","⛄"], msg:_t("Đông về, ngoài kia lạnh nhưng tiếng Anh của bạn vẫn ấm. Vào học thôi ❄️🎹")},
 };
 // [mã, tháng-ngày, hiện trước bao nhiêu ngày, hiện sau bao nhiêu ngày]
 const FEST_DAYS = [["valentine","02-14",1,0], ["women83","03-08",1,0], ["founder","03-18",0,0], ["kids","06-01",1,0],
@@ -1895,7 +1775,7 @@ function applyFestive() {
 function festBanner() {
   const id = festiveTheme(); if (!id) return "";
   if (["spring", "summer", "autumn", "winter"].includes(id)) { const f = FEST[id]; return `<section class="panel festbanner season"><div class="row nowrap"><span class="festemo">${f.emo[0]}</span><div class="grow"><p class="eyebrow">${esc(f.name)}</p><p class="festmsg">${esc(f.msg)}</p></div></div></section>`; }
-  const f = FEST[id], msg = id === "birthday" ? `Chúc mừng sinh nhật ${esc(displayName() || "bạn")}! 🎂 Chúc bạn tuổi mới thật nhiều niềm vui và nói tiếng Anh ngày càng giỏi. Happy birthday!` : esc(f.msg);
+  const f = FEST[id], msg = id === "birthday" ? `${_t("Chúc mừng sinh nhật ")}${esc(displayName() || _t("bạn"))}${_t("! 🎂 Chúc bạn tuổi mới thật nhiều niềm vui và nói tiếng Anh ngày càng giỏi. Happy birthday!")}` : esc(f.msg);
   return `<section class="panel festbanner">${id === "birthday" ? confetti(50) : ""}<div class="row nowrap"><span class="festemo">${f.emo[0]}</span><div class="grow"><p class="eyebrow">${esc(f.name)}</p><p class="festmsg">${msg}</p></div></div></section>`;
 }
 /* =====================================================================
@@ -1910,16 +1790,14 @@ function applyPrefs() {
 function renderHeader() {
   const h = $("#hdr"); if (!h) return;
   const focus = ["lesson", "quiz", "flip"].includes(view) || !S.path;
-  const tabs = [["home", "Trang chủ"], ["path", "Lộ trình"], ["review", "Ôn tập"], ["chat", "Cộng đồng"], ["history", "Lịch sử"]];
-  const due = dueCards().length, name = displayName() || ME?.email || "Bạn";
+  const tabs = [["home", _t("Trang chủ")], ["path", _t("Lộ trình")], ["review", _t("Ôn tập")], ["chat", _t("Cộng đồng")], ["history", _t("Lịch sử")]];
+  const due = dueCards().length, name = displayName() || ME?.email || _t("Bạn");
   const active = view === "settings" ? "" : view;
-  h.innerHTML = `<div class="hin"><a href="#" class="brand" data-a="go" data-v="home"><img class="logo" src="/logo.png?v=5" alt="" width="40" height="40"><span><b>SEED</b><small>Tiếng Anh cá nhân hóa</small></span></a>
-    ${focus ? "" : `<nav class="tabs-top" aria-label="Điều hướng">${tabs.map(([k, t]) => `<a href="#" class="${active === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : k === "chat" && CH.unread ? `<span class="badge">${CH.unread}</span>` : ""}</a>`).join("")}</nav>`}
-    <div class="tools">${S.level ? `<span class="lvl" title="Trình độ hiện tại">${S.level}</span>` : ""}
-     <div class="usermenu"><button class="avatar" data-a="menu" aria-label="Tài khoản ${esc(ME?.email || "")}">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc(name[0].toUpperCase())}</button>
-     ${UI.menu ? `<div class="menu"><div class="who"><b>${esc(displayName() || "Tài khoản")}</b><span>${esc(ME?.email || "")}</span></div>${ME?.admin ? `<a href="/admin">🛠️ Quản trị</a>` : ""}${S.path ? `<a href="#" data-a="go" data-v="settings">Cài đặt</a>` : ""}<a href="#" data-a="logout">Đăng xuất</a></div>` : ""}</div></div></div>`;
+  h.innerHTML = `${_t("<div class=\"hin\"><a href=\"#\" class=\"brand\" data-a=\"go\" data-v=\"home\"><img class=\"logo\" src=\"/logo.png?v=5\" alt=\"\" width=\"40\" height=\"40\"><span><b>SEED</b><small>Tiếng Anh cá nhân hóa</small></span></a>\n    ")}${focus ? "" : `${_t("<nav class=\"tabs-top\" aria-label=\"Điều hướng\">")}${tabs.map(([k, t]) => `<a href="#" class="${active === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : k === "chat" && CH.unread ? `<span class="badge">${CH.unread}</span>` : ""}</a>`).join("")}</nav>`}
+    <div class="tools">${S.level ? `${_t("<span class=\"lvl\" title=\"Trình độ hiện tại\">")}${S.level}</span>` : ""}${_t("\n     <div class=\"usermenu\"><button class=\"avatar\" data-a=\"menu\" aria-label=\"Tài khoản ")}${esc(ME?.email || "")}">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc(name[0].toUpperCase())}</button>
+     ${UI.menu ? `<div class="menu"><div class="who"><b>${esc(displayName() || _t("Tài khoản"))}</b><span>${esc(ME?.email || "")}</span></div>${ME?.admin ? `${_t("<a href=\"/admin\">🛠️ Quản trị</a>")}` : ""}${S.path ? `${_t("<a href=\"#\" data-a=\"go\" data-v=\"settings\">Cài đặt</a>")}` : ""}${_t("<a href=\"#\" data-a=\"logout\">Đăng xuất</a></div>")}` : ""}</div></div></div>`;
   const bn = $("#bnav");
-  if (bn) { bn.hidden = focus; bn.innerHTML = focus ? "" : [...tabs, ["settings", "Cài đặt"]].map(([k, t]) => `<a href="#" class="${view === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : k === "chat" && CH.unread ? `<span class="badge">${CH.unread}</span>` : ""}</a>`).join(""); }
+  if (bn) { bn.hidden = focus; bn.innerHTML = focus ? "" : [...tabs, ["settings", _t("Cài đặt")]].map(([k, t]) => `<a href="#" class="${view === k ? "sel" : ""}" data-a="go" data-v="${k}">${t}${k === "review" && due ? `<span class="badge">${due}</span>` : k === "chat" && CH.unread ? `<span class="badge">${CH.unread}</span>` : ""}</a>`).join(""); }
 }
 function render() {
   const a = $("#app"); if (!a) return;
@@ -1957,10 +1835,10 @@ function render() {
   if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
   swReg().then(checkPush).then(() => { if (view === "settings") render(); });
   const app = $("#app");
-  app.innerHTML = `<div class="wrap"><section class="panel center"><p><span class="spin"></span> Đang tải tiến độ của bạn...</p></section></div>`;
-  AI = {on:false, msg:"đang kiểm tra kết nối..."};
+  app.innerHTML = `${_t("<div class=\"wrap\"><section class=\"panel center\"><p><span class=\"spin\"></span> Đang tải tiến độ của bạn...</p></section></div>")}`;
+  AI = {on:false, msg:_t("đang kiểm tra kết nối...")};
   const meP = fetch("/api/me").then(r => r.ok ? r.json() : null).catch(() => null);
-  S = await loadState(); BASE = Number(S.rev || 0); ME = await meP;
+  S = await loadState(); BASE = Number(S.rev || 0); try { if (S.profile?.lang && !localStorage.getItem("ep_lang") && S.profile.lang !== LANG) { localStorage.setItem("ep_lang", S.profile.lang); return location.reload(); } } catch (e) {} ME = await meP;
   if (new URLSearchParams(location.search).get("view") === "chat" && S.path) { view = "chat"; history.replaceState(null, "", "/"); setTimeout(() => chPoll(true), 300); } try { applyFestive(); } catch (e) {} setInterval(() => { try { applyFestive(); } catch (e) {} }, 30 * 60e3); render(); remindLoop(); setInterval(remindLoop, 60e3);
   // Kiểm tra Gemini chạy ngầm, không chặn giao diện
   checkAI().then(() => { if (!["lesson", "quiz", "flip"].includes(view)) render(); setTimeout(prefetchNext, 1500); });

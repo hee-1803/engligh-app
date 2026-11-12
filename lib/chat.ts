@@ -3,6 +3,8 @@ import { createHash } from "crypto";
 
 const ANIMALS = ["Cáo", "Mèo", "Gấu", "Thỏ", "Cú", "Sóc", "Hươu", "Rái cá", "Chim sẻ", "Cá heo", "Gấu trúc", "Chim cánh cụt", "Hải ly", "Nhím", "Vẹt", "Ong"];
 const COLORS = ["Xanh", "Hồng", "Tím", "Vàng", "Cam", "Bạc", "Ngọc", "Mây", "Nắng", "Gió", "Trăng", "Sao"];
+const ANIMALS_EN = ["Fox", "Cat", "Bear", "Bunny", "Owl", "Squirrel", "Deer", "Otter", "Sparrow", "Dolphin", "Panda", "Penguin", "Beaver", "Hedgehog", "Parrot", "Bee"];
+const COLORS_EN = ["Blue", "Pink", "Violet", "Yellow", "Orange", "Silver", "Jade", "Cloud", "Sunny", "Breezy", "Moon", "Star"];
 const ICONS = ["🦊", "🐱", "🐻", "🐰", "🦉", "🐿️", "🦌", "🦦", "🐦", "🐬", "🐼", "🐧", "🦫", "🦔", "🦜", "🐝"];
 
 // Biệt danh ẩn danh: cố định theo người + phòng + ngày, đổi mỗi ngày để không ai lần ra ai
@@ -11,7 +13,8 @@ export function alias(userId: string, room: string) {
   const day = room.startsWith("p-") ? "pair" : new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
   const h = createHash("sha256").update(`${process.env.CHAT_SALT || process.env.CRON_SECRET || "ep"}|${userId}|${room}|${day}`).digest();
   const a = h[0] % ANIMALS.length;
-  return { name: `${ANIMALS[a]} ${COLORS[h[1] % COLORS.length]} #${(h[2] % 90) + 10}`, icon: ICONS[a], hue: h[3] % 360 };
+  const num = (h[2] % 90) + 10, c = h[1] % COLORS.length;
+  return { name: `${ANIMALS[a]} ${COLORS[c]} #${num}`, name_en: `${COLORS_EN[c]} ${ANIMALS_EN[a]} #${num}`, icon: ICONS[a], hue: h[3] % 360 };
 }
 
 // Chặn thông tin cá nhân để giữ ẩn danh và an toàn
