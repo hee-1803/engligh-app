@@ -646,3 +646,20 @@ input[type="date"] { min-width: 210px; width: auto; max-width: 100%; white-space
 .pushask { border: 2px dashed var(--accent) } .pushask h3 { margin: 0 0 4px }
 img.logo { width: 40px; height: 40px; border-radius: 12px; background: none; box-shadow: 0 6px 14px -6px rgba(124,92,255,.6); display: block }
 .logo-lg { border-radius: 18px; box-shadow: 0 8px 20px -8px rgba(124,92,255,.6); flex: none }
+/* ---------- Cài đặt kiểu ứng dụng ---------- */
+.setlist { background: var(--surface); border-radius: var(--r); box-shadow: var(--bub); overflow: hidden; display: grid }
+.setitem { display: grid; grid-template-columns: 34px 1fr auto 14px; align-items: center; gap: 10px; width: 100%; text-align: left; border: 0; border-radius: 0; box-shadow: none; background: none; padding: 15px 18px; font-weight: 700 }
+.setitem + .setitem { border-top: 1px solid var(--line) }
+.setitem:hover:not(:disabled) { transform: none; background: var(--sunk) } .setitem:active:not(:disabled) { transform: none; box-shadow: none }
+.si-ic { font-size: 1.25rem; text-align: center } .si-v { color: var(--muted); font-weight: 600; font-size: .88rem; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.si-go { color: var(--muted); font-size: 1.3rem } .danger-t { color: var(--bad) }
+.sethead { display: flex; align-items: center; gap: 8px; margin-bottom: 8px } .sethead h2 { margin: 0; font-size: 1.3rem }
+details.help summary { cursor: pointer; font-weight: 800; list-style: none } details.help summary::after { content: " +"; color: var(--muted) } details.help[open] summary::after { content: " –" }
+details.help > div { margin-top: 8px; line-height: 1.6 }
+.stars .star { font-size: 1.6rem; padding: 2px 6px; border: 0; box-shadow: none; background: none; color: var(--line) } .stars .star.on { color: #ffb703 }
+.founder blockquote { margin: 8px 0 0; padding: 10px 14px; border-left: 4px solid var(--accent); background: var(--accent-soft); border-radius: 12px; font-style: italic }
+.about .logo-lg { margin: 0 auto }
+.sethead .mini { white-space: nowrap; flex: none } .si-t { white-space: nowrap } .si-v { max-width: 38vw }
+.setrow .row .seg { white-space: nowrap; padding: 8px 14px }
+details.panel.help { padding: 16px 20px } .setlist + .setlist, .account + .setlist { margin-top: 14px }
+@media (max-width: 420px) { .si-v { display: none } }

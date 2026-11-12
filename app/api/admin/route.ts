@@ -17,6 +17,12 @@ const dayVN = (offset: number) => new Date(Date.now() + 7 * 3600e3 - offset * 86
 export async function GET(req: Request) {
   const deny = await guard(); if (deny) return deny;
   const db = createAdminClient();
+  if (new URL(req.url).searchParams.get("feedback")) {
+    const { data } = await db.from("feedback").select("*").order("created_at", { ascending: false }).limit(200);
+    const ids = [...new Set((data || []).map((f) => f.user_id))], emails = new Map<string, string>();
+    await Promise.all(ids.map(async (id) => { const { data: u } = await db.auth.admin.getUserById(id); emails.set(id, u.user?.email || id.slice(0, 8)); }));
+    return NextResponse.json({ feedback: (data || []).map((f) => ({ ...f, email: emails.get(f.user_id) })) });
+  }
   if (new URL(req.url).searchParams.get("reports")) {
     const { data: reps } = await db.from("chat_reports").select("*").eq("status", "open").order("created_at", { ascending: false }).limit(100);
     const ids = [...new Set((reps || []).map((r) => r.message_id).filter(Boolean))];
@@ -77,6 +83,7 @@ export async function POST(req: Request) {
   // Xử lý báo cáo: { mod: "dismiss"|"hide"|"ban"|"unban", reportId?, messageId?, userId?, days? }
   if (peek.mod) {
     const db = createAdminClient();
+    if (peek.mod === "fbDone" && peek.feedbackId) await db.from("feedback").update({ status: "done" }).eq("id", peek.feedbackId);
     if (peek.mod === "hide" && peek.messageId) await db.from("chat_messages").update({ hidden: true }).eq("id", peek.messageId);
     if (peek.mod === "ban" && peek.userId) await db.from("chat_bans").upsert({ user_id: peek.userId, until: new Date(Date.now() + (Number(peek.days) || 1) * 864e5).toISOString(), reason: "Quản trị viên khoá" });
     if (peek.mod === "ban" && peek.messageId) await db.from("chat_messages").update({ hidden: true }).eq("id", peek.messageId);

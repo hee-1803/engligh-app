@@ -1296,59 +1296,89 @@ function vHistory() {
         ${(s.mistakes || []).map(m => `<div class="fb bad small"><s>${esc(m.text)}</s> → <b>${esc(m.fix)}</b></div>`).join("")}</div>` : ""}`).join("")
      : `<p class="muted">Chưa có buổi học nào.</p>`}</section></div>`;
 }
+// Cài đặt kiểu ứng dụng: trang chính là danh sách gọn, bấm vào từng mục để mở trang con
+const APP_VERSION = "1.0";
+const SET_PAGES = {
+  goal:["🎯", "Mục tiêu học"], remind:["🔔", "Nhắc học & thông báo"], look:["🎨", "Giao diện & ngày sinh"], voice:["🔊", "Giọng đọc & micro"],
+  help:["📖", "Hướng dẫn sử dụng"], feedback:["💬", "Gửi phản hồi"], about:["🌱", "Về Lộ Trình & người sáng lập"], data:["🗂️", "Dữ liệu"],
+};
+function setRow(k, value = "") { const [ic, t] = SET_PAGES[k]; return `<button class="setitem" data-a="setPage" data-v="${k}"><span class="si-ic">${ic}</span><span class="si-t">${t}</span><span class="si-v">${value}</span><span class="si-go">›</span></button>`; }
 function vSettings() {
-  const fs = pref("ep_fs") || "m", th = pref("ep_theme") || "auto";
-  return `<div class="wrap narrow"><section class="hello">${mascot("happy", 80)}<div><p class="eyebrow">Cài đặt</p><h1>Tài khoản & tùy chỉnh</h1></div></section>
+  const pg = UI.sp;
+  if (pg && SET_PAGES[pg]) return `<div class="wrap narrow"><div class="sethead"><button class="mini ghost" data-a="setPage" data-v="">‹ Cài đặt</button><h2>${SET_PAGES[pg][0]} ${SET_PAGES[pg][1]}</h2></div>${setPage(pg)}</div>`;
+  const rc = remindCfg();
+  return `<div class="wrap narrow">
    <section class="panel account"><div class="row nowrap">
      <div class="bigavatar">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc((displayName() || ME?.email || "?")[0].toUpperCase())}</div>
-     <div class="who"><b>${esc(displayName() || "Chưa đặt tên")}</b><span>${esc(ME?.email || "Không lấy được email")}</span>
-      <span class="muted small">Đăng nhập bằng ${ME?.provider === "google" ? "Google" : "email"}${ME?.since ? ` · tham gia ${new Date(ME.since).toLocaleDateString("vi-VN")}` : ""}</span></div></div>
-     <div class="row"><button data-a="logout">Đăng xuất</button><span class="muted small">Muốn dùng tài khoản khác: đăng xuất rồi chọn tài khoản khi đăng nhập lại.</span></div></section>
-   <section class="panel"><h3>Mục tiêu học</h3><p>${esc(focusName())}${S.profile.job ? ` · ${esc(S.profile.job)}` : ""}${subList().length ? `<br><span class="small">${subList().map(esc).join(" · ")}</span>` : ""}${S.profile.interest ? `<br><span class="muted">${esc(S.profile.interest)}</span>` : ""}</p>
-    <p class="muted small">${S.profile.minutes} phút/ngày · Trình độ ${S.level} · Khóa ${S.path?.from} → ${S.path?.to}</p>
-    <button data-a="editGoal">Sửa mục tiêu và lĩnh vực</button></section>
-   <section class="panel"><div class="row between"><h3>Nhắc học</h3><button class="mini seg ${remindCfg().on ? "sel" : ""}" data-a="remToggle">${remindCfg().on ? "● Đang bật" : "○ Đang tắt"}</button></div>
-    <p class="muted small">Nếu hôm nay bạn chưa học, app gửi thông báo theo lịch dưới đây. Học xong buổi trong ngày thì app ngừng nhắc.</p>
-    <div class="row timerow"><div class="tfield"><label for="remindSet">Bắt đầu nhắc lúc</label><input id="remindSet" type="time" value="${remindCfg().start}" data-change="setRemind"></div>
-     <div class="tfield"><label for="remindEnd">Nhắc đến</label><input id="remindEnd" type="time" value="${remindCfg().end}" data-change="setRemindEnd"></div></div>
-    <div class="row"><span>Nhắc mỗi</span>${[[30, "30 phút"], [60, "1 tiếng"], [120, "2 tiếng"], [180, "3 tiếng"]].map(([k, t]) => `<button class="seg ${remindCfg().every === k ? "sel" : ""}" data-a="remEvery" data-v="${k}">${t}</button>`).join("")}</div>
-    <div class="setrow"><span>Giọng nhắc</span><div class="row">${[["spicy", "😈 Lầy lội"], ["soft", "🙂 Nhẹ nhàng"]].map(([k, t]) => `<button class="seg ${(S.profile.remindTone || "spicy") === k ? "sel" : ""}" data-a="remTone" data-v="${k}">${t}</button>`).join("")}</div></div>
-    <p class="fb small">${remindCfg().on ? `Các lần nhắc mỗi ngày (${remindSlots().length} lần): <b>${remindSlots().join(" · ")}</b>` : "Nhắc học đang tắt. Bạn sẽ không nhận thông báo nào."}</p>
-    <div class="pushbox"><b>Nhận thông báo trên thiết bị này</b>
-     <p class="muted small">Thông báo hiện trên điện thoại hoặc máy tính, kể cả khi đang đóng app. Mỗi thiết bị cần bật riêng một lần.</p>
-     ${PUSH.on ? `<div class="row"><span class="tag good">Đang bật trên thiết bị này</span><button class="mini" data-a="pushTest">Gửi thử</button><button class="mini" data-a="pushOff">Tắt trên thiết bị này</button></div>`
-       : `<button class="primary" data-a="pushOn">Bật thông báo trên thiết bị này</button>
-          ${isIOS() && !isStandalone() ? `<p class="small">Trên iPhone (iOS 16.4 trở lên): mở bằng Safari → nút Chia sẻ → <b>Thêm vào MH chính</b> → mở app từ biểu tượng mới, rồi bấm nút trên.</p>` : ""}`}</div>
-    <p class="muted small">Hoặc thêm một lời nhắc cố định vào lịch điện thoại (lúc ${remindCfg().start} mỗi ngày):</p>
-    <div class="row"><a class="btn mini" target="_blank" rel="noopener" href="${gcalLink()}">Google Calendar ↗</a><button class="mini" data-a="ics">Tải file lịch (.ics)</button></div></section>
-   <section class="panel"><div class="row between"><h3>Trạng thái AI</h3><button class="mini" data-a="probeAI" ${PROBE === "…" ? "disabled" : ""}>${PROBE === "…" ? `<span class="spin"></span> Đang kiểm tra` : "Kiểm tra AI"}</button></div>
-    <p class="muted small">Chấm câu, role-play, tra từ: Groq → OpenRouter → Gemini. Soạn bài mới: Gemini trước (giữ lượt Gemini cho việc này), hết lượt thì Groq/OpenRouter soạn thay.${LAST_ENGINE ? ` Lần gần nhất trả lời: <b>${esc(LAST_ENGINE)}</b> (${new Date(LAST_ENGINE_AT).toLocaleTimeString("vi-VN", {hour:"2-digit", minute:"2-digit"})}).` : ""}</p>
-    ${Array.isArray(PROBE) ? `<div class="ailist">${PROBE.map(p => `<div class="row between nowrap"><span><b>${esc(p.name)}</b> <span class="muted small">${esc(p.model || "")}</span></span>${p.ok ? `<span class="tag good">✓ Hoạt động · ${(p.ms / 1000).toFixed(1)}s</span>` : `<span class="tag bad" title="${esc(p.error || "")}">✗ ${esc(p.error || "Lỗi")}</span>`}</div>`).join("")}
-      ${PROBE.length < 3 ? `<p class="muted small">AI nào chưa hiện là chưa có key (GROQ_API_KEY / OPENROUTER_API_KEY) trên máy chủ.</p>` : ""}</div>` : ""}</section>
-   <section class="panel"><h3>Ngày sinh & giao diện theo mùa</h3>
-    <div class="row timerow"><div class="tfield"><label for="bday">Ngày sinh (không bắt buộc)</label><input id="bday" type="date" value="${esc(S.profile.birthday && S.profile.birthday.length === 10 ? S.profile.birthday : "")}" data-change="setBday"></div></div>
-    <p class="muted small">Đúng ngày sinh nhật, giao diện của bạn sẽ đổi sang chủ đề sinh nhật để chúc mừng 🎂. Chỉ bạn thấy.</p>
-    <label for="festSel">Giao diện theo mùa & ngày lễ</label>
-    <select id="festSel" data-change="setFest"><option value="auto" ${(S.profile.festive || "auto") === "auto" ? "selected" : ""}>Tự động theo ngày (khuyên dùng)</option><option value="off" ${S.profile.festive === "off" ? "selected" : ""}>Tắt, dùng màu mặc định</option>
-      ${Object.entries(FEST).map(([k, f]) => `<option value="${k}" ${S.profile.festive === k ? "selected" : ""}>Xem thử: ${esc(f.name)}</option>`).join("")}</select>
-    <div class="setrow"><span>Hiệu ứng rơi (hoa, lá, nốt nhạc…)</span><div class="row">${[[true, "Bật"], [false, "Tắt"]].map(([k, t]) => `<button class="seg ${(S.profile.festFx !== false) === k ? "sel" : ""}" data-a="festFx" data-v="${k}">${t}</button>`).join("")}</div></div>
-    <p class="muted small">Hôm nay: <b>${esc(FEST[festiveTheme()]?.name || "Mặc định")}</b>. Tết Âm lịch, Tết Dương lịch, 14/2, 8/3, 18/3, 1/6, Trung thu, 14/10, 20/11, Giáng Sinh và 4 mùa.</p></section>
-   <section class="panel"><h3>Giọng đọc & micro</h3>
-    <label for="voiceSel">Giọng đọc tiếng Anh</label><select id="voiceSel" data-change="setVoice">${VOICES.length ? VOICES.map(v => `<option value="${esc(v.name)}" ${pickVoice()?.name === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("") : `<option>Giọng mặc định của trình duyệt</option>`}</select>
-    <div class="row"><span>Tốc độ đọc</span>${[["0.6", "Rất chậm"], ["0.7", "Chậm"], ["0.8", "Vừa"], ["0.95", "Nhanh"]].map(([k, t]) => `<button class="seg ${Number(k) === ttsRate() ? "sel" : ""}" data-a="ttsRate" data-v="${k}">${t}</button>`).join("")}
-     <button data-a="speak" data-v="Hello! This is how I sound. Let's practise English together.">🔊 Nghe thử</button></div>
-    <div class="row"><button class="mic ${UI.rec === "test" ? "on" : ""}" data-a="micTest" ${SR ? "" : "disabled"}>${UI.rec === "test" ? "● Đang nghe..." : "🎤 Thử micro"}</button>
-     <span class="muted small">${SR ? "Nhận giọng nói chạy trên Chrome và Edge, cần có Internet." : "Trình duyệt này không hỗ trợ nhận giọng nói. Hãy dùng Chrome hoặc Edge."}</span></div>
-    ${UI.rec === "test" ? `<p class="live" id="live">Hãy nói một câu tiếng Anh...</p>` : ""}
-    <p class="muted small">Muốn giọng đọc tự nhiên hơn: dùng Edge (có sẵn giọng "Natural"), hoặc trên Windows vào Cài đặt → Thời gian & ngôn ngữ → Giọng nói để cài thêm giọng tiếng Anh.</p></section>
-   <section class="panel"><h3>Hiển thị</h3><div class="row"><span>Cỡ chữ</span>${["s", "m", "l"].map(k => `<button class="seg ${fs === k ? "sel" : ""}" data-a="fs" data-v="${k}">${k.toUpperCase()}</button>`).join("")}</div>
-    <div class="row"><span>Giao diện</span>${[["auto", "Theo máy"], ["light", "Sáng"], ["dark", "Tối"]].map(([k, t]) => `<button class="seg ${th === k ? "sel" : ""}" data-a="theme" data-v="${k}">${t}</button>`).join("")}</div></section>
-   <section class="panel"><h3>Gemini AI</h3><p>${AI.quota ? `<span class="tag bad">Hết lượt miễn phí</span> Gemini giới hạn số lần gọi mỗi phút và mỗi ngày. App đang dùng nội dung mẫu và sẽ tự thử lại sau 5 phút. Nếu hết lượt theo ngày, lượt mới có lại vào khoảng 14–15 giờ chiều (giờ Việt Nam).` : AI.on && AI.busy ? `<span class="tag">Đang quá tải</span> ${esc(AI.msg)}. App vẫn dùng AI và tự thử lại; nếu vẫn lỗi sẽ tạm dùng nội dung mẫu.` : AI.on ? `<span class="tag good">Đang hoạt động</span> Bài học, chấm câu, role-play và tra từ dùng AI.` : `<span class="tag bad">Chưa hoạt động</span> ${esc(AI.msg)}`}</p>
-    <p class="muted small">Key nằm trong file .env.local (GEMINI_API_KEY, GEMINI_MODEL). Sửa file rồi khởi động lại app.</p><button data-a="checkAI">Kiểm tra lại kết nối</button></section>
-   <section class="panel"><h3>Dữ liệu</h3><div class="row">
-    <button class="danger" data-a="reset" id="resetBtn">Xóa toàn bộ tiến độ và làm lại</button></div></section></div>`;
+     <div class="who grow"><b>${esc(displayName() || "Chưa đặt tên")}</b><span>${esc(ME?.email || "")}</span></div><span class="tag">${esc(S.level || "")}</span></div></section>
+   <div class="setlist">${setRow("goal", esc(focusName()))}${setRow("remind", rc.on ? (PUSH.on ? rc.start : "Chưa bật trên máy này") : "Đang tắt")}${setRow("look", esc(FEST[festiveTheme()]?.name || "Mặc định"))}${setRow("voice")}</div>
+   <div class="setlist">${setRow("help")}${setRow("feedback")}${setRow("about")}</div>
+   <div class="setlist">${setRow("data")}<button class="setitem" data-a="logout"><span class="si-ic">🚪</span><span class="si-t danger-t">Đăng xuất</span><span class="si-v"></span><span class="si-go"></span></button></div>
+   <p class="muted small center">Lộ Trình · phiên bản ${APP_VERSION} · <a href="/privacy">Quyền riêng tư</a></p></div>`;
 }
-
+function setPage(pg) {
+  const fs = pref("ep_fs") || "m", th = pref("ep_theme") || "auto", rc = remindCfg();
+  const seg = (list, cur, act) => `<div class="row">${list.map(([k, t]) => `<button class="seg ${String(cur) === String(k) ? "sel" : ""}" data-a="${act}" data-v="${k}">${t}</button>`).join("")}</div>`;
+  if (pg === "goal") return `<section class="panel"><p><b>${esc(focusName())}</b>${S.profile.job ? ` · ${esc(S.profile.job)}` : ""}</p>${subList().length ? `<p class="small">${subList().map(esc).join(" · ")}</p>` : ""}
+    <p class="muted small">${S.profile.minutes} phút/ngày · Trình độ ${S.level} · Khóa ${S.path?.from} → ${S.path?.to}</p><button class="primary" data-a="editGoal">Sửa mục tiêu</button></section>`;
+  if (pg === "remind") return `<section class="panel">
+    <div class="row between"><b>Nhắc khi hôm đó chưa học</b><button class="mini seg ${rc.on ? "sel" : ""}" data-a="remToggle">${rc.on ? "Bật" : "Tắt"}</button></div>
+    ${rc.on ? `<div class="row timerow"><div class="tfield"><label for="remindSet">Từ</label><input id="remindSet" type="time" value="${rc.start}" data-change="setRemind"></div>
+     <div class="tfield"><label for="remindEnd">Đến</label><input id="remindEnd" type="time" value="${rc.end}" data-change="setRemindEnd"></div></div>
+    <div class="setrow"><span>Nhắc mỗi</span>${seg([[30, "30 phút"], [60, "1 giờ"], [120, "2 giờ"], [180, "3 giờ"]], rc.every, "remEvery")}</div>
+    <div class="setrow"><span>Giọng nhắc</span>${seg([["spicy", "😈 Lầy lội"], ["soft", "🙂 Nhẹ nhàng"]], S.profile.remindTone || "spicy", "remTone")}</div>` : ""}</section>
+   <section class="panel"><b>Thiết bị này</b>
+    ${PUSH.on ? `<div class="row"><span class="tag good">Đang nhận thông báo</span><button class="mini" data-a="pushTest">Gửi thử</button><button class="mini" data-a="pushOff">Tắt</button></div>`
+      : isIOS() && !isStandalone() ? `<p class="small">Trên iPhone, hãy thêm app vào màn hình chính trước (xem Hướng dẫn sử dụng).</p>` : `<button class="primary" data-a="pushOn">Bật thông báo</button>`}</section>`;
+  if (pg === "look") return `<section class="panel">
+    <div class="tfield"><label for="bday">Ngày sinh</label><input id="bday" type="date" value="${esc(S.profile.birthday && S.profile.birthday.length === 10 ? S.profile.birthday : "")}" data-change="setBday"></div>
+    <label for="festSel">Chủ đề</label><select id="festSel" data-change="setFest"><option value="auto" ${(S.profile.festive || "auto") === "auto" ? "selected" : ""}>Tự động theo mùa & ngày lễ</option><option value="off" ${S.profile.festive === "off" ? "selected" : ""}>Mặc định</option>
+      ${Object.entries(FEST).map(([k, f]) => `<option value="${k}" ${S.profile.festive === k ? "selected" : ""}>Xem thử: ${esc(f.name)}</option>`).join("")}</select>
+    <div class="setrow"><span>Hiệu ứng rơi</span>${seg([[true, "Bật"], [false, "Tắt"]], S.profile.festFx !== false, "festFx")}</div>
+    <div class="setrow"><span>Cỡ chữ</span>${seg([["s", "Nhỏ"], ["m", "Vừa"], ["l", "Lớn"]], fs, "fs")}</div>
+    <div class="setrow"><span>Chế độ</span>${seg([["auto", "Theo máy"], ["light", "Sáng"], ["dark", "Tối"]], th, "theme")}</div></section>`;
+  if (pg === "voice") return `<section class="panel">
+    <label for="voiceSel">Giọng đọc</label><select id="voiceSel" data-change="setVoice">${VOICES.length ? VOICES.map(v => `<option value="${esc(v.name)}" ${pickVoice()?.name === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("") : `<option>Giọng mặc định</option>`}</select>
+    <div class="setrow"><span>Tốc độ</span>${seg([["0.6", "Rất chậm"], ["0.7", "Chậm"], ["0.8", "Vừa"], ["0.95", "Nhanh"]], ttsRate(), "ttsRate")}</div>
+    <div class="row"><button data-a="speak" data-v="Hello! This is how I sound. Let's practise English together.">🔊 Nghe thử</button><button class="mic ${UI.rec === "test" ? "on" : ""}" data-a="micTest" ${SR ? "" : "disabled"}>${UI.rec === "test" ? "● Đang nghe..." : "🎤 Thử micro"}</button></div>
+    ${UI.rec === "test" ? `<p class="live" id="live">Hãy nói một câu tiếng Anh...</p>` : ""}</section>`;
+  if (pg === "help") return HELP.map(([q, a], i) => `<details class="panel help" ${i === 0 ? "open" : ""}><summary>${q}</summary><div class="small">${a}</div></details>`).join("");
+  if (pg === "feedback") return `<section class="panel">
+    <p>Bạn thấy Lộ Trình thế nào? Mọi góp ý đều được đọc và dùng để làm app tốt hơn 💚</p>
+    <div class="setrow"><span>Loại</span>${seg([["idea", "💡 Góp ý"], ["bug", "🐞 Báo lỗi"], ["love", "💚 Khen"], ["other", "Khác"]], UI.fbKind || "idea", "fbKind")}</div>
+    <div class="setrow"><span>Đánh giá</span><div class="row stars">${[1, 2, 3, 4, 5].map(n => `<button class="star ${n <= (UI.fbRate || 0) ? "on" : ""}" data-a="fbRate" data-v="${n}" aria-label="${n} sao">★</button>`).join("")}</div></div>
+    <label for="fbMsg">Nội dung</label><textarea id="fbMsg" rows="5" maxlength="2000" placeholder="Bạn thích điều gì, gặp lỗi ở đâu, muốn có thêm tính năng gì..."></textarea>
+    <button class="primary" data-a="fbSend" ${UI.fbBusy ? "disabled" : ""}>${UI.fbBusy ? "Đang gửi..." : "Gửi phản hồi"}</button></section>`;
+  if (pg === "about") return `<section class="panel about center">
+    <img src="/logo.png?v=3" alt="" width="96" height="96" class="logo-lg"><h2>Lộ Trình</h2><p class="muted">Học tiếng Anh theo đúng mục tiêu của bạn, mỗi ngày một chút.</p></section>
+   <section class="panel founder"><p class="eyebrow">Người sáng lập</p><h3>${esc(FOUNDER.name)}</h3>
+    <p>${FOUNDER.bio}</p>
+    <div class="row">${FOUNDER.loves.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+    <blockquote>“${FOUNDER.quote}”</blockquote></section>
+   <section class="panel"><p class="small muted">Phiên bản ${APP_VERSION} · Sinh nhật Lộ Trình cùng ngày với người sáng lập (18/3).<br><a href="/privacy">Chính sách quyền riêng tư</a> · <a href="/data-deletion">Xoá dữ liệu</a></p></section>`;
+  if (pg === "data") return `<section class="panel"><p>Xoá toàn bộ tiến độ học để bắt đầu lại từ đầu. Không thể hoàn tác.</p><button class="danger" data-a="reset" id="resetBtn">Xóa tiến độ và làm lại</button></section>`;
+  return "";
+}
+// Thông tin người sáng lập (sửa tại đây)
+const FOUNDER = {
+  name: "Hồ Quốc Huy",
+  bio: "Một người yêu cái đẹp: yêu thiên nhiên, cây cối, những bức tranh và từng nốt nhạc, và yêu con người. Lộ Trình được tạo ra từ mong muốn giúp mỗi người học tiếng Anh nhẹ nhàng như chăm một mầm cây: mỗi ngày tưới một chút, rồi đến lúc sẽ nở hoa.",
+  loves: ["🌿 Thiên nhiên", "🎨 Hội hoạ", "🎵 Âm nhạc", "🎻 Nhạc cụ", "💚 Con người"],
+  quote: "Ngôn ngữ cũng như âm nhạc: không cần hoàn hảo, chỉ cần mỗi ngày được cất lên.",
+};
+// Hướng dẫn sử dụng (gom tất cả chú thích chi tiết về đây)
+const HELP = [
+  ["Một buổi học gồm những gì?", "6 bước: Ôn bài cũ → Từ vựng mới → Tự đặt câu → Dịch câu → Role-play với AI → Tổng kết. Bấm thanh tiến trình trên đầu bài để quay lại xem bước đã học. Cứ 5 buổi có một bài kiểm tra ngắn."],
+  ["Tra nghĩa và nghe phát âm", "Bấm vào bất kỳ từ tiếng Anh nào để xem nghĩa, từ loại, phiên âm IPA và ví dụ. Bấm 🔊 để nghe, 🌐 Dịch để dịch cả câu ngay trong trang. Đổi giọng đọc và tốc độ trong Cài đặt → Giọng đọc & micro."],
+  ["Luyện nói bằng micro", "Bấm 🎤 rồi nói. App chấm phát âm theo từng từ. Nhận giọng nói chạy tốt nhất trên Chrome hoặc Edge, cần có Internet."],
+  ["Flashcard và ôn tập", "Từ đã học tự vào flashcard. App nhắc ôn đúng lúc bạn sắp quên (lặp lại ngắt quãng). Vào tab Ôn tập để lật thẻ hoặc làm bài ôn."],
+  ["Bật thông báo nhắc học", "Cài đặt → Nhắc học & thông báo → Bật thông báo. Mỗi thiết bị bật riêng một lần. Học xong (hoặc đã vào học, ôn flashcard) trong ngày thì app không nhắc nữa."],
+  ["Dùng trên iPhone", "Mở bằng Safari → nút Chia sẻ → Thêm vào MH chính → mở app từ biểu tượng ngoài màn hình. Sau đó mới bật được thông báo (iOS 16.4 trở lên)."],
+  ["Cộng đồng: trò chuyện ẩn danh", "Phòng chung theo trình độ để hỏi đáp; Ghép đôi 1-1 để luyện nói, kể cả khi người kia đang offline. Mọi người chỉ thấy biệt danh. Không chia sẻ số điện thoại, mạng xã hội hay đường link (app sẽ chặn)."],
+  ["Giữ cuộc trò chuyện, thu hồi, chặn", "⭐ Giữ: khi cả hai cùng bấm, hai bạn thành bạn chat và tin nhắn không bị xoá (cuộc trò chuyện thường tự xoá sau 30 ngày). Bấm ⋯ ở tin của mình để thu hồi. Bấm ⋯ trên đầu cuộc trò chuyện để tắt thông báo, kết thúc hoặc chặn. Bỏ chặn: Ghép đôi 1-1 → Người đã chặn."],
+  ["Giao diện theo mùa và sinh nhật", "Giao diện tự đổi theo 4 mùa và các ngày lễ (Tết, 14/2, 8/3, 18/3, 1/6, Trung thu, 14/10, 20/11, Giáng Sinh…). Nhập ngày sinh để nhận lời chúc riêng đúng ngày sinh nhật."],
+  ["Đổi tài khoản", "Cài đặt → Đăng xuất, rồi chọn tài khoản khác khi đăng nhập lại. Tiến độ được lưu theo tài khoản và đồng bộ giữa các thiết bị."],
+];
 /* =====================================================================
    TRA TỪ
    ===================================================================== */
@@ -1518,6 +1548,14 @@ async function testPush(btn) { btn.disabled = true; const r = await fetch("/api/
    HÀNH ĐỘNG (data-a)
    ===================================================================== */
 const ACT = {
+  setPage: v => { UI.sp = v || ""; render(); scrollTo(0, 0); },
+  fbKind: v => { UI.fbKind = v; render(); }, fbRate: v => { UI.fbRate = Number(v); render(); },
+  fbSend: async () => { const msg = $("#fbMsg")?.value.trim(); if (!msg && !UI.fbRate) return toast("Hãy viết vài dòng hoặc chọn số sao nhé");
+    UI.fbBusy = true; render();
+    try { const r = await timeoutFetch("/api/feedback", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({kind:UI.fbKind || "idea", rating:UI.fbRate || null, message:msg, level:S.level, ua:navigator.userAgent})}, 15000);
+      const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || "Không gửi được");
+      UI.fbRate = 0; UI.fbBusy = false; UI.sp = ""; render(); toast("Cảm ơn bạn đã góp ý 💚"); }
+    catch (e) { UI.fbBusy = false; render(); toast(e.message); } },
   logout: () => logout(),
   pushAsk: async (v, btn) => { S.profile.pushAsked = true; save(); if (v === "1") await enablePush(btn); else render(); },
   chAgree: () => { S.profile.chatOK = true; save(); chPoll(true); render(); },
@@ -1544,7 +1582,7 @@ const ACT = {
   chReport: async v => { const [id, reason] = String(v).split("|"); try { await chApi({action:"report", id:Number(id), reason}); CH.menu = null; toast("Đã gửi báo cáo. Cảm ơn bạn!"); chPoll(true); } catch (e) { toast(e.message); } },
   chBlock: async v => { try { await chApi({action:"block", id:Number(v)}); CH.menu = null; CH.msgs = CH.msgs.filter(m => m.id !== Number(v)); toast("Đã chặn. Bạn sẽ không thấy tin nhắn của người này nữa."); if (CH.tab === "pair") { CH.pair = null; CH.msgs = []; CH.last = 0; } chPoll(true); } catch (e) { toast(e.message); } },
   festFx: v => { S.profile.festFx = v === "true"; save(); applyFestive(); render(); toast(v === "true" ? "Đã bật hiệu ứng rơi" : "Đã tắt hiệu ứng rơi"); },
-  go: v => { view = v; Q = null; FC = null; closePop(); UI.menu = false; render(); scrollTo(0, 0); if (v === "chat") chPoll(true); },
+  go: v => { if (v === "settings") UI.sp = ""; view = v; Q = null; FC = null; closePop(); UI.menu = false; render(); scrollTo(0, 0); if (v === "chat") chPoll(true); },
   speak: v => say(v),
   slow: v => say(v, Math.max(0.45, ttsRate() - 0.25)),
   pron: v => { const l = L(), [kind, i] = v.split(":"), w = l.les.words[Number(i)], target = kind === "w" ? w.w : w.ex;
@@ -1754,23 +1792,21 @@ function vChat() {
   const tabs = `<div class="row chtabs"><button class="seg ${CH.tab === "room" ? "sel" : ""}" data-a="chTab" data-v="room">💬 Phòng chung</button><button class="seg ${CH.tab === "pair" ? "sel" : ""}" data-a="chTab" data-v="pair">🤝 Ghép đôi 1-1</button>
     ${CH.me ? `<span class="muted small">Hôm nay bạn là <b>${CH.me.icon} ${esc(CH.me.name)}</b></span>` : ""}</div>`;
   let head = "";
-  if (CH.tab === "room") head = `<div class="row">${[...CH_LEVELS, "ALL"].map(k => `<button class="mini seg ${(CH.room || "lv-" + (CH_LEVELS.includes(S.level) ? S.level : "A1")) === "lv-" + k ? "sel" : ""}" data-a="chRoom" data-v="lv-${k}">${k === "ALL" ? "Mọi trình độ" : k}</button>`).join("")}</div>
-     <p class="muted small">Phòng ${lv === "ALL" ? "chung cho mọi trình độ" : "trình độ " + lv}: hỏi đáp, chia sẻ mẹo học, luyện viết câu.</p>`;
+  if (CH.tab === "room") head = `<div class="row">${[...CH_LEVELS, "ALL"].map(k => `<button class="mini seg ${(CH.room || "lv-" + (CH_LEVELS.includes(S.level) ? S.level : "A1")) === "lv-" + k ? "sel" : ""}" data-a="chRoom" data-v="lv-${k}">${k === "ALL" ? "Mọi trình độ" : k}</button>`).join("")}</div>`;
   else if (!CH.pair) {
     const list = (CH.inbox || []).map(r => `<div class="inbox-item"><button class="inbox-row" data-a="chOpen" data-v="${r.id}"><span class="cav" style="--h:${r.partner.hue}">${r.partner.icon}</span>
       <span class="grow"><b>${esc(r.partner.name)}</b>${r.saved ? ` <span class="tag good">⭐ Bạn chat</span>` : r.theirKeep ? ` <span class="tag">muốn giữ cuộc trò chuyện</span>` : ""}<br><span class="muted small">${esc(r.preview || "Chưa có tin nhắn, hãy chào bạn ấy nhé!")}</span></span>
       ${r.muted ? `<span title="Đã tắt thông báo">🔕</span>` : ""}${r.unread ? `<span class="badge">${r.unread}</span>` : ""}</button>
       <button class="mini ghost inbox-x" data-a="chBlockRoom" data-v="${r.id}" title="Chặn người này, không bao giờ thấy tin của họ nữa">⛔</button></div>`).join("");
     return `<div class="wrap narrow">${tabs}<section class="panel">
-      <div class="row between nowrap"><div><h2>Ghép đôi 1-1</h2><p class="muted small">Ghép ngay với một người cùng trình độ, kể cả khi họ chưa online: họ sẽ nhận thông báo và trả lời sau.</p></div>${mascot(CH.waiting ? "think" : "cheer", 70, CH.waiting ? "bob" : "")}</div>
-      ${CH.waiting ? `<div class="row"><span class="spin"></span><span>Chưa có ai phù hợp. App sẽ tự ghép khi có người vào (bạn có thể rời trang này).</span><button class="mini" data-a="chCancel">Huỷ tìm</button></div>`
+      <div class="row between nowrap"><div><h2>Ghép đôi 1-1</h2></div>${mascot(CH.waiting ? "think" : "cheer", 70, CH.waiting ? "bob" : "")}</div>
+      ${CH.waiting ? `<div class="row"><span class="spin"></span><span>Đang tìm bạn phù hợp...</span><button class="mini" data-a="chCancel">Huỷ tìm</button></div>`
         : `<button class="primary big" data-a="chMatch">🔍 Tìm bạn luyện tập mới</button>`}
       <h3>Cuộc trò chuyện của bạn</h3>
       ${list ? `<div class="inbox">${list}</div>` : `<p class="muted">Chưa có cuộc trò chuyện nào.</p>`}
-      <p class="muted small">⛔ Không muốn nói chuyện với ai: bấm ⛔ để chặn. Bạn sẽ không bao giờ thấy tin, bị ghép lại hay nhận thông báo từ người đó. <a href="#" data-a="chBlocks">${CH.showBlocks ? "Ẩn danh sách đã chặn" : "Xem người đã chặn / bỏ chặn"}</a></p>
+      <p class="small"><a href="#" data-a="chBlocks">${CH.showBlocks ? "Ẩn người đã chặn" : "Người đã chặn"}</a></p>
       ${CH.showBlocks ? `<div class="inbox">${(CH.blocks || []).length ? CH.blocks.map(b => `<div class="inbox-item blk"><span class="cav" style="--h:${b.who.hue}">${b.who.icon}</span><span class="grow"><b>${esc(b.who.name)}</b><br><span class="muted small">Chặn lúc ${new Date(b.at).toLocaleString("vi-VN")}</span></span>
-        <button class="mini" data-a="chUnblock" data-v="${b.key}|0">Bỏ chặn</button>${b.room ? `<button class="mini" data-a="chUnblock" data-v="${b.key}|1">Bỏ chặn & mở lại chat</button>` : ""}</div>`).join("") : `<p class="muted small">Bạn chưa chặn ai.</p>`}</div>` : ""}
-      <p class="muted small">⭐ Khi cả hai cùng bấm <b>Giữ cuộc trò chuyện</b>, hai bạn thành <b>bạn chat</b>: tin nhắn được giữ lại để nhắn với nhau mỗi ngày, nhưng vẫn chỉ thấy biệt danh của nhau. Cuộc trò chuyện chưa giữ sẽ tự xoá sau 30 ngày.</p></section></div>`;
+        <button class="mini" data-a="chUnblock" data-v="${b.key}|0">Bỏ chặn</button>${b.room ? `<button class="mini" data-a="chUnblock" data-v="${b.key}|1">Bỏ chặn & mở lại chat</button>` : ""}</div>`).join("") : `<p class="muted small">Bạn chưa chặn ai.</p>`}</div>` : ""}</section></div>`;
   }
   else {
     const P = CH.pairInfo || {}, w = P.partner;
@@ -1779,7 +1815,7 @@ function vChat() {
       <button class="mini" data-a="chHMenu" aria-label="Tuỳ chọn" aria-expanded="${CH.hmenu ? "true" : "false"}">⋯</button></div>
       ${CH.hmenu ? `<div class="cmenu row hmenu"><button class="mini" data-a="chMute" data-v="${P.muted ? 0 : 1}">${P.muted ? "🔔 Bật lại thông báo" : "🔕 Tắt thông báo"}</button>
         <button class="mini" data-a="chLeave">${P.saved ? "Huỷ bạn chat" : "Kết thúc"}</button><button class="mini danger" data-a="chBlockRoom" data-v="${CH.pair.id}">⛔ Chặn</button></div>` : ""}
-      ${!P.saved && P.mineKeep ? `<p class="muted small">Đang chờ bạn ấy cũng bấm “Giữ”. Khi cả hai cùng giữ, tin nhắn sẽ không bị xoá.</p>` : !P.saved && P.theirKeep ? `<p class="fb small">⭐ Bạn ấy muốn giữ cuộc trò chuyện này. Bấm “Giữ cuộc trò chuyện” để thành bạn chat!</p>` : ""}
+      ${!P.saved && P.mineKeep ? `` : !P.saved && P.theirKeep ? `<p class="fb small">⭐ Bạn ấy muốn giữ cuộc trò chuyện. Bấm “Giữ” để thành bạn chat.</p>` : ""}
       ${CH.closed ? `<p class="fb small">Cuộc trò chuyện đã kết thúc.</p>` : ""}`;
   }
   const bubble = m => {
@@ -1798,8 +1834,7 @@ function vChat() {
     ${CH.ban ? `<p class="fb small">Bạn đang bị tạm khoá trò chuyện đến ${new Date(CH.ban.until).toLocaleString("vi-VN")} do bị báo cáo vi phạm.</p>` : ""}
     ${canSend ? (CH.rec ? `<div class="row recbar"><span class="recdot"></span><b id="recT">0:00</b><span class="muted small">Đang ghi âm (tối đa 60 giây)</span><button class="ghost" data-a="chRecCancel">Huỷ</button><button class="primary" data-a="chRecStop">Dừng & gửi</button></div>`
       : `<div class="row nowrap"><label class="sr" for="chIn">Tin nhắn</label><input id="chIn" data-enter="chSend" maxlength="500" placeholder="Viết bằng tiếng Anh (hoặc hỏi bằng tiếng Việt)..." autocomplete="off">
-         <button class="round" data-a="chRec" aria-label="Ghi âm" title="Gửi tin nhắn giọng nói">🎤</button><button class="primary" data-a="chSend" ${CH.sending ? "disabled" : ""}>${CH.sending ? "..." : "Gửi"}</button></div>`) : ""}
-    <p class="muted small">Ẩn danh · Không chia sẻ thông tin cá nhân · Bấm vào từ tiếng Anh để tra nghĩa · ⋯ để thu hồi, báo cáo hoặc chặn.</p></section></div>`;
+         <button class="round" data-a="chRec" aria-label="Ghi âm" title="Gửi tin nhắn giọng nói">🎤</button><button class="primary" data-a="chSend" ${CH.sending ? "disabled" : ""}>${CH.sending ? "..." : "Gửi"}</button></div>`) : ""}</section></div>`;
 }
 /* =====================================================================
    GIAO DIỆN THEO MÙA / NGÀY LỄ + SINH NHẬT NGƯỜI DÙNG

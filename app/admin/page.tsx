@@ -7,6 +7,7 @@ type U = { id: string; email: string; name: string; provider: string; joined: st
 type Data = { stats: { users: number; today: number; week: number; sessions: number; push: number; newWeek: number }; users: U[] };
 type Rep = { id: number; reason: string; created_at: string; reporter: string; reported: string; reporterEmail?: string; reportedEmail?: string; room_id: string;
   message: { id: number; text: string | null; audio_path: string | null; hidden: boolean } | null };
+type Fb = { id: number; kind: string; rating: number | null; message: string; level: string; status: string; created_at: string; email?: string; user_agent?: string };
 type Ban = { user_id: string; until: string; reason: string };
 type Probe = { name: string; model?: string; ok: boolean; ms?: number; error?: string };
 
@@ -25,6 +26,9 @@ export default function AdminPage() {
   const [busy, setBusy] = useState(false);
   const [probe, setProbe] = useState<Probe[] | null>(null);
   const [reps, setReps] = useState<{ reports: Rep[]; bans: Ban[] } | null>(null);
+  const [fbs, setFbs] = useState<Fb[] | null>(null);
+  async function loadFb() { try { const r = await fetch("/api/admin?feedback=1"); if (r.ok) setFbs((await r.json()).feedback); } catch {} }
+  useEffect(() => { loadFb(); }, []);
   async function loadReps() { try { const r = await fetch("/api/admin?reports=1"); if (r.ok) setReps(await r.json()); } catch {} }
   useEffect(() => { loadReps(); }, []);
   async function mod(body: Record<string, unknown>) {
@@ -112,6 +116,18 @@ export default function AdminPage() {
               <td>{u.push ? <span className="tag good">✓ {u.push} thiết bị</span> : <span className="muted small">Chưa bật</span>}</td>
               <td><button className="mini" disabled={!u.push} onClick={() => { setTo(u); setMsg(""); document.getElementById("adm-send")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>{to !== "all" && to?.id === u.id ? "✓ Đã chọn" : "Chọn gửi"}</button></td>
             </tr>))}</tbody></table></div>
+      </section>
+
+      <section className="panel">
+        <div className="row between"><h3>Phản hồi từ người dùng ({fbs?.filter((f) => f.status !== "done").length ?? "…"} mới)</h3><button className="mini" onClick={loadFb}>↻</button></div>
+        {fbs?.length === 0 && <p className="muted">Chưa có phản hồi nào.</p>}
+        {fbs?.map((f) => (
+          <div key={f.id} className="adm-rep" style={{ opacity: f.status === "done" ? 0.55 : 1 }}>
+            <div><span className="tag">{({ idea: "💡 Góp ý", bug: "🐞 Báo lỗi", love: "💚 Khen", other: "Khác" } as Record<string, string>)[f.kind] || f.kind}</span>{f.rating ? <b> {"★".repeat(f.rating)}{"☆".repeat(5 - f.rating)}</b> : null}</div>
+            {f.message && <div style={{ whiteSpace: "pre-wrap" }}>{f.message}</div>}
+            <div className="muted small">{f.email} · {f.level} · {new Date(f.created_at).toLocaleString("vi-VN")} · {/iPhone|iPad/.test(f.user_agent || "") ? "iPhone" : /Android/.test(f.user_agent || "") ? "Android" : "Máy tính"}</div>
+            {f.status !== "done" && <div className="row"><button className="mini" onClick={async () => { await fetch("/api/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mod: "fbDone", feedbackId: f.id }) }); loadFb(); }}>✓ Đã xem</button></div>}
+          </div>))}
       </section>
 
       <section className="panel">
