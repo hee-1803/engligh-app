@@ -665,21 +665,35 @@ details.panel.help { padding: 16px 20px } .setlist + .setlist, .account + .setli
 @media (max-width: 420px) { .si-v { display: none } }
 .langpick { display: grid; border-radius: 18px; overflow: hidden; border: 2px solid var(--line) } .langpick .setitem.sel { background: var(--accent-soft) } .langpick .si-go { color: var(--accent); font-weight: 900 }
 .langsw .sel { color: var(--accent); text-decoration: underline }
-/* ---------- Màn hình mở app: 2 chú dê rượt nhau ---------- */
-.boot { min-height: 72vh; display: grid; place-items: center; align-content: center; gap: 34px }
-.boot-ring { position: relative; width: 240px; height: 240px; animation: bootspin 2.4s linear infinite }
-.boot-ring img { width: 100%; height: 100%; display: block; filter: drop-shadow(0 8px 14px rgba(120, 90, 40, .18)) }
-@keyframes bootspin { to { transform: rotate(360deg) } }
-/* Bụi tung sau chân (bám theo dê vì nằm trong vòng quay) */
-.boot .puff { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #fffaf0, #eadcc4); opacity: 0; animation: puff 1.2s ease-out infinite }
-.boot .p1 { left: 2%; top: 40% } .boot .p2 { left: 9%; top: 47%; animation-delay: .4s; width: 16px; height: 16px }
-.boot .p3 { right: 0; bottom: 6% ; animation-delay: .6s } .boot .p4 { right: 8%; bottom: 0; animation-delay: 1s; width: 16px; height: 16px }
-@keyframes puff { 0% { opacity: .9; transform: scale(.4) } 100% { opacity: 0; transform: scale(1.8) translate(-6px, 4px) } }
-/* Nốt nhạc bay lên */
-.boot .note { position: absolute; font: 900 22px/1 var(--f-display); color: #57a13e; opacity: 0; animation: note 1.6s ease-out infinite }
-.boot .n1 { left: 40%; top: 4% } .boot .n2 { left: 46%; top: 0; animation-delay: .8s; color: #ff8fb1 }
-.boot .n3 { right: 22%; bottom: 30% ; animation-delay: .4s; color: #f2b134 } .boot .n4 { right: 14%; bottom: 36%; animation-delay: 1.2s }
-@keyframes note { 0% { opacity: 0; transform: translateY(6px) scale(.6) } 25% { opacity: 1 } 100% { opacity: 0; transform: translateY(-26px) rotate(-18deg) scale(1.1) } }
+/* ---------- Màn hình mở app: 2 chú dê chạy từng bước quanh vòng elip ---------- */
+.boot { min-height: 72vh; display: grid; place-items: center; align-content: center; gap: 26px }
+.boot .gtrack { position: relative; width: 300px; height: 200px }
+.boot .lane { position: absolute; left: 30px; top: 55px; width: 240px; height: 110px; border-radius: 50%; border: 3px dashed color-mix(in srgb, #57a13e 35%, transparent); background: radial-gradient(ellipse, color-mix(in srgb, #9fdc9a 22%, transparent), transparent 70%) }
+.boot .runner { position: absolute; left: 0; top: 0; width: 92px; height: 72px; offset-anchor: 50% 92%;
+  offset-path: path("M30,110 A120,55 0 1,0 270,110 A120,55 0 1,0 30,110"); offset-rotate: 0deg; animation: lap 3.4s linear infinite }
+.boot .r2 { animation-delay: -1.25s }
+.boot .depth { width: 100%; height: 100%; position: relative; animation: depth 3.4s linear infinite; animation-delay: inherit }
+.boot .flip { width: 100%; height: 100%; position: relative; animation: face 3.4s steps(1) infinite; animation-delay: inherit }
+@keyframes lap { to { offset-distance: 100% } }
+@keyframes face { 0% { transform: scaleX(1) } 50% { transform: scaleX(-1) } }
+@keyframes depth { 0% { transform: scale(.92); z-index: 2 } 25% { transform: scale(1.04) } 50% { transform: scale(.92) } 75% { transform: scale(.76); filter: saturate(.9) } 100% { transform: scale(.92) } }
+.boot .goat { width: 100%; height: 100%; overflow: visible; display: block; filter: drop-shadow(0 5px 4px rgba(90, 60, 30, .18)) }
+/* Bước chạy: chân trước/sau đánh ngược pha, thân nhún, đầu gật */
+.boot .leg { transform-box: fill-box; transform-origin: 50% 0; animation: stride .38s ease-in-out infinite alternate }
+.boot .ff, .boot .bn { animation-delay: -.19s }
+.boot .bf, .boot .bn { animation-name: stride-b }
+@keyframes stride { from { transform: rotate(32deg) } to { transform: rotate(-30deg) } }
+@keyframes stride-b { from { transform: rotate(-28deg) } to { transform: rotate(30deg) } }
+.boot .gbody { animation: bob .19s ease-in-out infinite alternate } @keyframes bob { from { transform: translateY(0) } to { transform: translateY(-3px) } }
+.boot .ghead { transform-box: fill-box; transform-origin: 20% 80%; animation: nod .38s ease-in-out infinite alternate } @keyframes nod { from { transform: rotate(-4deg) } to { transform: rotate(5deg) } }
+/* Bụi tung sau chân */
+.boot .dust { position: absolute; left: 2px; bottom: 2px; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #fffaf0, #e3d2b2); opacity: 0; animation: dust .76s ease-out infinite }
+.boot .d2 { animation-delay: .25s; width: 10px; height: 10px; bottom: 8px } .boot .d3 { animation-delay: .5s; width: 12px; height: 12px; left: 10px }
+@keyframes dust { 0% { opacity: .95; transform: translate(0, 0) scale(.5) } 100% { opacity: 0; transform: translate(-22px, -6px) scale(1.7) } }
+/* Nốt nhạc bay lên trên đầu */
+.boot .note { position: absolute; left: 50%; top: -14px; font: 900 20px/1 var(--f-display); color: #57a13e; opacity: 0; animation: note 1.4s ease-out infinite }
+.boot .r2 .note { color: #ff8fb1; animation-delay: .7s }
+@keyframes note { 0% { opacity: 0; transform: translateY(6px) scale(.6) } 25% { opacity: 1 } 100% { opacity: 0; transform: translateY(-24px) rotate(-16deg) scale(1.1) } }
 .boot-dots { display: flex; gap: 6px } .boot-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); opacity: .3; animation: bdot 1s infinite }
 .boot-dots i:nth-child(2) { animation-delay: .15s } .boot-dots i:nth-child(3) { animation-delay: .3s } @keyframes bdot { 50% { opacity: 1; transform: translateY(-4px) } }
-@media (prefers-reduced-motion: reduce) { .boot-ring { animation-duration: 8s } .boot .puff, .boot .note { display: none } }
+@media (prefers-reduced-motion: reduce) { .boot .runner, .boot .depth, .boot .flip { animation-duration: 12s } .boot .dust, .boot .note { display: none } }
