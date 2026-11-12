@@ -41,6 +41,7 @@ export default function AdminPage() {
   }
   const [reps, setReps] = useState<{ reports: Rep[]; bans: Ban[] } | null>(null);
   const [fbs, setFbs] = useState<Fb[] | null>(null);
+  const [rk, setRk] = useState(0), [reloading, setReloading] = useState(false), [done, setDone] = useState(false);
   async function loadFb() { try { const r = await fetch("/api/admin?feedback=1"); if (r.ok) setFbs((await r.json()).feedback); } catch {} }
   useEffect(() => { loadFb(); }, []);
   async function loadReps() { try { const r = await fetch("/api/admin?reports=1"); if (r.ok) setReps(await r.json()); } catch {} }
@@ -101,7 +102,7 @@ export default function AdminPage() {
       <header className="adm-head">
         <div className="row nowrap">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/logo.png?v=5" alt="" width={44} height={44} className="logo-lg" />
           <div><p className="eyebrow">SEED · Quản trị</p><h1>Trang quản trị</h1></div></div>
-        <div className="row"><button className="mini" onClick={() => { load(); loadReps(); loadFb(); }}>↻ Tải lại</button><a className="btn mini" href="/">← Về app</a></div>
+        <div className="row"><button className="mini" disabled={reloading} onClick={async () => { setReloading(true); await Promise.all([load(), loadReps(), loadFb()]); setRk((k) => k + 1); setReloading(false); setDone(true); setTimeout(() => setDone(false), 1800); }}>{reloading ? "⏳ Đang tải…" : done ? "✓ Đã tải lại" : "↻ Tải lại"}</button><a className="btn mini" href="/">← Về app</a></div>
       </header>
       <nav className="adm-tabs">{TABS.map(([k, t, n]) => <button key={k} className={tab === k ? "sel" : ""} onClick={() => setTab(k)}>{t}{n ? <span className="badge">{n}</span> : null}</button>)}</nav>
 
@@ -149,7 +150,7 @@ export default function AdminPage() {
           {msg && <span className="small">{msg}</span>}</div>
       </section>}
 
-      {tab === "lessons" && <LessonsAdmin />}
+      {tab === "lessons" && <LessonsAdmin key={rk} />}
 
       {tab === "feedback" && <section className="panel">
         <div className="row between"><h3>Phản hồi ({newFb.length} mới / {fbs?.length ?? "…"})</h3><button className="mini" onClick={loadFb}>↻</button></div>
