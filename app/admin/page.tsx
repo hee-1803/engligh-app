@@ -26,6 +26,19 @@ export default function AdminPage() {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [probe, setProbe] = useState<Probe[] | null>(null);
+  // Tab đang mở (nhớ theo #hash để bấm "Về trang quản trị" quay lại đúng chỗ)
+  const [tab, setTabState] = useState("overview");
+  useEffect(() => { const h = location.hash.slice(1); if (h) setTabState(h); }, []);
+  const setTab = (t: string) => { setTabState(t); history.replaceState(null, "", "#" + t); };
+  // Phân trang: mỗi danh sách chỉ hiện 5 mục mới nhất, xem tiếp bằng ‹ Trước / Sau ›
+  const PER = 5;
+  const [pg, setPg] = useState<Record<string, number>>({});
+  function page<T>(arr: T[], k: string) { const p = Math.min(pg[k] || 0, Math.max(0, Math.ceil(arr.length / PER) - 1)); return arr.slice(p * PER, p * PER + PER); }
+  function Pager({ k, total }: { k: string; total: number }) {
+    const pages = Math.ceil(total / PER); if (pages <= 1) return null; const p = Math.min(pg[k] || 0, pages - 1);
+    return <div className="pager"><button className="mini" disabled={p === 0} onClick={() => setPg({ ...pg, [k]: p - 1 })}>‹ Trước</button>
+      <span className="small">Trang {p + 1}/{pages} · {total} mục</span><button className="mini" disabled={p >= pages - 1} onClick={() => setPg({ ...pg, [k]: p + 1 })}>Sau ›</button></div>;
+  }
   const [reps, setReps] = useState<{ reports: Rep[]; bans: Ban[] } | null>(null);
   const [fbs, setFbs] = useState<Fb[] | null>(null);
   async function loadFb() { try { const r = await fetch("/api/admin?feedback=1"); if (r.ok) setFbs((await r.json()).feedback); } catch {} }
@@ -33,7 +46,7 @@ export default function AdminPage() {
   async function loadReps() { try { const r = await fetch("/api/admin?reports=1"); if (r.ok) setReps(await r.json()); } catch {} }
   useEffect(() => { loadReps(); }, []);
   async function mod(body: Record<string, unknown>) {
-    await fetch("/api/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); loadReps();
+    await fetch("/api/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); loadReps(); setMsg("");
   }
 
   async function load() {
@@ -75,87 +88,115 @@ export default function AdminPage() {
   if (!d) return <main className="adm"><section className="panel"><p><span className="spin" /> Đang tải dữ liệu...</p></section></main>;
 
   const S = d.stats;
+  const banned = new Map((reps?.bans || []).map((b) => [b.user_id, b]));
+  const openReps = reps?.reports || [], newFb = (fbs || []).filter((f) => f.status !== "done");
+  const TABS: [string, string, number?][] = [["overview", "📊 Tổng quan"], ["users", "👥 Người dùng", S.users], ["notify", "🔔 Gửi thông báo"], ["lessons", "📚 Kho bài"],
+    ["feedback", "💬 Phản hồi", newFb.length], ["reports", "🚩 Vi phạm", openReps.length + (reps?.bans.length || 0)], ["ai", "🤖 AI"]];
   const cards: [string, number, string][] = [["Người dùng", S.users, `+${S.newWeek} trong 7 ngày`], ["Học hôm nay", S.today, ""], ["Học trong 7 ngày", S.week, ""],
     ["Tổng buổi học", S.sessions, ""], ["Bật thông báo", S.push, `${S.users ? Math.round((S.push / S.users) * 100) : 0}% người dùng`]];
+  const pickUser = (u: U) => { setTo(u); setMsg(""); setTab("notify"); scrollTo({ top: 0, behavior: "smooth" }); };
 
   return (
     <main className="adm">
-      <div className="row between"><div><p className="eyebrow">SEED · Quản trị</p><h1>Trang quản trị</h1></div>
-        <div className="row"><button onClick={load}>↻ Tải lại</button><a className="btn" href="/">← Về app</a></div></div>
+      <header className="adm-head">
+        <div className="row nowrap">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/logo.png?v=5" alt="" width={44} height={44} className="logo-lg" />
+          <div><p className="eyebrow">SEED · Quản trị</p><h1>Trang quản trị</h1></div></div>
+        <div className="row"><button className="mini" onClick={() => { load(); loadReps(); loadFb(); }}>↻ Tải lại</button><a className="btn mini" href="/">← Về app</a></div>
+      </header>
+      <nav className="adm-tabs">{TABS.map(([k, t, n]) => <button key={k} className={tab === k ? "sel" : ""} onClick={() => setTab(k)}>{t}{n ? <span className="badge">{n}</span> : null}</button>)}</nav>
 
-      <div className="adm-stats">{cards.map(([t, n, sub]) => <div key={t} className="panel"><span className="muted small">{t}</span><b>{n}</b>{sub && <span className="muted small">{sub}</span>}</div>)}</div>
+      {tab === "overview" && <>
+        <div className="adm-stats">{cards.map(([t, n, sub]) => <div key={t} className="panel"><span className="muted small">{t}</span><b>{n}</b>{sub && <span className="muted small">{sub}</span>}</div>)}</div>
+        <div className="adm-two">
+          <section className="panel"><div className="row between"><h3>Học gần đây</h3><button className="mini ghost" onClick={() => setTab("users")}>Xem tất cả →</button></div>
+            {d.users.filter((u) => u.lastStudy).slice(0, 5).map((u) => <div key={u.id} className="adm-line"><b>{u.name || u.email}</b><span className="muted small">{u.level} · {u.sessions} buổi · {u.today ? "hôm nay" : fmt(u.lastStudy)}</span></div>)}</section>
+          <section className="panel"><div className="row between"><h3>Cần xử lý</h3></div>
+            <div className="adm-line"><b>💬 Phản hồi mới</b><button className="mini" onClick={() => setTab("feedback")}>{newFb.length}</button></div>
+            <div className="adm-line"><b>🚩 Báo cáo vi phạm</b><button className="mini" onClick={() => setTab("reports")}>{openReps.length}</button></div>
+            <div className="adm-line"><b>⛔ Đang bị khoá chat</b><button className="mini" onClick={() => setTab("reports")}>{reps?.bans.length || 0}</button></div></section>
+        </div></>}
 
-      <section className="panel" id="adm-send">
+      {tab === "users" && <section className="panel">
+        <div className="row between"><h3>Người dùng ({list.length})</h3>
+          <div className="row">{([["all", "Tất cả"], ["today", "Học hôm nay"], ["push", "Bật thông báo"], ["idle", "Bỏ học 7 ngày"]] as const).map(([k, t]) =>
+            <button key={k} className={`seg mini ${filter === k ? "sel" : ""}`} onClick={() => { setFilter(k); setPg((p) => ({ ...p, users: 0 })); }}>{t}</button>)}</div></div>
+        <input placeholder="Tìm theo tên hoặc email" value={q} onChange={(e) => { setQ(e.target.value); setPg((p) => ({ ...p, users: 0 })); }} />
+        <div className="adm-cards">{page(list, "users").map((u) => { const b = banned.get(u.id); return (
+          <div key={u.id} className="adm-card">
+            <div className="row between nowrap"><div><b>{u.name || "(chưa đặt tên)"}</b> {u.level && <span className="tag">{u.level}</span>}<br /><span className="muted small">{u.email} · {u.provider}</span></div>
+              {u.today ? <span className="tag good">Học hôm nay</span> : <span className="muted small">Học: {fmt(u.lastStudy)}</span>}</div>
+            <div className="muted small">{GOAL[u.goal] || u.goal || "–"} · {u.sessions} buổi · {u.cards} từ · tham gia {fmt(u.joined)} · {u.push ? `🔔 ${u.push} thiết bị` : "chưa bật thông báo"}</div>
+            {b && <div className="fb small">⛔ Đang bị khoá chat đến {new Date(b.until).toLocaleString("vi-VN")} ({b.reason})</div>}
+            <div className="row">
+              <button className="mini" disabled={!u.push} onClick={() => pickUser(u)}>🔔 Gửi thông báo</button>
+              {b ? <button className="mini" onClick={() => mod({ mod: "unban", userId: u.id })}>✓ Mở khoá chat</button>
+                : <button className="mini danger" onClick={() => { if (confirm(`Khoá chat ${u.email} trong 1 ngày?`)) mod({ mod: "ban", userId: u.id, days: 1 }); }}>⛔ Khoá chat 1 ngày</button>}
+            </div></div>); })}</div>
+        <Pager k="users" total={list.length} />
+      </section>}
+
+      {tab === "notify" && <section className="panel" id="adm-send">
         <h3>Gửi thông báo</h3>
         <div className="row">
           <span>Gửi tới:</span>
           <button className={`seg ${to === "all" ? "sel" : ""}`} onClick={() => setTo("all")}>Tất cả người đã bật ({S.push})</button>
-          {to && to !== "all" && <span className="adm-to">👤 <b>{to.name || "(chưa đặt tên)"}</b> · {to.email} · {to.push} thiết bị <button className="mini ghost" onClick={() => setTo(null)}>✕</button></span>}
-          {(!to || to === "all") && <span className="muted small">hoặc bấm “Gửi” ở một người trong danh sách</span>}
+          {to && to !== "all" && <span className="adm-to">👤 <b>{to.name || "(chưa đặt tên)"}</b> · {to.email} <button className="mini ghost" onClick={() => setTo(null)}>✕</button></span>}
+          {(!to || to === "all") && <button className="mini ghost" onClick={() => setTab("users")}>Chọn một người →</button>}
         </div>
         <input placeholder="Tiêu đề, ví dụ: 🎄 Chủ đề Giáng Sinh đã có!" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} />
         <textarea placeholder="Nội dung (tối đa 240 ký tự)" value={body} maxLength={240} onChange={(e) => setBody(e.target.value)} />
         <div className="row"><button className="primary" disabled={busy || !to || !title.trim() || !body.trim()} onClick={send}>{busy ? "Đang gửi..." : to === "all" ? "Gửi cho tất cả" : to ? "Gửi cho người này" : "Gửi thông báo"}</button>
-          {!to ? <span className="muted small">Chọn người nhận trước</span> : (!title.trim() || !body.trim()) && <span className="muted small">Nhập tiêu đề và nội dung</span>}
           {msg && <span className="small">{msg}</span>}</div>
-      </section>
+      </section>}
 
-      <section className="panel">
-        <div className="row between"><h3>Người dùng ({list.length})</h3>
-          <div className="row">{([["all", "Tất cả"], ["today", "Học hôm nay"], ["push", "Bật thông báo"], ["idle", "Bỏ học 7 ngày"]] as const).map(([k, t]) =>
-            <button key={k} className={`seg mini ${filter === k ? "sel" : ""}`} onClick={() => setFilter(k)}>{t}</button>)}</div></div>
-        <input placeholder="Tìm theo tên hoặc email" value={q} onChange={(e) => setQ(e.target.value)} />
-        <div className="adm-table"><table>
-          <thead><tr><th>Người dùng</th><th>Trình độ</th><th>Buổi</th><th>Học gần nhất</th><th>Tham gia</th><th>Thông báo</th><th /></tr></thead>
-          <tbody>{list.map((u) => (
-            <tr key={u.id} className={to !== "all" && to?.id === u.id ? "sel" : ""}>
-              <td><b>{u.name || "(chưa đặt tên)"}</b><br /><span className="muted small">{u.email || u.id.slice(0, 8)} · {u.provider}</span></td>
-              <td>{u.level ? <span className="tag">{u.level}</span> : "–"}<br /><span className="muted small">{GOAL[u.goal] || ""}</span></td>
-              <td>{u.sessions}<br /><span className="muted small">{u.cards} từ</span></td>
-              <td>{u.today ? <span className="tag good">Hôm nay</span> : fmt(u.lastStudy)}</td>
-              <td>{fmt(u.joined)}</td>
-              <td>{u.push ? <span className="tag good">✓ {u.push} thiết bị</span> : <span className="muted small">Chưa bật</span>}</td>
-              <td><button className="mini" disabled={!u.push} onClick={() => { setTo(u); setMsg(""); document.getElementById("adm-send")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>{to !== "all" && to?.id === u.id ? "✓ Đã chọn" : "Chọn gửi"}</button></td>
-            </tr>))}</tbody></table></div>
-      </section>
+      {tab === "lessons" && <LessonsAdmin />}
 
-      <LessonsAdmin />
-
-      <section className="panel">
-        <div className="row between"><h3>Phản hồi từ người dùng ({fbs?.filter((f) => f.status !== "done").length ?? "…"} mới)</h3><button className="mini" onClick={loadFb}>↻</button></div>
+      {tab === "feedback" && <section className="panel">
+        <div className="row between"><h3>Phản hồi ({newFb.length} mới / {fbs?.length ?? "…"})</h3><button className="mini" onClick={loadFb}>↻</button></div>
         {fbs?.length === 0 && <p className="muted">Chưa có phản hồi nào.</p>}
-        {fbs?.map((f) => (
+        {page(fbs || [], "fb").map((f) => (
           <div key={f.id} className="adm-rep" style={{ opacity: f.status === "done" ? 0.55 : 1 }}>
             <div><span className="tag">{({ idea: "💡 Góp ý", bug: "🐞 Báo lỗi", love: "💚 Khen", other: "Khác" } as Record<string, string>)[f.kind] || f.kind}</span>{f.rating ? <b> {"★".repeat(f.rating)}{"☆".repeat(5 - f.rating)}</b> : null}</div>
             {f.message && <div style={{ whiteSpace: "pre-wrap" }}>{f.message}</div>}
             <div className="muted small">{f.email} · {f.level} · {new Date(f.created_at).toLocaleString("vi-VN")} · {/iPhone|iPad/.test(f.user_agent || "") ? "iPhone" : /Android/.test(f.user_agent || "") ? "Android" : "Máy tính"}</div>
             {f.status !== "done" && <div className="row"><button className="mini" onClick={async () => { await fetch("/api/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mod: "fbDone", feedbackId: f.id }) }); loadFb(); }}>✓ Đã xem</button></div>}
           </div>))}
-      </section>
+        <Pager k="fb" total={fbs?.length || 0} />
+      </section>}
 
-      <section className="panel">
-        <div className="row between"><h3>Báo cáo vi phạm trong trò chuyện ({reps?.reports.length ?? "…"})</h3><button className="mini" onClick={loadReps}>↻</button></div>
-        <p className="muted small">Tin nhắn bị 2 người báo cáo sẽ tự ẩn. Người bị 3 người khác nhau báo cáo trong 24 giờ sẽ tự bị khoá chat 24 giờ.</p>
-        {reps?.reports.length === 0 && <p className="muted">Chưa có báo cáo nào. 🎉</p>}
-        {reps?.reports.map((r) => (
-          <div key={r.id} className="adm-rep">
-            <div><b>{r.message?.audio_path ? "🎤 (tin nhắn giọng nói)" : `“${r.message?.text || "(đã xoá)"}”`}</b>{r.message?.hidden && <span className="tag"> đã ẩn</span>}</div>
-            <div className="muted small">Người gửi: <b>{r.reportedEmail}</b> · Người báo cáo: {r.reporterEmail} · Lý do: {r.reason || "–"} · {new Date(r.created_at).toLocaleString("vi-VN")} · {r.room_id.startsWith("p-") ? "Ghép đôi" : r.room_id.replace("lv-", "Phòng ")}</div>
-            <div className="row">
-              <button className="mini" onClick={() => mod({ mod: "dismiss", reportId: r.id })}>Bỏ qua</button>
-              {r.message && !r.message.hidden && <button className="mini" onClick={() => mod({ mod: "hide", reportId: r.id, messageId: r.message!.id })}>Ẩn tin nhắn</button>}
-              <button className="mini danger" onClick={() => mod({ mod: "ban", reportId: r.id, userId: r.reported, days: 1, messageId: r.message?.id })}>Khoá chat 1 ngày</button>
-              <button className="mini danger" onClick={() => mod({ mod: "ban", reportId: r.id, userId: r.reported, days: 30, messageId: r.message?.id })}>Khoá 30 ngày</button>
-            </div>
-          </div>))}
-        {!!reps?.bans.length && <><h3>Đang bị khoá chat</h3>{reps.bans.map((b) => <div key={b.user_id} className="row between nowrap"><span className="small">{d.users.find((u) => u.id === b.user_id)?.email || b.user_id.slice(0, 8)} · đến {new Date(b.until).toLocaleString("vi-VN")} · {b.reason}</span><button className="mini" onClick={() => mod({ mod: "unban", userId: b.user_id })}>Mở khoá</button></div>)}</>}
-      </section>
+      {tab === "reports" && <>
+        <section className="panel">
+          <div className="row between"><h3>⛔ Đang bị khoá chat ({reps?.bans.length || 0})</h3></div>
+          <p className="muted small">Khoá nhầm thì bấm Mở khoá, người đó chat lại được ngay.</p>
+          {reps?.bans.length === 0 && <p className="muted">Không có ai bị khoá.</p>}
+          {page(reps?.bans || [], "bans").map((b) => <div key={b.user_id} className="adm-line"><span className="small"><b>{d.users.find((u) => u.id === b.user_id)?.email || b.user_id.slice(0, 8)}</b> · đến {new Date(b.until).toLocaleString("vi-VN")} · {b.reason}</span>
+            <button className="mini" onClick={() => mod({ mod: "unban", userId: b.user_id })}>✓ Mở khoá</button></div>)}
+          <Pager k="bans" total={reps?.bans.length || 0} />
+        </section>
+        <section className="panel">
+          <div className="row between"><h3>🚩 Báo cáo vi phạm ({openReps.length})</h3><button className="mini" onClick={loadReps}>↻</button></div>
+          <p className="muted small">Tin bị 2 người báo cáo sẽ tự ẩn. Người bị 3 người khác nhau báo cáo trong 24 giờ sẽ tự bị khoá chat 24 giờ.</p>
+          {openReps.length === 0 && <p className="muted">Chưa có báo cáo nào. 🎉</p>}
+          {page(openReps, "reps").map((r) => (
+            <div key={r.id} className="adm-rep">
+              <div><b>{r.message?.audio_path ? "🎤 (tin nhắn giọng nói)" : `“${r.message?.text || "(đã xoá)"}”`}</b>{r.message?.hidden && <span className="tag"> đã ẩn</span>}</div>
+              <div className="muted small">Người gửi: <b>{r.reportedEmail}</b> · Người báo cáo: {r.reporterEmail} · Lý do: {r.reason || "–"} · {new Date(r.created_at).toLocaleString("vi-VN")}</div>
+              <div className="row">
+                <button className="mini" onClick={() => mod({ mod: "dismiss", reportId: r.id })}>Bỏ qua</button>
+                {r.message && !r.message.hidden && <button className="mini" onClick={() => mod({ mod: "hide", reportId: r.id, messageId: r.message!.id })}>Ẩn tin nhắn</button>}
+                <button className="mini danger" onClick={() => mod({ mod: "ban", reportId: r.id, userId: r.reported, days: 1, messageId: r.message?.id })}>Khoá chat 1 ngày</button>
+                <button className="mini danger" onClick={() => mod({ mod: "ban", reportId: r.id, userId: r.reported, days: 30, messageId: r.message?.id })}>Khoá 30 ngày</button>
+              </div>
+            </div>))}
+          <Pager k="reps" total={openReps.length} />
+        </section></>}
 
-      <section className="panel">
+      {tab === "ai" && <section className="panel">
         <div className="row between"><h3>Trạng thái AI</h3><button className="mini" onClick={checkAI}>Kiểm tra AI</button></div>
-        {probe && (probe.length ? probe.map((p) => <div key={p.name} className="row between nowrap"><span><b>{p.name}</b> <span className="muted small">{p.model}</span></span>
+        <p className="muted small">Chấm câu, role-play, tra từ: Groq → OpenRouter → Gemini. Soạn bài mới: Gemini trước, hết lượt thì Groq/OpenRouter soạn thay.</p>
+        {probe && (probe.length ? probe.map((p) => <div key={p.name} className="adm-line"><span><b>{p.name}</b> <span className="muted small">{p.model}</span></span>
           {p.ok ? <span className="tag good">✓ {((p.ms || 0) / 1000).toFixed(1)}s</span> : <span className="tag bad">✗ {p.error}</span>}</div>) : <p><span className="spin" /> Đang kiểm tra...</p>)}
-      </section>
+      </section>}
     </main>
   );
 }

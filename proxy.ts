@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Những đường dẫn không cần đăng nhập
-const PUBLIC = ["/login", "/auth", "/api/cron", "/sw.js", "/manifest.webmanifest", "/englishpath.js", "/stickers.js", "/lessonbank.js", "/privacy", "/data-deletion"];
+const PUBLIC = ["/login", "/auth", "/api/cron", "/sw.js", "/manifest.webmanifest", "/englishpath.js", "/stickers.js", "/lessonbank.js", "/install.js", "/privacy", "/data-deletion"];
 
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;

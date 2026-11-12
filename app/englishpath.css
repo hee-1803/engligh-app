@@ -720,3 +720,12 @@ details.panel.help { padding: 16px 20px } .setlist + .setlist, .account + .setli
 .lres { display: grid; gap: 6px } .bad-list, .warn-list { margin: 0; padding-left: 4px; list-style: none; font-size: .9rem } .bad-list { color: var(--bad) }
 .aidraft input { flex: 1; min-width: 220px }
 @media (max-width: 700px) { .lq { grid-template-columns: 1fr 1fr } .lq > input:first-child { grid-column: 1 / -1 } }
+/* ---------- Trang quản trị: tab + phân trang ---------- */
+.adm-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center } .adm-head h1 { margin: 0; font-size: 1.6rem }
+.adm-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 4px; background: var(--surface); border-radius: 99px; box-shadow: var(--bub); position: sticky; top: 8px; z-index: 5 }
+.adm-tabs button { white-space: nowrap; border: 0; box-shadow: none; background: none; padding: 9px 16px; display: inline-flex; gap: 6px; align-items: center }
+.adm-tabs button.sel { background: var(--accent-soft); color: var(--accent) } .adm-tabs .badge { font-size: .72rem }
+.adm-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px }
+.adm-line { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line) } .adm-line:last-child { border-bottom: 0 }
+.adm-cards { display: grid; gap: 10px } .adm-card { border: 1.5px solid var(--line); border-radius: 18px; padding: 12px 14px; display: grid; gap: 6px }
+.pager { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 10px }

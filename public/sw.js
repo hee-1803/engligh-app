@@ -1,6 +1,7 @@
 /* Service worker: nhận thông báo đẩy nhắc học */
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
+self.addEventListener("fetch", () => {}); // cần cho điều kiện "cài đặt được" (PWA) trên một số trình duyệt
 
 self.addEventListener("push", (e) => {
   let d = {};

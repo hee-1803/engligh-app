@@ -1,3 +1,4 @@
+import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
@@ -20,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     // suppressHydrationWarning: app tự gắn cỡ chữ / giao diện sáng-tối lên thẻ <html>
     <html lang="vi" suppressHydrationWarning>
-      <body>{children}</body>
+      <body>{children}<Script src="/install.js?v=1" strategy="afterInteractive" /></body>
     </html>
   );
 }
