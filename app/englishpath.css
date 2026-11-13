@@ -797,3 +797,8 @@ a.setitem { color: var(--ink); text-decoration: none }
 .lbav.fr-forest::after { content: "🌲"; position: absolute; right: -6px; bottom: -6px; font-size: .55em } .lbav.fr-rainbow::after { content: "🌈"; position: absolute; right: -6px; bottom: -6px; font-size: .55em }
 .panel.lg-body { padding-top: 16px }
 .lbopts .si-t { white-space: normal; line-height: 1.35 } .lbopts .si-v { display: none } .lbopts .setitem { gap: 10px }
+.lbskel .lbrow { height: 56px; background: linear-gradient(90deg, var(--sunk, #f2f0f8) 25%, color-mix(in srgb, var(--sunk, #f2f0f8) 60%, #fff) 50%, var(--sunk, #f2f0f8) 75%); background-size: 200% 100%; animation: skel 1s linear infinite }
+@keyframes skel { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+/* Phản hồi tức thì khi chạm/bấm */
+button, .setitem, .seg, [data-a] { -webkit-tap-highlight-color: transparent; touch-action: manipulation }
+button:active, .setitem:active, [role=button]:active { transform: scale(.97); transition: transform .06s }

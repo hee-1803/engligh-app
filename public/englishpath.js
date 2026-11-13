@@ -1268,7 +1268,7 @@ const APP_VERSION = "1.0";
 /* =====================================================================
    BẢNG XẾP HẠNG TUẦN + PHẦN THƯỞNG (điểm do máy chủ tính từ dữ liệu học)
    ===================================================================== */
-var LB = {d:null, at:0, level:"", league:null, busy:false, err:"", opened:{}};
+var LB = {d:null, at:0, level:"", league:null, busy:false, err:"", cache:{}, pend:false, seq:0};
 const lbEn = () => LANG === "en";
 const lgName = k => { const g = (LB.d?.leagues || [])[k]; return g ? g.ic + " " + (lbEn() ? g.en : g.vi) : ""; };
 const lbWho = r => lbEn() ? r.name_en : r.name;
@@ -1276,17 +1276,23 @@ const lbTitle = t => t ? (lbEn() ? t.en : t.vi) : "";
 const MEDAL = {gold:"🥇", silver:"🥈", bronze:"🥉", star:"🌟", bee:"🐝", fire:"🔥"};
 const BADGE_NAME = {gold:["Hạng nhất tuần","1st place"], silver:["Hạng nhì tuần","2nd place"], bronze:["Hạng ba tuần","3rd place"], star:["Top 10 tuần","Weekly top 10"], bee:["Chăm chỉ: 50 điểm/tuần","Busy Bee: 50 pts in a week"], fire:["Bền bỉ: 500 điểm/tuần","Unstoppable: 500 pts in a week"]};
 function lbFrame() { try { return LB.d?.reward?.frame ?? localStorage.getItem("ep_frame") ?? ""; } catch (e) { return LB.d?.reward?.frame || ""; } }
+// Tải bảng: hiện ngay bản đã lưu (nếu có), tải bản mới ở nền. Xem bảng khác (browse) thì máy chủ chỉ đọc bảng, rất nhanh.
 async function lbLoad(force) {
-  if (LB.busy || (!force && LB.d && Date.now() - LB.at < 60e3 && (!LB.level || LB.level === LB.d.level) && (LB.league === null || LB.league === LB.d.league))) return;
-  LB.busy = true; LB.err = "";
+  const browse = !!(LB.level || LB.league !== null), key = (LB.level || LB.d?.myLevel || "") + "|" + (LB.league ?? LB.d?.myLeague ?? "");
+  if (!force && LB.d && Date.now() - LB.at < 60e3 && !browse) return;
+  const c = LB.cache[key]; if (c) { LB.d = {...c, reward:LB.d?.reward || c.reward}; LB.pend = false; } else if (LB.d) LB.pend = true;
+  if (view === "chat" && CH.tab === "rank") render();
+  if (c && Date.now() - c._at < 30e3) return;
+  const my = ++LB.seq; LB.err = ""; LB.inflight = true;
   try {
-    const q = new URLSearchParams(); if (LB.level) q.set("level", LB.level); if (LB.league !== null) q.set("league", LB.league);
+    const q = new URLSearchParams(); if (LB.level) q.set("level", LB.level); if (LB.league !== null) q.set("league", LB.league); if (browse && LB.d) q.set("browse", "1");
     const r = await fetch("/api/leaderboard?" + q, {cache:"no-store"}); const j = await r.json();
     if (!r.ok) throw new Error(j.error || r.status);
-    LB.d = j; LB.at = Date.now();
+    if (my !== LB.seq) return; // người dùng đã bấm sang bảng khác (yêu cầu mới hơn sẽ tự tắt cờ tải)
+    j._at = Date.now(); LB.cache[j.level + "|" + j.league] = j; LB.d = j; LB.at = Date.now(); LB.pend = false;
     try { localStorage.setItem("ep_frame", j.reward?.frame || ""); } catch (e) {}
-  } catch (e) { LB.err = e.message; }
-  LB.busy = false;
+  } catch (e) { if (my === LB.seq) { LB.err = e.message; LB.pend = false; } }
+  if (my === LB.seq) LB.inflight = false;
   if (view === "chat" && CH.tab === "rank" || view === "home" || view === "settings") render();
 }
 function lbLeft() {
@@ -1303,7 +1309,7 @@ function lbRow(r) {
 // Thẻ nhỏ ở Trang chủ
 function rankCard() {
   if (!S.profile) return "";
-  if (!LB.d) { if (!LB.err) setTimeout(() => lbLoad(), 400); return ""; }
+  if (!LB.d) { if (!LB.err && !LB.inflight) setTimeout(() => lbLoad(), 400); return ""; }
   const d = LB.d, me = d.me, r = d.reward; if (r.opt_out) return "";
   const lr = r.lastResult;
   return `<section class="panel rankcard" data-a="openRank" role="button" tabindex="0">
@@ -1314,10 +1320,11 @@ function rankCard() {
       ${lr ? `<br><span class="tag good">🎁 ${_t("Có kết quả tuần trước, bấm để xem!")}</span>` : ""}</div><span class="si-go">›</span></div></section>`;
 }
 function vRank() {
-  if (!LB.d) { lbLoad(); return `<section class="panel center">${LB.err ? `<p class="bad-t">${esc(LB.err)}</p><button class="mini" data-a="lbReload">${_t("Thử lại")}</button>` : `<span class="spin"></span> ${_t("Đang tải bảng xếp hạng…")}`}</section>`; }
+  if (!LB.d) { if (!LB.inflight && !LB.err) setTimeout(lbLoad, 0); return `<section class="panel center">${LB.err ? `<p class="bad-t">${esc(LB.err)}</p><button class="mini" data-a="lbReload">${_t("Thử lại")}</button>` : `<span class="spin"></span> ${_t("Đang tải bảng xếp hạng…")}`}</section>`; }
   const d = LB.d, r = d.reward, en = lbEn();
-  const levels = ["A0","A1","A2","B1","B2","C1"].map(k => `<button class="mini seg ${d.level === k ? "sel" : ""}" data-a="lbLevel" data-v="${k}">${k}${k === d.myLevel ? " •" : ""}</button>`).join("");
-  const leagues = d.leagues.map(g => `<button class="mini seg ${d.league === g.k ? "sel" : ""}" data-a="lbLeague" data-v="${g.k}" title="${esc(en ? g.en : g.vi)}">${g.ic}<span class="lg-n"> ${esc(en ? g.en : g.vi)}</span></button>`).join("");
+  const selLv = LB.level || d.myLevel, selLg = LB.league ?? (LB.level ? d.myLeague : d.league);
+  const levels = ["A0","A1","A2","B1","B2","C1"].map(k => `<button class="mini seg ${selLv === k ? "sel" : ""}" data-a="lbLevel" data-v="${k}">${k}${k === d.myLevel ? " •" : ""}</button>`).join("");
+  const leagues = d.leagues.map(g => `<button class="mini seg ${selLg === g.k ? "sel" : ""}" data-a="lbLeague" data-v="${g.k}" title="${esc(en ? g.en : g.vi)}">${g.ic}<span class="lg-n"> ${esc(en ? g.en : g.vi)}</span></button>`).join("");
   const mine = d.level === d.myLevel && d.league === d.myLeague;
   const lr = r.lastResult;
   const last = lr ? `<section class="panel celebrate lbres">${confetti()}<div class="row nowrap">${mascot(lr.rank <= 3 ? "cheer" : "happy", 90, "bob")}<div class="grow">
@@ -1333,9 +1340,9 @@ function vRank() {
       <div class="lbbig"><b>${me.points}</b><span>${_t("điểm tuần")}</span></div></div>
       ${me.rank ? `<p class="small">${_t("Bạn đang hạng")} <b>#${me.rank}</b>/${mine ? d.total : "?"}${me.gapTop10 ? ` · ${_t("còn")} <b>${me.gapTop10}</b> ${_t("điểm để vào top 10")}` : me.rank <= 10 ? ` · ${_t("đang trong top 10, giữ vững nhé!")}` : ""}</p>` : `<p class="small muted">${_t("Học 1 bài để có tên trên bảng tuần này.")}</p>`}</section>`;
   const board = `<section class="panel">
-    <div class="row between"><h3>${_t("Bảng")} ${esc(d.level)} · ${lgName(d.league)}</h3><span class="muted small">${d.total} ${_t("người")}</span></div>
+    <div class="row between"><h3>${_t("Bảng")} ${esc(LB.pend ? selLv : d.level)} · ${lgName(LB.pend ? selLg : d.league)}</h3><span class="muted small">${d.total} ${_t("người")}</span></div>
     <div class="row lbtabs">${levels}</div><div class="row lbtabs">${leagues}</div>
-    ${d.top.length ? `<div class="lblist">${d.top.map(lbRow).join("")}${d.near.length ? `<div class="lbgap">⋯</div>${d.near.map(lbRow).join("")}` : ""}</div>` : `<p class="muted center">${_t("Chưa có ai trong bảng này tuần này. Học 1 bài là bạn đứng đầu!")}</p>`}
+    ${LB.pend ? `<div class="lblist lbskel">${"<div class=\"lbrow\"></div>".repeat(6)}</div>` : d.top.length ? `<div class="lblist">${d.top.map(lbRow).join("")}${d.near.length ? `<div class="lbgap">⋯</div>${d.near.map(lbRow).join("")}` : ""}</div>` : `<p class="muted center">${_t("Chưa có ai trong bảng này tuần này. Học 1 bài là bạn đứng đầu!")}</p>`}
     ${mine ? "" : `<p class="small"><a href="#" data-a="lbMine">← ${_t("Về bảng của bạn")}</a></p>`}</section>`;
   const nextM = d.milestones.find(m => !m.got), topM = d.milestones[d.milestones.length - 1].p;
   const miles = `<section class="panel"><h3>🎯 ${_t("Mốc điểm tuần này")}</h3><p class="muted small">${_t("Ai cũng nhận được, không cần lên top.")}</p>
@@ -1373,9 +1380,15 @@ async function autoFreeze() {
     toast(_t("🧊 Đã dùng 1 đóng băng chuỗi cho hôm qua. Chuỗi ngày học của bạn vẫn còn!")); render();
   } catch (e) {}
 }
+// Đổi tuỳ chọn: cập nhật giao diện ngay, gửi lên máy chủ ở nền; lỗi thì trả lại như cũ
 async function lbSet(body) {
-  try { const r = await fetch("/api/leaderboard", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"settings", ...body})}); const j = await r.json(); if (!r.ok) throw new Error(j.error); await lbLoad(true); }
-  catch (e) { toast(e.message); }
+  const r = LB.d?.reward; if (!r) return; const old = {...r};
+  if ("show_name" in body) { r.show_name = body.show_name; if (LB.d.me) { const nm = body.show_name && body.display_name ? body.display_name : null; LB.d.me._nm = LB.d.me._nm || {name:LB.d.me.name, name_en:LB.d.me.name_en}; LB.d.me.name = nm || LB.d.me._nm.name; LB.d.me.name_en = nm || LB.d.me._nm.name_en; } }
+  if ("opt_out" in body) r.opt_out = body.opt_out;
+  if ("frame" in body) r.frame = body.frame || null;
+  LB.cache = {}; render();
+  try { const x = await fetch("/api/leaderboard", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"settings", ...body})}); const j = await x.json(); if (!x.ok) throw new Error(j.error); LB.at = 0; }
+  catch (e) { Object.assign(r, old); render(); toast(e.message); }
 }
 
 /* =====================================================================
@@ -1651,11 +1664,11 @@ async function testPush(btn) { btn.disabled = true; const r = await fetch("/api/
 const ACT = {
   openRank: () => { view = "chat"; CH.tab = "rank"; LB.level = ""; LB.league = null; render(); lbLoad(true); window.scrollTo(0, 0); },
   lbReload: () => { LB.err = ""; lbLoad(true); render(); },
-  lbLevel: v => { LB.level = v; LB.league = null; lbLoad(true); },
-  lbLeague: v => { LB.league = Number(v); lbLoad(true); },
+  lbLevel: v => { LB.level = v; LB.league = LB.d?.myLeague ?? null; lbLoad(true); },
+  lbLeague: v => { if (!LB.level) LB.level = LB.d?.myLevel || ""; LB.league = Number(v); lbLoad(true); },
   lbMine: () => { LB.level = ""; LB.league = null; lbLoad(true); },
   lbSeen: async () => { try { await fetch("/api/leaderboard", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"seen"})}); } catch (e) {} if (LB.d) LB.d.reward.lastResult = null; render(); toast(_t("🎁 Đã nhận thưởng! Xem trong mục Phần thưởng của bạn.")); },
-  lbFrame: v => { if (LB.d) LB.d.reward.frame = v || null; try { localStorage.setItem("ep_frame", v || ""); } catch (e) {} render(); lbSet({frame: v || null}); },
+  lbFrame: v => { try { localStorage.setItem("ep_frame", v || ""); } catch (e) {} lbSet({frame: v || null}); },
   lbNameT: () => lbSet({show_name: !LB.d?.reward?.show_name, display_name: displayName() || ""}),
   lbOpt: v => { if (v === "1" && !confirm(_t("Tắt tham gia: bạn sẽ không có tên trên bảng và không nhận thưởng theo hạng. Tiếp tục?"))) return; lbSet({opt_out: v === "1"}); },
   setLang: async v => { if (v === LANG_PICK) return; try { localStorage.setItem("ep_lang", v); } catch (e) {} S.profile.lang = v; S.profile.uiLang = v === "auto" ? DEVICE_LANG : v; save(); if (DIRTY || saveTimer) await pushState().catch(() => {}); location.reload(); },

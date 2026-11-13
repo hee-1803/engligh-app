@@ -20,27 +20,35 @@ export async function GET(req: Request) {
   const user = await who(); if (!user) return bad("Chưa đăng nhập", 401);
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return bad("Thiếu SUPABASE_SERVICE_ROLE_KEY", 500);
   const db = createAdminClient(), uid = user.id, week = weekOf();
-  try {
-    // Chốt tuần trước nếu chưa ai chốt
+  const u0 = new URL(req.url), browse = u0.searchParams.get("browse") === "1";
+  let myLevel = "A0";
+  if (browse) {
+    // Chỉ xem bảng khác: không tính lại điểm, chỉ đọc (nhanh)
+    const { data: st } = await db.from("lb_scores").select("level").eq("user_id", uid).eq("week", week).maybeSingle();
+    myLevel = st?.level || "A0";
+  } else {
+    // Chốt tuần trước (nếu chưa) và tính lại điểm của mình cùng lúc
     const pw = prevWeek(week);
-    const { data: done } = await db.from("lb_weeks").select("week").eq("week", pw).maybeSingle();
-    if (!done) await finalizeWeek(db, pw);
-  } catch {}
-
-  // Điểm của mình luôn mới nhất (tính lại từ dữ liệu học)
-  const { data: st, error: e1 } = await db.from("app_state").select("data").eq("user_id", uid).maybeSingle();
-  if (e1) return bad(e1.message, 500);
-  const myLevel = levelOf(st?.data);
-  try { await updateScore(db, uid, st?.data || {}); } catch (e) {
-    const m = (e as Error).message || ""; if (/lb_|relation/.test(m)) return bad("Chưa tạo bảng xếp hạng: chạy supabase/leaderboard.sql trong Supabase", 500);
+    const [fin, stR] = await Promise.all([
+      db.from("lb_weeks").select("week").eq("week", pw).maybeSingle().then(async (x: any) => { if (!x.data) { try { await finalizeWeek(db, pw); } catch {} } }), // eslint-disable-line @typescript-eslint/no-explicit-any
+      db.from("app_state").select("data").eq("user_id", uid).maybeSingle(),
+    ]); void fin;
+    if (stR.error) return bad(stR.error.message, 500);
+    myLevel = levelOf(stR.data?.data);
+    try { await updateScore(db, uid, stR.data?.data || {}); } catch (e) {
+      const m = (e as Error).message || ""; if (/lb_|relation/.test(m)) return bad("Chưa tạo bảng xếp hạng: chạy supabase/leaderboard.sql trong Supabase", 500);
+    }
   }
   const prof = await getProf(db, uid);
 
-  const u = new URL(req.url);
+  const u = u0;
   const level = LEVELS.includes(u.searchParams.get("level") || "") ? u.searchParams.get("level")! : myLevel;
   const lg = Number(u.searchParams.get("league")); const league = Number.isInteger(lg) && lg >= 0 && lg <= 4 ? lg : prof.league;
 
-  const { data: rows, error } = await db.from("lb_scores").select("user_id, points").eq("week", week).eq("level", level).eq("league", league).gt("points", 0).order("points", { ascending: false }).limit(300);
+  const [{ data: rows, error }, myRow] = await Promise.all([
+    db.from("lb_scores").select("user_id, points").eq("week", week).eq("level", level).eq("league", league).gt("points", 0).order("points", { ascending: false }).limit(300),
+    db.from("lb_scores").select("points").eq("user_id", uid).eq("week", week).maybeSingle(),
+  ]);
   if (error) return bad(/lb_/.test(error.message) ? "Chưa tạo bảng xếp hạng: chạy supabase/leaderboard.sql trong Supabase" : error.message, 500);
   const ids = (rows || []).map((r) => r.user_id);
   const profs = new Map<string, any>(); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -51,7 +59,7 @@ export async function GET(req: Request) {
     return { rank: i + 1, me: r.user_id === uid, points: r.points, ...n, frame: p?.frame || null, title: curTitle(p), medals };
   });
   const mine = ranked.find((r) => r.me) || null;
-  const myPts = (await db.from("lb_scores").select("points").eq("user_id", uid).eq("week", week).maybeSingle()).data?.points || 0;
+  const myPts = myRow.data?.points || 0;
   const tenth = ranked[9]?.points ?? 0;
   const got = prof.milestones[week] || [];
 

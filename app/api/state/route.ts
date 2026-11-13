@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { updateScore } from "@/lib/leaderboard";
@@ -30,7 +30,7 @@ export async function PUT(req: Request) {
     .upsert({ user_id: user.id, data: body, updated_at: new Date().toISOString() });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   // Cập nhật điểm bảng xếp hạng tuần (máy chủ tự tính, lỗi ở đây không ảnh hưởng việc lưu)
-  let points: number | undefined;
-  if (process.env.SUPABASE_SERVICE_ROLE_KEY) { try { points = (await updateScore(createAdminClient(), user.id, body)).points; } catch {} }
-  return NextResponse.json({ ok: true, rev: body?.rev ?? 0, points });
+  // chạy SAU khi đã trả lời, để việc lưu không phải chờ
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) after(async () => { try { await updateScore(createAdminClient(), user.id, body); } catch {} });
+  return NextResponse.json({ ok: true, rev: body?.rev ?? 0 });
 }
