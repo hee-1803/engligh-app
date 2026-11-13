@@ -882,3 +882,4 @@ button:active, .setitem:active, [role=button]:active { transform: scale(.97); tr
 .rvq { margin: 4px 0 } .rvex { background: #fffaf0; border-radius: 12px; padding: 6px 10px; margin: 6px 0 0 }
 .passage.sm { font-size: .9rem; padding: 10px 12px; margin: 4px 0 }
 .hero .xtby span { background: rgba(255,255,255,.22); color: #fff; font-weight: 700 } .hero .xtby span b { color: #fff }
+.subsall { margin: 2px 0 10px; align-items: center }
