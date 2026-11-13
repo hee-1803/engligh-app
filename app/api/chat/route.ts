@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { curTitle } from "@/lib/leaderboard";
 import { randomUUID, createHmac } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -100,17 +101,24 @@ export async function GET(req: Request) {
     const { data: signed } = await db.storage.from("chat-voice").createSignedUrls(paths, 3600);
     (signed || []).forEach((s) => s.signedUrl && s.path && urls.set(s.path, s.signedUrl));
   }
+  // Danh hiệu tuần từ bảng xếp hạng (hiện cạnh biệt danh)
+  const tmap = new Map<string, { vi: string; en: string } | null>();
+  try {
+    const uids = [...new Set(rows.map((m) => m.user_id).concat(uid))];
+    const { data: lp } = await db.from("lb_profile").select("user_id, title, title_week, opt_out").in("user_id", uids);
+    for (const p of lp || []) if (!p.opt_out) tmap.set(p.user_id, curTitle(p as never));
+  } catch {}
   const gone = !!(r.kind === "pair" && r.closed_at);
   const messages = rows.map((m) => {
     const off = m.hidden || m.recalled;
-    return { id: m.id, mine: m.user_id === uid, who: alias(m.user_id, room), at: m.created_at, recalled: !!m.recalled, hidden: !!m.hidden && !m.recalled,
+    return { id: m.id, mine: m.user_id === uid, who: { ...alias(m.user_id, room), title: tmap.get(m.user_id) || null }, at: m.created_at, recalled: !!m.recalled, hidden: !!m.hidden && !m.recalled,
       text: off ? "" : m.text || "", audio: off || !m.audio_path ? null : urls.get(m.audio_path) || null, sec: m.audio_sec || 0 };
   });
   if (rows.length) await db.from("chat_reads").upsert({ user_id: uid, room_id: room, last_id: rows[rows.length - 1].id });
   // Tin đã thu hồi trong 10 phút gần đây: báo để màn hình người khác cập nhật
   const { data: rc } = await db.from("chat_messages").select("id").eq("room_id", room).eq("recalled", true).gte("created_at", new Date(Date.now() - 864e5).toISOString());
   const pairInfo = r.kind === "pair" ? { partner: alias(other(r, uid), room), saved: !!r.saved_at, muted: mutedFor(r, uid), mineKeep: r.a === uid ? r.a_keep : r.b_keep, theirKeep: r.a === uid ? r.b_keep : r.a_keep, level: r.level } : null;
-  return NextResponse.json({ messages, recalled: (rc || []).map((x) => x.id), me: alias(uid, room), closed: gone, pair: pairInfo, ban: await banned(db, uid) });
+  return NextResponse.json({ messages, recalled: (rc || []).map((x) => x.id), me: { ...alias(uid, room), title: tmap.get(uid) || null }, closed: gone, pair: pairInfo, ban: await banned(db, uid) });
 }
 
 export async function POST(req: Request) {

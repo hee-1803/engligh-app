@@ -79,3 +79,8 @@ Thêm biến trên Vercel: `ADMIN_EMAILS=email-cua-ban@gmail.com` (nhiều email
 ## Cộng đồng (trò chuyện ẩn danh)
 1. Supabase → SQL Editor → chạy `supabase/chat.sql`, sau đó chạy tiếp `supabase/chat2.sql` rồi `supabase/chat3.sql` (tạo bảng, 7 phòng chung, kho ghi âm `chat-voice`, lịch tự dọn).
 2. Cần sẵn `SUPABASE_SERVICE_ROLE_KEY` trên Vercel. (Tùy chọn) `CHAT_SALT=chuỗi-ngẫu-nhiên` để tạo biệt danh.
+
+## Bảng xếp hạng tuần (v77)
+1. Supabase → SQL Editor → chạy file `supabase/leaderboard.sql` (1 lần).
+2. Không cần thêm biến môi trường (dùng SUPABASE_SERVICE_ROLE_KEY và VAPID đã có).
+3. Điểm tự tính mỗi lần người học lưu tiến độ. Tuần chốt tự động khi có người mở bảng xếp hạng lần đầu trong tuần mới.

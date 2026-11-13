@@ -751,3 +751,49 @@ details.panel.help { padding: 16px 20px } .setlist + .setlist, .account + .setli
 .led a.btn, td a.btn { display:inline-flex; align-items:center; gap:6px; padding:10px 18px; border-radius:99px; background:var(--card,#fff); border:2px solid var(--line); box-shadow:0 3px 0 var(--line); color:var(--ink); font-weight:800; text-decoration:none } td a.btn.mini { padding:5px 14px }
 a.setitem { color: var(--ink); text-decoration: none }
 .warn-t { color: #b45309 } .tag.warn { background:#fff3d6; color:#b45309; margin-left:6px }
+
+/* ===== Bảng xếp hạng & phần thưởng ===== */
+.rankcard { cursor: pointer; background: linear-gradient(135deg, #fff8e1, #eef8e6) } .rankcard:hover { transform: translateY(-1px) }
+.rc-ic { font-size: 2rem; flex: none }
+.lbtabs { gap: 6px; flex-wrap: wrap } .lbtabs .seg { padding: 5px 12px }
+@media (max-width: 560px) { .lg-n { display: none } }
+.lblist { display: grid; gap: 6px; margin-top: 6px }
+.lbrow { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 18px; background: var(--sunk, #f6f4fb) }
+.lbrow.me { background: color-mix(in srgb, #57a13e 16%, var(--surface)); outline: 2px solid color-mix(in srgb, #57a13e 50%, transparent) }
+.lbrow.top1 { background: linear-gradient(90deg, #fff3c4, var(--sunk, #f6f4fb)) } .lbrow.top2 { background: linear-gradient(90deg, #eceff4, var(--sunk, #f6f4fb)) } .lbrow.top3 { background: linear-gradient(90deg, #f8e1cf, var(--sunk, #f6f4fb)) }
+.lbrk { width: 30px; text-align: center; font-weight: 900; font-size: 1.05rem; flex: none }
+.lbpts { font-size: 1.05rem; font-variant-numeric: tabular-nums }
+.lbgap { text-align: center; color: var(--muted); letter-spacing: 4px }
+.lbtitle { display: inline-block; font-size: .78rem; font-weight: 800; color: #8a5a00; background: #fff1c7; border-radius: 99px; padding: 1px 8px; vertical-align: middle }
+.lbav { flex: none; display: inline-grid; place-items: center; border-radius: 50%; background: hsl(var(--h, 120) 60% 88%); font-size: 1.2em; position: relative }
+.lbme .lbav { font-size: 1.6rem }
+.lbbig { text-align: center; display: grid } .lbbig b { font-size: 1.8rem; line-height: 1; color: #3c7a26 } .lbbig span { font-size: .75rem; color: var(--muted) }
+.lbbar { position: relative; height: 12px; border-radius: 99px; background: var(--sunk, #eee); margin: 14px 6px 6px }
+.lbbar i { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: linear-gradient(90deg, #8cd16b, #57a13e) }
+.lbbar span { position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #fff; border: 3px solid #cfd8c8 } .lbbar span.on { border-color: #57a13e; background: #e3f1d8 }
+.lbmiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 8px }
+.lbmiles div { display: grid; gap: 2px; padding: 8px 10px; border-radius: 14px; background: var(--sunk, #f6f4fb); font-size: .85rem } .lbmiles div.on { background: #e3f1d8 }
+.lbstats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px }
+.lbstats div { display: grid; gap: 2px; padding: 12px; border-radius: 16px; background: var(--sunk, #f6f4fb) } .lbstats b { font-size: 1.1rem } .lbstats span { font-size: .8rem; color: var(--muted) }
+.lbbadges { display: flex; flex-wrap: wrap; gap: 8px }
+.lbbadge { display: grid; justify-items: center; gap: 0; min-width: 84px; padding: 8px; border-radius: 16px; background: var(--sunk, #f6f4fb); font-size: 1.6rem } .lbbadge b { font-size: .85rem } .lbbadge small { font-size: .68rem; color: var(--muted); text-align: center; line-height: 1.2 }
+.lbframes { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px }
+.lbfr { display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border-radius: 18px; background: var(--sunk, #f6f4fb); border: 2px solid transparent; font: inherit; color: var(--ink); cursor: pointer }
+.lbfr .lbav { font-size: 1.4rem } .lbfr b { font-size: .85rem } .lbfr span { font-size: .7rem; color: var(--muted); text-align: center; line-height: 1.25 }
+.lbfr.sel { border-color: #57a13e; background: #eef8e6 } .lbfr.locked { opacity: .55; cursor: default }
+.lbres h2 { margin: 2px 0 }
+.tgl { flex: none; width: 42px; height: 24px; border-radius: 99px; background: #d4d4dc; position: relative; transition: background .2s }
+.tgl::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2) }
+.tgl.on { background: #57a13e } .tgl.on::after { left: 21px }
+.good-t { color: #3c7a26 } .bad-t { color: var(--bad, #c0392b) }
+/* Khung ảnh đại diện (áp cho ảnh trên bảng, nút tài khoản và ảnh lớn trong Cài đặt) */
+.fr-leaf, .fr-music, .fr-flower, .fr-gold, .fr-forest, .fr-rainbow { box-shadow: 0 0 0 3px var(--fr1), 0 0 0 6px var(--fr2) !important }
+.fr-leaf { --fr1: #8cd16b; --fr2: #d8f0c8 } .fr-music { --fr1: #7b6cf6; --fr2: #ddd8ff } .fr-flower { --fr1: #f48fb1; --fr2: #ffe0ec }
+.fr-gold { --fr1: #f5b301; --fr2: #ffe9a6 } .fr-forest { --fr1: #2e7d32; --fr2: #a5d6a7 }
+.fr-rainbow { box-shadow: 0 0 0 3px #fff, 0 0 0 6px transparent !important; background-clip: padding-box; outline: 3px solid; outline-offset: 2px; outline-color: #f5a; animation: rbw 4s linear infinite }
+@keyframes rbw { 0% { outline-color: #ff6b6b } 25% { outline-color: #ffd93d } 50% { outline-color: #6bcB77 } 75% { outline-color: #4d96ff } 100% { outline-color: #ff6b6b } }
+.lbav.fr-leaf::after { content: "🍃"; position: absolute; right: -6px; bottom: -6px; font-size: .55em } .lbav.fr-music::after { content: "🎵"; position: absolute; right: -6px; bottom: -6px; font-size: .55em }
+.lbav.fr-flower::after { content: "🌸"; position: absolute; right: -6px; bottom: -6px; font-size: .55em } .lbav.fr-gold::after { content: "👑"; position: absolute; right: -4px; top: -10px; font-size: .55em }
+.lbav.fr-forest::after { content: "🌲"; position: absolute; right: -6px; bottom: -6px; font-size: .55em } .lbav.fr-rainbow::after { content: "🌈"; position: absolute; right: -6px; bottom: -6px; font-size: .55em }
+.panel.lg-body { padding-top: 16px }
+.lbopts .si-t { white-space: normal; line-height: 1.35 } .lbopts .si-v { display: none } .lbopts .setitem { gap: 10px }
