@@ -20,7 +20,7 @@ const VIRE = /[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹ�
 let TPC = (() => { try { return JSON.parse(localStorage.getItem("ep_tpc") || "{}"); } catch (e) { return {}; } })(), TPQ = new Set(), TPT = null;
 function tpFetch() {
   clearTimeout(TPT); TPT = setTimeout(async () => {
-    const list = [...TPQ].slice(0, 12); TPQ.clear();
+    const list = [...TPQ].slice(0, 12); list.forEach(x => TPQ.delete(x)); if (TPQ.size) setTimeout(tpFetch, 400);
     await Promise.all(list.map(async x => { try { const r = await fetch(`/api/translate?sl=vi&tl=en&q=${encodeURIComponent(x)}`); const d = await r.json(); if (r.ok && d.text) TPC[x] = d.text; } catch (e) {} }));
     try { localStorage.setItem("ep_tpc", JSON.stringify(TPC)); } catch (e) {}
     if (list.some(x => TPC[x]) && typeof render === "function") render();
@@ -1057,8 +1057,8 @@ function reviewPanel(k) {
   if (k === 0) return `${_t("<section class=\"panel\"><h2>Xem lại: Ôn bài cũ")}${l.prevTopic ? ` · ${esc(tp(l.prevTopic))}` : ""}</h2>
     ${(l.warmItems || []).length ? `<ol class="revlist">${l.warmItems.map(it => `<li><b>${esc(it.q)}</b><br><span class="tag good">${esc(it.opts ? it.opts[it.ans] : it.ans)}</span>${it.explain ? ` <span class="muted small">${esc(it.explain)}</span>` : ""}</li>`).join("")}</ol>` : `${_t("<p class=\"muted\">Buổi này không có phần ôn bài cũ.</p>")}`}</section>`;
   return `${_t("<section class=\"panel\"><h2>Xem lại: Từ vựng & ngữ pháp</h2>\n    <div class=\"revlist\">")}${ws.map(w => `<div class="revword"><div class="row nowrap"><b>${esc(w.w)}</b><button class="round sm" data-a="speak" data-v="${esc(w.w)}" aria-label="${LANG === "en" ? "Listen" : "Nghe"}">🔊</button><span class="ipa">${esc(w.ipa || "")}</span>${w.pos ? `<span class="tag">${esc(w.pos)}</span>` : ""}</div>
-      <div>${esc(w.vi)}</div>${w.ex ? `<div class="muted small"><i>${esc(w.ex)}</i>${w.ex_vi ? " · " + esc(w.ex_vi) : ""}</div>` : ""}</div>`).join("")}</div></section>
-    ${g ? `${_t("<section class=\"panel\"><h3>Ngữ pháp: ")}${esc(tp(g.name || ""))}</h3>${g.pattern ? `<p><code>${esc(g.pattern)}</code></p>` : ""}<p>${esc(g.note || "")}</p>
+      <div>${esc(tr1(w.vi))}</div>${w.ex ? `<div class="muted small"><i>${esc(w.ex)}</i>${w.ex_vi && LANG !== "en" ? " · " + esc(w.ex_vi) : ""}</div>` : ""}</div>`).join("")}</div></section>
+    ${g ? `${_t("<section class=\"panel\"><h3>Ngữ pháp: ")}${esc(tp(g.name || ""))}</h3>${g.pattern ? `<p><code>${esc(g.pattern)}</code></p>` : ""}<p>${esc(tr1(g.note || ""))}</p>
       ${(g.quiz || []).map(qz => `<p class="small">• ${esc(qz.q)} → <b>${esc((qz.opts || [])[qz.ans] ?? "")}</b>${qz.explain ? ` <span class="muted">(${esc(qz.explain)})</span>` : ""}</p>`).join("")}</section>` : ""}`;
 }
 
@@ -1087,7 +1087,7 @@ function step2() {
     return `${_t("<section class=\"panel\"><div class=\"row between\"><span class=\"tag\">Từ ")}${l.vi + 1}/${n}</span><div class="dots">${ws.map((_, k) => `<i class="${k <= l.vi ? "on" : ""}"></i>`).join("")}</div></div>
       <div class="vocab">${stk(topicStk(l.les.topic)[0], 70, "corner", 12)}<div class="row"><h2 class="word">${esc(w.w)}</h2><button class="round" data-a="speak" data-v="${esc(w.w)}" aria-label="${LANG === "en" ? "Listen" : "Nghe"}">🔊</button></div>
       <div class="ipa">${esc(w.ipa)}${w.pos ? ` · <span class="tag">${esc(w.pos)}</span>` : ""}</div>
-      <p class="meaning">${esc(w.vi)}</p>
+      <p class="meaning">${esc(tr1(w.vi))}</p>
       <div class="example"><p>${tw(w.ex)} <button class="mini" data-a="speak" data-v="${esc(w.ex)}${_t("\">🔊 Nghe câu</button> </p><div>")}${trBtn(w.ex, "en", "vi", _t("Dịch câu"))}</div>${w.ex_vi ? `<p class="muted">${twv(w.ex_vi)}</p>` : ""}</div></div>
       ${speakBox(w, l.vi)}
       <div class="row">${l.vi > 0 ? `${_t("<button data-a=\"vprev\">Từ trước</button>")}` : ""}<button class="primary" data-a="vnext">${l.vi < n - 1 ? _t("Từ tiếp theo") : _t("Xem điểm ngữ pháp")}</button></div></section>`;
@@ -1095,7 +1095,7 @@ function step2() {
   if (l.vi === n) {
     const g = l.les.grammar;
     return `${_t("<section class=\"panel\"><span class=\"eyebrow\">Ngữ pháp trọng tâm</span><h2>")}${esc(tp(g.name))}</h2>
-      ${g.pattern ? `<div class="pattern">${esc(g.pattern)}</div>` : ""}<p>${twv(g.note || "")}</p>
+      ${g.pattern ? `<div class="pattern">${esc(g.pattern)}</div>` : ""}<p>${LANG === "en" ? esc(tr1(g.note || "")) : twv(g.note || "")}</p>
       ${(g.quiz || []).length ? `${_t("<p class=\"muted small\">Điểm ngữ pháp này sẽ được ôn lại ở đầu buổi sau.</p>")}` : ""}${_t("\n      <div class=\"row\"><button data-a=\"vprev\">Xem lại từ</button><button class=\"primary\" data-a=\"vnext\">Kiểm tra nhanh 4 câu</button></div></section>")}`;
   }
   return `${_t("<section class=\"panel\"><h2>Kiểm tra nhanh từ mới</h2><p class=\"muted\">Từ bạn học hôm nay đã được thêm vào flashcard.</p></section><section class=\"panel quiz\">")}${vQuizBody(Q)}</section>`;
@@ -1112,7 +1112,7 @@ function speakBox(w, i) {
 function step3() {
   const l = L(), ws = l.les.words.slice(0, 4), graded = Object.keys(l.sent).length;
   return `${_t("<section class=\"panel\"><h2>Tự đặt câu</h2><p class=\"muted\">Viết một câu tiếng Anh với mỗi từ, càng gần với công việc và cuộc sống của bạn càng tốt. ")}${aiOn() ? _t("AI sẽ sửa lỗi và giải thích.") : _t("Đang chấm cơ bản vì AI đang nghỉ.")}</p></section>
-   ${ws.map((w, i) => { const r = l.sent[i]; return `<section class="panel"><div class="row between"><h3>${esc(w.w)} <span class="muted normal">· ${esc(w.vi)}</span></h3><button class="mini" data-a="speak" data-v="${esc(w.ex)}${_t("\">Nghe ví dụ</button></div>\n     <label class=\"sr\" for=\"sent")}${i}${_t("\">Câu với ")}${esc(w.w)}</label><textarea id="sent${i}${_t("\" placeholder=\"Ví dụ gợi ý: ")}${esc(w.ex)}">${esc(r?.text || "")}</textarea>${sentFb(r)}</section>`; }).join("")}
+   ${ws.map((w, i) => { const r = l.sent[i]; return `<section class="panel"><div class="row between"><h3>${esc(w.w)} <span class="muted normal">· ${esc(tr1(w.vi))}</span></h3><button class="mini" data-a="speak" data-v="${esc(w.ex)}${_t("\">Nghe ví dụ</button></div>\n     <label class=\"sr\" for=\"sent")}${i}${_t("\">Câu với ")}${esc(w.w)}</label><textarea id="sent${i}${_t("\" placeholder=\"Ví dụ gợi ý: ")}${esc(w.ex)}">${esc(r?.text || "")}</textarea>${sentFb(r)}</section>`; }).join("")}
    <div class="row sticky-actions"><button class="primary" data-a="grade3" id="g3">${graded ? _t("Chấm lại") : _t("Chấm câu")}</button>${graded ? `${_t("<button data-a=\"step\" data-v=\"3\">Sang bước dịch câu →</button>")}` : ""}</div>`;
 }
 function sentFb(r) {
@@ -1166,12 +1166,12 @@ function step5() {
     return `${_t("<section class=\"panel\"><h2>Kết quả role-play</h2><div class=\"stats\">")}${[[_t("Trôi chảy"), e.fluency], [_t("Chính xác"), e.accuracy], [_t("Hoàn thành nhiệm vụ"), e.task_score]].map(([k, v]) => `<div class="stat"><b>${v}/10</b><span>${k}</span></div>`).join("")}</div>
       <p>${esc(e.comment_vi || "")}</p>${(e.better_phrases || []).map(b => `${_t("<div class=\"fb\">Bạn nói: <i>")}${esc(b.you)}${_t("</i><br>Tự nhiên hơn: <b>")}${tw(b.better)}</b></div>`).join("")}${_t("\n      <div class=\"row\"><button data-a=\"rpAgain\">Trò chuyện thêm</button><button class=\"primary\" data-a=\"step\" data-v=\"5\">Xem tổng kết →</button></div></section>")}`;
   }
-  return `${_t("<section class=\"panel rp\"><div class=\"row between\"><h2>Role-play</h2><span class=\"muted small\">Bạn: ")}${esc(rp.user_role || "")}</span></div>
-    <p class="muted">${esc(rp.setting || "")}</p>
-    <ul class="tasks">${(rp.tasks || []).map((t, k) => `<li class="${l.tasksDone.includes(k) ? "done" : ""}">${esc(t)}</li>`).join("")}${_t("</ul>\n    <p class=\"small\">Từ đã dùng: ")}${l.les.words.map(w => `<span class="chip ${used.includes(w.w) ? "on" : ""}">${esc(w.w)}</span>`).join(" ")}</p></section>
+  return `${_t("<section class=\"panel rp\"><div class=\"row between\"><h2>Role-play</h2><span class=\"muted small\">Bạn: ")}${esc(tr1(rp.user_role || ""))}</span></div>
+    <p class="muted">${esc(tr1(rp.setting || ""))}</p>
+    <ul class="tasks">${(rp.tasks || []).map((t, k) => `<li class="${l.tasksDone.includes(k) ? "done" : ""}">${esc(tr1(t))}</li>`).join("")}${_t("</ul>\n    <p class=\"small\">Từ đã dùng: ")}${l.les.words.map(w => `<span class="chip ${used.includes(w.w) ? "on" : ""}">${esc(w.w)}</span>`).join(" ")}</p></section>
    <section class="panel"><div class="chat" id="chat">${l.chat.map((m, mi) => `<div class="msg ${m.role}">${m.role === "ai" ? (hideText() && !(l.reveal || []).includes(mi) ? `${_t("<span class=\"muted\">(Chữ đã ẩn, hãy nghe)</span> <button class=\"mini\" data-a=\"reveal\" data-v=\"")}${mi}${_t("\">Hiện chữ</button>")}` : tw(m.text)) : (m.voice ? "🎤 " : "") + esc(m.text)}${m.fix ? `${_t("<span class=\"fix\">Nên nói: ")}${esc(m.fix)}</span>` : ""}${m.role === "ai" ? ` <button class="mini" data-a="speak" data-v="${esc(m.text)}" aria-label="${LANG === "en" ? "Listen" : "Nghe"}">🔊</button>${trBtn(m.text, "en", "vi")}` : ""}</div>`).join("")}
      ${l.rpBusy ? `<div class="msg ai"><span class="spin"></span></div>` : ""}</div>
-    ${l.hint ? `${_t("<div class=\"fb\">Gợi ý: <b>")}${tw(l.hint.en)}</b>${l.hint.vi ? `<br><span class="muted">${twv(l.hint.vi)}</span>` : ""}</div>` : ""}${_t("\n    <div class=\"row nowrap\"><label class=\"sr\" for=\"rpIn\">Câu trả lời</label><input id=\"rpIn\" data-enter=\"rpSend\" placeholder=\"Trả lời bằng tiếng Anh...\" autocomplete=\"off\" ")}${l.rpBusy ? "disabled" : ""}>
+    ${l.hint ? `${_t("<div class=\"fb\">Gợi ý: <b>")}${tw(l.hint.en)}</b>${l.hint.vi ? `<br><span class="muted">${LANG === "en" ? esc(tr1(l.hint.vi)) : twv(l.hint.vi)}</span>` : ""}</div>` : ""}${_t("\n    <div class=\"row nowrap\"><label class=\"sr\" for=\"rpIn\">Câu trả lời</label><input id=\"rpIn\" data-enter=\"rpSend\" placeholder=\"Trả lời bằng tiếng Anh...\" autocomplete=\"off\" ")}${l.rpBusy ? "disabled" : ""}>
       <button class="mic ${UI.rec === "rp" ? "on" : ""}" data-a="rpMic" ${SR && !l.rpBusy ? "" : "disabled"}${_t(" aria-label=\"Nói\">")}${UI.rec === "rp" ? _t("● Dừng") : _t("🎤 Nói")}</button>
       <button class="primary" data-a="rpSend" ${l.rpBusy ? "disabled" : ""}${_t(">Gửi</button></div>\n    ")}${UI.rec === "rp" ? `${_t("<p class=\"live\" id=\"live\">Hãy nói bằng tiếng Anh...</p>")}` : ""}
     <div class="row small"><button class="mini seg ${autoSpeak() ? "sel" : ""}${_t("\" data-a=\"autospeak\">🔈 Tự đọc câu của AI</button><button class=\"mini seg ")}${hideText() ? "sel" : ""}${_t("\" data-a=\"hidetext\">🙈 Ẩn chữ để luyện nghe</button>\n      ")}${SR ? `${_t("<span class=\"muted\">Bấm 🎤 Nói để trả lời bằng giọng nói.</span>")}` : `${_t("<span class=\"muted\">Mở bằng Chrome hoặc Edge để nói bằng micro.</span>")}`}${_t("</div>\n    <div class=\"row\"><button data-a=\"rpHint\">Gợi ý câu trả lời</button>")}${turns >= 3 ? `${_t("<button class=\"primary\" data-a=\"rpEnd\" id=\"rpEndBtn\">Kết thúc & chấm điểm</button>")}` : `${_t("<span class=\"muted small\">Trao đổi ít nhất 3 lượt để kết thúc (")}${turns}/3).</span>`}</div></section>`;
@@ -1503,7 +1503,7 @@ function vFlip() {
   const c = S.cards[FC.keys[FC.i]]; if (!c) { FC.i++; return vFlip(); }
   const w = c.w;
   return `${_t("<div class=\"wrap narrow\"><div class=\"row between\"><button class=\"ghost\" data-a=\"go\" data-v=\"review\">← Thoát</button><span class=\"eyebrow\">Thẻ ")}${FC.i + 1}/${FC.keys.length}</span><span></span></div>
-   <section class="flash ${FC.flip ? "back" : ""}${_t("\" data-a=\"flip\" tabindex=\"0\" role=\"button\" aria-label=\"Lật thẻ\">\n    ")}${FC.flip ? `<div class="word">${esc(w.w)}</div><div class="ipa">${esc(w.ipa || "")}${w.pos ? " · " + esc(w.pos) : ""}</div><p class="meaning">${esc(w.vi)}</p>
+   <section class="flash ${FC.flip ? "back" : ""}${_t("\" data-a=\"flip\" tabindex=\"0\" role=\"button\" aria-label=\"Lật thẻ\">\n    ")}${FC.flip ? `<div class="word">${esc(w.w)}</div><div class="ipa">${esc(w.ipa || "")}${w.pos ? " · " + esc(w.pos) : ""}</div><p class="meaning">${esc(tr1(w.vi))}</p>
       ${w.ex ? `<p>${tw(w.ex)}</p>` : ""}${c.example && c.example !== w.ex ? `${_t("<p class=\"muted\">Câu của bạn: ")}${tw(c.example)}</p>` : ""}`
      : `<div class="word">${esc(w.w)}</div><div class="ipa">${esc(w.ipa || "")}${_t("</div><p class=\"muted\">Bấm để xem nghĩa (phím Space)</p>")}`}</section>
    ${FC.flip ? `<div class="rate">${[[1, _t("Quên"), _t("<1 phút")], [3, _t("Khó"), ""], [4, _t("Nhớ"), ""], [5, _t("Dễ"), ""]].map(([q, t]) => `<button data-a="rate" data-v="${q}"><b>${t}${_t("</b><span class=\"small muted\">phím ")}${q === 1 ? 1 : q === 3 ? 2 : q === 4 ? 3 : 4}</span></button>`).join("")}</div>`
