@@ -802,3 +802,11 @@ a.setitem { color: var(--ink); text-decoration: none }
 /* Phản hồi tức thì khi chạm/bấm */
 button, .setitem, .seg, [data-a] { -webkit-tap-highlight-color: transparent; touch-action: manipulation }
 button:active, .setitem:active, [role=button]:active { transform: scale(.97); transition: transform .06s }
+.tabs-top a[data-v=rank], #bnav a[data-v=rank] { color: #b7791f; font-weight: 800 }
+.tabs-top a[data-v=rank].sel, #bnav a[data-v=rank].sel { background: #fff1c7; color: #8a5a00 }
+.badge.gift { background: transparent; padding: 0; animation: bob 1.6s ease-in-out infinite }
+/* Thanh dưới trên điện thoại: biểu tượng + chữ nhỏ */
+#bnav a { position: relative; min-width: 0; display: grid; justify-items: center; gap: 1px; padding: 6px 0 5px; font-size: .66rem; line-height: 1.1 }
+#bnav .bi { font-size: 1.25rem; line-height: 1.2 } #bnav .bl { max-width: 100%; overflow: hidden; text-overflow: ellipsis }
+#bnav .badge { position: absolute; top: 2px; left: calc(50% + 6px); margin: 0; font-size: .6rem; min-width: 16px; padding: 0 4px }
+#bnav .badge.gift { font-size: .75rem }
