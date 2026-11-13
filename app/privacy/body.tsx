@@ -28,7 +28,7 @@ export default function PrivacyBody() {
       <ul>
         <li><b>Supabase</b>: stores accounts, learning data, chat and voice messages.</li>
         <li><b>Vercel</b>: runs the app.</li>
-        <li><b>Google Gemini, Groq, OpenRouter</b>: AI services that process lesson content and your answers.</li>
+        <li><b>Google, Groq, OpenRouter</b>: AI services that process lesson content and your answers.</li>
         <li><b>Google, Facebook, Apple</b>: sign-in, depending on your choice.</li>
       </ul>
       <h2>Your rights</h2>
@@ -62,7 +62,7 @@ export default function PrivacyBody() {
       <ul>
         <li><b>Supabase</b>: lưu tài khoản, dữ liệu học tập, tin nhắn và tin nhắn thoại.</li>
         <li><b>Vercel</b>: chạy ứng dụng.</li>
-        <li><b>Google Gemini, Groq, OpenRouter</b>: dịch vụ AI xử lý nội dung bài học và bài làm.</li>
+        <li><b>Google, Groq, OpenRouter</b>: dịch vụ AI xử lý nội dung bài học và bài làm.</li>
         <li><b>Google, Facebook, Apple</b>: xác thực đăng nhập theo lựa chọn của bạn.</li>
       </ul>
       <h2>Quyền của bạn</h2>

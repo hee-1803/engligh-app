@@ -196,7 +196,7 @@ export default function AdminPage() {
       {tab === "about" && <AboutAdmin key={rk} />}
       {tab === "ai" && <section className="panel">
         <div className="row between"><h3>Trạng thái AI</h3><button className="mini" onClick={checkAI}>Kiểm tra AI</button></div>
-        <p className="muted small">Chấm câu, role-play, tra từ: Groq → OpenRouter → Gemini. Soạn bài mới: Gemini trước, hết lượt thì Groq/OpenRouter soạn thay.</p>
+        <p className="muted small">Chấm câu, role-play, tra từ: Groq → OpenRouter → AI chính (Google). Soạn bài mới: AI chính trước, hết lượt thì Groq/OpenRouter soạn thay.</p>
         {probe && (probe.length ? probe.map((p) => <div key={p.name} className="adm-line"><span><b>{p.name}</b> <span className="muted small">{p.model}</span></span>
           {p.ok ? <span className="tag good">✓ {((p.ms || 0) / 1000).toFixed(1)}s</span> : <span className="tag bad">✗ {p.error}</span>}</div>) : <p><span className="spin" /> Đang kiểm tra...</p>)}
       </section>}

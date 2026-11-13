@@ -35,7 +35,7 @@ async function discoverModels(): Promise<string[]> {
 }
 // Không chờ Gemini quá lâu: việc nhỏ 20 giây, soạn bài 110 giây
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error("504 timeout UNAVAILABLE: Gemini phản hồi quá chậm")), ms))]);
+  return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error("504 timeout UNAVAILABLE: AI phản hồi quá chậm")), ms))]);
 }
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -55,11 +55,11 @@ const isBusy = (e: unknown) => !isQuota(e) && ([500, 503, 504].includes(statusOf
 
 function errMsg(e: unknown) {
   const s = String((e as Error)?.message ?? e);
-  if (s.includes("free tier is not available")) return "Project Gemini này không có free tier. Hãy tạo key bằng Gmail khác trên aistudio.google.com/apikey";
+  if (s.includes("free tier is not available")) return "Project AI (Google) này không có free tier. Hãy tạo key bằng Gmail khác trên aistudio.google.com/apikey";
   if (s.includes("API key not valid") || s.includes("API_KEY_INVALID")) return "GEMINI_API_KEY không hợp lệ";
   if (s.includes("no longer available") || statusOf(e) === 404) return "Tên model trong GEMINI_MODEL không còn dùng được, hãy đổi model";
-  if (isQuota(e)) return "Đã hết lượt gọi Gemini miễn phí (giới hạn theo phút hoặc theo ngày)";
-  if (isBusy(e)) return "Máy chủ Gemini đang quá tải, thử lại sau ít phút";
+  if (isQuota(e)) return "Đã hết lượt gọi AI chính miễn phí (giới hạn theo phút hoặc theo ngày)";
+  if (isBusy(e)) return "Máy chủ AI đang quá tải, thử lại sau ít phút";
   return s.slice(0, 200);
 }
 
@@ -106,7 +106,7 @@ async function generate(params: { contents: unknown; config?: Record<string, unk
     }
     if (last && isBusy(last)) exhausted.set(model, Math.max(exhausted.get(model) || 0, Date.now() + 2 * 60e3)); // quá tải: tạm bỏ qua 2 phút
   }
-  throw last ?? new Error("429 RESOURCE_EXHAUSTED: mọi model Gemini đều đã hết lượt");
+  throw last ?? new Error("429 RESOURCE_EXHAUSTED: mọi model AI chính đều đã hết lượt");
 }
 
 // GET: kiểm tra key và tên model (không tốn lượt gọi sinh nội dung)
@@ -114,13 +114,13 @@ export async function GET(req: Request) {
   if (!(await requireUser())) return NextResponse.json({ ok: false, error: "Chưa đăng nhập" }, { status: 401 });
   // ?probe=1: kiểm tra từng AI (Cài đặt → Trạng thái AI)
   if (new URL(req.url).searchParams.get("probe")) {
-    let gem: { name: string; model: string; ok: boolean; error?: string; ms?: number } = { name: "Gemini", model: MODEL, ok: false, error: "Chưa có GEMINI_API_KEY" };
+    let gem: { name: string; model: string; ok: boolean; error?: string; ms?: number } = { name: "AI chính (Google)", model: MODEL, ok: false, error: "Chưa có GEMINI_API_KEY" };
     if (process.env.GEMINI_API_KEY) {
       const t0 = Date.now();
       try {
         await generate({ contents: "Say OK", config: { maxOutputTokens: 5 } }, true, false);
-        gem = { name: "Gemini", model: lastModel, ok: true, ms: Date.now() - t0 };
-      } catch (e) { gem = { name: "Gemini", model: lastModel, ok: false, error: errMsg(e) }; }
+        gem = { name: "AI chính (Google)", model: lastModel, ok: true, ms: Date.now() - t0 };
+      } catch (e) { gem = { name: "AI chính (Google)", model: lastModel, ok: false, error: errMsg(e) }; }
     }
     return NextResponse.json({ list: [gem, ...(await probeFallbacks())] });
   }
@@ -142,7 +142,7 @@ export async function POST(req: Request) {
   // Soạn bài (heavy) → Gemini trước vì soạn bài tốt hơn; Gemini hết lượt thì AI dự phòng soạn thay
   if (!heavy && PROVIDERS.length) {
     try { return NextResponse.json(await askFallback(system, contents, !!json, 25000)); }
-    catch (e) { console.warn("AI dự phòng lỗi, thử Gemini:", String((e as Error)?.message ?? e)); }
+    catch (e) { console.warn("AI dự phòng lỗi, thử AI chính:", String((e as Error)?.message ?? e)); }
   }
   try {
     if (!process.env.GEMINI_API_KEY) throw new Error("503 UNAVAILABLE no gemini key");
@@ -150,7 +150,7 @@ export async function POST(req: Request) {
       contents,
       config: { systemInstruction: system, temperature: json ? 0.3 : 0.7, ...(json ? { responseMimeType: "application/json" } : {}) },
     }, PROVIDERS.length > 0 && !heavy, !!heavy);
-    return NextResponse.json({ text: res.text ?? "", engine: "Gemini", model: lastModel });
+    return NextResponse.json({ text: res.text ?? "", engine: "AI chính", model: lastModel });
   } catch (e) {
     if (heavy && PROVIDERS.length && (isQuota(e) || isBusy(e))) {
       try { return NextResponse.json(await askFallback(system, contents, !!json, 90000)); }

@@ -55,6 +55,9 @@ export function weekPoints(d: any, week: string) {
   for (const s of d?.sessions || []) if (inW(s.date)) add(s.date, 20 + Math.round(Math.min(100, Number(s.total) || 0) / 10));
   for (const t of d?.tests || []) if (inW(t.date)) add(t.date, 40 + Math.round(Math.min(100, Number(t.score) || 0) / 10));
   for (const [k, n] of Object.entries(d?.revDays || {})) if (inW(k)) add(k, Math.min(60, 2 * (Number(n) || 0)));
+  // Mục Kiểm tra: chỉ bài đầu tiên mỗi ngày được cộng (40 + điểm/10), tránh làm đi làm lại để cày điểm
+  const xDay = new Set<string>();
+  for (const x of d?.xtests || []) if (inW(x.date) && !xDay.has(x.date)) { xDay.add(x.date); add(x.date, 40 + Math.round(Math.min(100, Number(x.score) || 0) / 10)); }
   let total = 0;
   for (const k of Object.keys(day)) total += Math.min(DAY_CAP, day[k] + 10);
   return total;

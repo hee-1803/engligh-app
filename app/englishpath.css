@@ -854,3 +854,31 @@ button:active, .setitem:active, [role=button]:active { transform: scale(.97); tr
 .svlang { display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 10px }
 .svlang button { border: 0; padding: 7px 14px; border-radius: 99px; background: var(--surface); color: var(--muted); font: inherit; font-weight: 800; font-size: .85rem; box-shadow: 0 2px 10px rgba(80,60,160,.1); cursor: pointer }
 .svlang button.on { background: var(--accent); color: #fff }
+/* Thẻ chọn mục tiêu: biểu tượng ở trên, chữ ở dưới, không tràn khi chữ dài (bản tiếng Anh) */
+.choices .choice { flex-direction: column; justify-content: center; align-items: center; gap: 6px; text-align: center; min-width: 0; padding: 12px 8px; line-height: 1.2; overflow-wrap: break-word; hyphens: auto }
+.choices .choice > * { min-width: 0; max-width: 100% }
+
+/* ===== Mục Kiểm tra ===== */
+.testcard { cursor: pointer; background: linear-gradient(135deg, #eaf2ff, #f3ecff) }
+.xtgrid { display: grid; gap: 14px }
+.xtcard { display: grid; gap: 10px } .xtcard h3 { margin: 0 } .xtcard > .primary { justify-self: start }
+.xtcard.gold { background: linear-gradient(135deg, #fff8e1, #fff) }
+.xtskills { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px }
+.xtsk { display: grid; justify-items: center; gap: 4px; padding: 10px 4px; border-radius: 18px; font-size: .8rem; text-align: center; line-height: 1.2 }
+@media (max-width: 520px) { .xtskills { grid-template-columns: repeat(2, 1fr) } }
+.xtby { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px }
+.xtby span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 99px; background: color-mix(in srgb, var(--surface) 75%, transparent); font-size: .9rem }
+.xtchart { display: flex; align-items: flex-end; gap: 6px; height: 130px; padding: 8px 4px 0; border-bottom: 2px solid var(--line); margin-bottom: 12px }
+.xtchart div { flex: 1; max-width: 46px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 2px }
+.xtchart i { width: 100%; border-radius: 10px 10px 4px 4px; background: #9aa7c7 } .xtchart i.hi { background: #57a13e } .xtchart i.mid { background: #f5b301 } .xtchart i.lo { background: #ef7b7b }
+.xtchart span { font-size: .7rem; color: var(--muted); font-weight: 700 }
+.xtlist { display: grid; gap: 8px; margin-bottom: 8px }
+.xtrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: var(--sunk, #f6f4fb) } .xtsc { font-size: 1.1rem }
+.rvlist { display: grid; gap: 10px; padding: 0; margin: 8px 0; list-style: none }
+.rvlist li { padding: 12px 14px; border-radius: 18px; background: var(--sunk, #f6f4fb); border-left: 5px solid #9aa7c7 }
+.rvlist li.ok { border-left-color: #57a13e } .rvlist li.bad { border-left-color: #ef7b7b }
+.rvhead { display: flex; align-items: center; gap: 8px; margin-bottom: 4px }
+.rvmark { font-weight: 900; font-size: 1.1rem } li.ok .rvmark { color: #3c7a26 } li.bad .rvmark { color: #c0392b }
+.rvq { margin: 4px 0 } .rvex { background: #fffaf0; border-radius: 12px; padding: 6px 10px; margin: 6px 0 0 }
+.passage.sm { font-size: .9rem; padding: 10px 12px; margin: 4px 0 }
+.hero .xtby span { background: rgba(255,255,255,.22); color: #fff; font-weight: 700 } .hero .xtby span b { color: #fff }
