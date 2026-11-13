@@ -13,7 +13,7 @@
   const inApp = /FBAN|FBAV|FB_IAB|Instagram|Zalo|Messenger|Line\//i.test(ua);
   const mobile = ios || /Android/i.test(ua);
   const pick = (() => { try { return localStorage.getItem("ep_lang") || "auto"; } catch (e) { return "auto"; } })();
-  const en = pick === "en" || (pick === "auto" && String(navigator.language || "").toLowerCase().startsWith("en"));
+  const en = pick === "en" || (pick !== "vi" && !String(navigator.language || "").toLowerCase().startsWith("vi"));
   const T = (vi, e) => (en ? e : vi);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
 

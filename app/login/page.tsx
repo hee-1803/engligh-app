@@ -30,7 +30,7 @@ export default function LoginPage() {
   const [lang, setLang] = useState<"en" | "vi">("vi");
   useEffect(() => { try {
     const pick = localStorage.getItem("ep_lang");
-    const dev = String((navigator.languages && navigator.languages[0]) || navigator.language || "vi").toLowerCase().startsWith("en") ? "en" : "vi";
+    const dev = String((navigator.languages && navigator.languages[0]) || navigator.language || "vi").toLowerCase().startsWith("vi") ? "vi" : "en";
     setLang(pick === "en" || pick === "vi" ? pick : dev);
   } catch {} }, []);
   const L = (vi: string, en: string) => (lang === "vi" ? vi : en);

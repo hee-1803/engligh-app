@@ -851,3 +851,6 @@ button:active, .setitem:active, [role=button]:active { transform: scale(.97); tr
 .hero .skn, .hero .skv { color: inherit }
 .adjcard { background: linear-gradient(135deg, #eef8e6, #fff8e1) }
 .quiz.pl .qcount .eyebrow { display: none } .quiz.pl .qtop { margin-top: 2px }
+.svlang { display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 10px }
+.svlang button { border: 0; padding: 7px 14px; border-radius: 99px; background: var(--surface); color: var(--muted); font: inherit; font-weight: 800; font-size: .85rem; box-shadow: 0 2px 10px rgba(80,60,160,.1); cursor: pointer }
+.svlang button.on { background: var(--accent); color: #fff }
