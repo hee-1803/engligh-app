@@ -14,7 +14,7 @@ export default function Home() {
         <div dangerouslySetInnerHTML={{ __html: BOOT }} />
       </main>
       <nav id="bnav" hidden aria-label="Navigation" />
-      <Script src="/englishpath.js?v=81" strategy="afterInteractive" />
+      <Script src="/englishpath.js?v=82" strategy="afterInteractive" />
     </>
   );
 }

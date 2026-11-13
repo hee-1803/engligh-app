@@ -420,9 +420,22 @@ async function doTranslate(k) {
 const gtLink = (t, sl, tl) => `https://translate.google.com/?sl=${sl}&tl=${tl}&op=translate&text=${encodeURIComponent(t)}`;
 // Tốc độ đọc: mặc định 0.8 (chậm hơn tốc độ máy). Đổi giá trị cũ sang thang mới.
 function ttsRate() { const v = pref("ep_rate"), old = {"0.95":"0.8", "1.1":"0.95", "0.75":"0.7"}; return Number(old[v] || v || 0.8); }
-function say(t, rate) { return new Promise(res => { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(String(t).replace(/_+/g, " blank "));
+// Đọc câu. Chống "vấp đầu câu":
+//  - Lần đầu: đọc trước 1 tiếng im lặng để đánh thức loa/bộ đọc (nhất là tai nghe Bluetooth), câu thật xếp ngay sau nên không bị nuốt chữ đầu.
+//  - Đang đọc câu khác: dừng hẳn rồi chờ một chút mới đọc câu mới (Chrome cắt đầu câu nếu đọc ngay sau khi dừng).
+let TTS_AT = 0, TTS_SEQ = 0;
+function ttsWarm() { try { const w = new SpeechSynthesisUtterance(" . "); w.volume = 0; w.rate = 1.5; const v = pickVoice(); if (v) { w.voice = v; w.lang = v.lang; } speechSynthesis.speak(w); TTS_AT = Date.now(); } catch (e) {} }
+function say(t, rate) { return new Promise(res => { try {
+  const my = ++TTS_SEQ, busy = speechSynthesis.speaking || speechSynthesis.pending;
+  if (busy) speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(String(t).replace(/_+/g, " blank "));
   const v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-US";
-  u.rate = rate || ttsRate(); u.onend = res; u.onerror = res; speechSynthesis.speak(u); } catch (e) { res(); } }); }
+  u.rate = rate || ttsRate(); u.onend = res; u.onerror = res;
+  const go = () => { if (my !== TTS_SEQ) return res(); const cold = Date.now() - TTS_AT > 20000; if (cold) ttsWarm(); speechSynthesis.resume(); speechSynthesis.speak(u); TTS_AT = Date.now(); };
+  busy ? setTimeout(go, 150) : go();
+} catch (e) { res(); } }); }
+// Đánh thức bộ đọc ngay lần chạm đầu tiên (iPhone chỉ cho phát âm thanh sau khi người dùng chạm)
+if ("speechSynthesis" in window) document.addEventListener("pointerdown", () => { if (Date.now() - TTS_AT > 20000 && !speechSynthesis.speaking) ttsWarm(); }, {capture:true, passive:true});
 // Nhận giọng nói (Chrome, Edge)
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let REC = null;
