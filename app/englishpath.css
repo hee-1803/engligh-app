@@ -828,3 +828,26 @@ button:active, .setitem:active, [role=button]:active { transform: scale(.97); tr
   .wrap { padding-bottom: 110px }
 }
 .rankhead { align-items: center; gap: 10px } .rankhead h2 { margin: 0 } .lbmiles .stk { display: inline-block }
+
+/* ===== Bài test đầu vào 4 kỹ năng ===== */
+.plhead { display: grid; gap: 4px; margin-bottom: 10px }
+.plsteps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px }
+.plsteps span { display: grid; justify-items: center; gap: 2px; padding: 8px 4px; border-radius: 18px; background: var(--sunk, #f3f1fa); opacity: .55; font-size: .72rem; text-align: center; line-height: 1.2 }
+.plsteps span.cur { opacity: 1; background: color-mix(in srgb, var(--accent) 14%, var(--surface)); outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent) }
+.plsteps span.done { opacity: 1; background: #e3f1d8 }
+.plinter { display: grid; justify-items: center; gap: 10px; padding: 10px 0 4px } .plinter h2 { margin: 0; display: flex; align-items: center; gap: 8px } .plinter p { max-width: 460px; margin: 0 }
+.passage { background: #fffaf0; border: 2px dashed #f1d9a6; border-radius: 18px; padding: 14px 16px; line-height: 1.7; font-size: 1.02rem; margin-bottom: 10px }
+.plparts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0 }
+.plparts div { display: grid; justify-items: center; gap: 2px; padding: 10px 4px; border-radius: 18px; background: color-mix(in srgb, var(--surface) 70%, transparent); text-align: center; font-size: .85rem } .plparts span { font-size: .75rem; opacity: .8 }
+@media (max-width: 520px) { .plparts, .plsteps { grid-template-columns: repeat(2, 1fr) } }
+.lvpick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px }
+.lvpick .seg { display: grid; gap: 2px; padding: 10px; border-radius: 18px } .lvpick .seg span { font-size: .75rem; opacity: .8 }
+.skbars { display: grid; gap: 8px; margin: 8px 0 }
+.skrow { display: grid; grid-template-columns: 34px 1fr 2fr 34px; align-items: center; gap: 8px }
+.skn { font-weight: 700; font-size: .9rem } .skv { text-align: right }
+.skbar { height: 12px; border-radius: 99px; background: color-mix(in srgb, var(--sunk, #eee) 80%, transparent); overflow: hidden }
+.skbar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #8cd16b, #57a13e) }
+.sknote { grid-column: 2 / -1; margin-top: -6px }
+.hero .skn, .hero .skv { color: inherit }
+.adjcard { background: linear-gradient(135deg, #eef8e6, #fff8e1) }
+.quiz.pl .qcount .eyebrow { display: none } .quiz.pl .qtop { margin-top: 2px }
