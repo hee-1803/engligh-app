@@ -270,6 +270,9 @@ function pickVoice() { const name = pref("ep_voice");
 const twv = t => esc(t).replace(/(&[a-z#0-9]+;)|([\p{L}]+)/gu, (m, ent, w) => ent ? ent : `<span class="wv" data-s="${w}">${w}</span>`);
 // ---- Nhãn dán & linh vật (SVG trong /stickers.js) ----
 const STK = () => window.STICKERS || {}, MAS = () => window.MASCOT || {};
+// Biểu tượng thanh dưới (cùng nét vẽ với bộ nhãn dán)
+const NAV_HOME = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" stroke="#1f2d2b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M10 30 L32 11 L54 30" fill="none"/><path d="M15 27 V52 Q15 55 18 55 H46 Q49 55 49 52 V27 L32 13 Z" fill="#ffd166"/><path d="M27 55 V42 Q27 38 32 38 Q37 38 37 42 V55" fill="#ef7b7b"/><path d="M41 16 V9 H47 V21" fill="#9fd47a"/><circle cx="22" cy="36" r="2.5" fill="#1f2d2b" stroke="none"/></svg>`;
+const NAV_GEAR = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" stroke="#1f2d2b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M28 7 H36 L38 15 L44 18 L51 13 L57 19 L52 26 L55 32 L57 34 V38 L52 40 L50 46 L55 52 L49 58 L42 53 L36 56 L34 60 H28 L26 53 L20 50 L13 55 L8 49 L12 42 L9 36 H7 V28 L13 26 L15 20 L10 13 L16 8 L22 12 L27 9 Z" fill="#a8c7ff" transform="translate(0 -1)"/><circle cx="32" cy="32" r="9" fill="#fff"/></svg>`;
 const stk = (name, size = 48, cls = "", rot) => `<span class="stk ${cls}" style="--s:${size}px;--r:${rot ?? ((String(name).length * 7) % 13 - 6)}deg">${STK()[name] || STK().star || ""}</span>`;
 const mascot = (mood = "happy", size = 120, cls = "") => `<span class="mascot ${cls}" style="--s:${size}px">${MAS()[mood] || ""}</span>`;
 const W_ = w => `(?<![\\p{L}])(?:${w})(?![\\p{L}])`; // khớp nguyên từ, kể cả tiếng Việt có dấu
@@ -1313,7 +1316,7 @@ function rankCard() {
   const d = LB.d, me = d.me, r = d.reward; if (r.opt_out) return "";
   const lr = r.lastResult;
   return `<section class="panel rankcard" data-a="openRank" role="button" tabindex="0">
-    <div class="row nowrap"><span class="rc-ic">🏆</span><div class="grow">
+    <div class="row nowrap"><span class="rc-ic">${stk("trophy", 46, "", -8)}</span><div class="grow">
       <p class="eyebrow">${_t("Bảng xếp hạng tuần")} · ${esc(d.myLevel)} · ${lgName(d.myLeague)}</p>
       <b>${me.rank ? `${_t("Hạng")} #${me.rank} · ` : ""}${me.points} ${_t("điểm")}</b>
       <span class="muted small"> · ${lbLeft()}${me.gapTop10 ? ` · ${_t("còn")} ${me.gapTop10} ${_t("điểm để vào top 10")}` : ""}</span>
@@ -1347,7 +1350,7 @@ function vRank() {
   const nextM = d.milestones.find(m => !m.got), topM = d.milestones[d.milestones.length - 1].p;
   const miles = `<section class="panel"><h3>🎯 ${_t("Mốc điểm tuần này")}</h3><p class="muted small">${_t("Ai cũng nhận được, không cần lên top.")}</p>
     <div class="lbbar"><i style="width:${Math.min(100, me.points / topM * 100)}%"></i>${d.milestones.map(m => `<span class="${m.got ? "on" : ""}" style="left:${m.p / topM * 100}%" title="${m.p}"></span>`).join("")}</div>
-    <div class="lbmiles">${d.milestones.map(m => `<div class="${m.got ? "on" : ""}"><b>${m.got ? "✅" : m.p}</b><span>${esc(en ? m.en : m.vi)}</span></div>`).join("")}</div>
+    <div class="lbmiles">${d.milestones.map(m => `<div class="${m.got ? "on" : ""}"><b>${m.got ? stk("star", 24, "", 0) : m.p}</b><span>${esc(en ? m.en : m.vi)}</span></div>`).join("")}</div>
     ${nextM ? `<p class="small">${_t("Còn")} <b>${nextM.p - me.points}</b> ${_t("điểm nữa để nhận")} ${esc(en ? nextM.en : nextM.vi)}</p>` : `<p class="small good-t">🎉 ${_t("Bạn đã nhận hết quà mốc điểm tuần này!")}</p>`}</section>`;
   const frames = Object.entries(r.allFrames).map(([k, f]) => { const has = r.frames.includes(k);
     return `<button class="lbfr ${r.frame === k ? "sel" : ""} ${has ? "" : "locked"}" ${has ? `data-a="lbFrame" data-v="${k}"` : "disabled"} title="${esc(en ? f.how_en : f.how_vi)}">${lbAv({icon:me.icon, hue:me.hue, frame:k}, 44)}<b>${esc(en ? f.en : f.vi)}</b><span>${has ? (r.frame === k ? _t("Đang dùng") : _t("Dùng")) : "🔒 " + esc(en ? f.how_en : f.how_vi)}</span></button>`; }).join("");
@@ -2029,7 +2032,7 @@ function renderHeader() {
     <div class="tools">${S.level ? `${_t("<span class=\"lvl\" title=\"Trình độ hiện tại\">")}${S.level}</span>` : ""}${_t("\n     <div class=\"usermenu\"><button class=\"avatar\" data-a=\"menu\" aria-label=\"Tài khoản ")}${esc(ME?.email || "")}">${ME?.avatar ? `<img src="${esc(ME.avatar)}" alt="" referrerpolicy="no-referrer">` : esc(name[0].toUpperCase())}</button>
      ${UI.menu ? `<div class="menu"><div class="who"><b>${esc(displayName() || _t("Tài khoản"))}</b><span>${esc(ME?.email || "")}</span></div>${ME?.admin ? `${_t("<a href=\"/admin\">🛠️ Quản trị</a>")}` : ""}${S.path ? `<a href="#" data-a="go" data-v="history">${_t("📜 Lịch sử học")}</a>${_t("<a href=\"#\" data-a=\"go\" data-v=\"settings\">Cài đặt</a>")}` : ""}${_t("<a href=\"#\" data-a=\"logout\">Đăng xuất</a></div>")}` : ""}</div></div></div>`;
   const bn = $("#bnav");
-  if (bn) { bn.hidden = focus; const BI = {home:"🏠", path:"🗺️", review:"📚", rank:"🏆", chat:"💬", settings:"⚙️"};
+  if (bn) { bn.hidden = focus; const BI = {home:NAV_HOME, path:STK().map, review:STK().book, rank:STK().trophy, chat:STK().chat, settings:NAV_GEAR};
     bn.innerHTML = focus ? "" : [...tabs.filter(t => t[0] !== "history"), ["settings", _t("Cài đặt")]].map(([k, t]) => `<a href="#" class="${view === k ? "sel" : ""}" data-a="go" data-v="${k}"><span class="bi">${BI[k]}</span><span class="bl">${k === "rank" ? _t("Xếp hạng") : t}</span>${k === "review" && due ? `<span class="badge">${due}</span>` : k === "chat" && CH.unread ? `<span class="badge">${CH.unread}</span>` : k === "rank" ? gift : ""}</a>`).join(""); }
 }
 function render() {
@@ -2048,7 +2051,7 @@ function render() {
   else if (view === "history") html = vHistory();
   else if (view === "settings") html = vSettings();
   else if (view === "chat") html = vChat();
-  else if (view === "rank") html = `<div class="wrap narrow"><div class="sethead"><h2>🏆 ${_t("Bảng xếp hạng tuần")}</h2></div>${vRank()}</div>`;
+  else if (view === "rank") html = `<div class="wrap narrow"><div class="sethead rankhead">${stk("trophy", 44, "", -8)}<h2>${_t("Bảng xếp hạng tuần")}</h2></div>${vRank()}</div>`;
   else { view = "home"; html = vHome(); }
   // Giữ nội dung đang gõ dở (câu tự đặt, bản dịch...) khi giao diện vẽ lại
   const keep = {}; a.querySelectorAll("textarea[id], input[id]").forEach(el => { if (el.value && !["qin", "rpIn", "rq"].includes(el.id) && !/^(sv-|remind)/.test(el.id)) keep[el.id] = el.value; });
