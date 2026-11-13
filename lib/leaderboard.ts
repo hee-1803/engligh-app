@@ -69,7 +69,7 @@ export async function getProf(db: Db, uid: string): Promise<Prof> {
 }
 
 // Gọi sau mỗi lần lưu tiến độ: cập nhật điểm tuần, trao mốc điểm, báo cho người vừa bị vượt
-export async function updateScore(db: Db, uid: string, d: any) {
+export async function updateScore(db: Db, uid: string, d: any, silent = false) {
   const week = weekOf(), level = levelOf(d), points = weekPoints(d, week);
   const prof = await getProf(db, uid);
   const { data: old } = await db.from("lb_scores").select("points, level, league").eq("user_id", uid).eq("week", week).maybeSingle();
@@ -91,7 +91,7 @@ export async function updateScore(db: Db, uid: string, d: any) {
   }
 
   // Báo cho người trong cùng bảng vừa bị vượt (mỗi người tối đa 1 lần/ngày)
-  if (!prof.opt_out && old && points > old.points) {
+  if (!silent && !prof.opt_out && old && points > old.points) {
     try {
       const { data: passed } = await db.from("lb_scores").select("user_id, points").eq("week", week).eq("level", level).eq("league", prof.league)
         .gte("points", old.points).lt("points", points).gt("points", 0).neq("user_id", uid).limit(5);
@@ -161,3 +161,20 @@ export function shownName(p: Prof | undefined, uid: string) {
   return { name: a.name, name_en: a.name_en, icon: a.icon, hue: a.hue, real: false };
 }
 export const curTitle = (p?: Prof | null) => (p?.title && p.title_week === weekOf() ? TITLES[p.title] || null : null);
+
+// Tính điểm cho TẤT CẢ người đã học trong tuần (kể cả người chưa mở lại app từ khi có bảng xếp hạng).
+// Chạy tối đa 1 lần mỗi 10 phút, không gửi thông báo.
+export async function syncAll(db: Db, week = weekOf()) {
+  const slot = "sync:" + new Date().toISOString().slice(0, 15); // mỗi 10 phút một khe
+  const { data: claimed, error } = await db.from("lb_weeks").insert({ week: slot }).select("week");
+  if (error || !claimed?.length) return 0;
+  db.from("lb_weeks").delete().like("week", "sync:%").lt("done_at", new Date(Date.now() - 864e5).toISOString()).then(() => {}, () => {});
+  const since = new Date(Date.parse(week + "T00:00:00Z") - 2 * 864e5).toISOString();
+  let n = 0;
+  for (let from = 0; ; from += 500) {
+    const { data } = await db.from("app_state").select("user_id, data").gte("updated_at", since).range(from, from + 499);
+    for (const r of data || []) { try { if (weekPoints(r.data, week) > 0) { await updateScore(db, r.user_id, r.data, true); n++; } } catch {} }
+    if (!data || data.length < 500) break;
+  }
+  return n;
+}

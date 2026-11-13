@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { LEAGUES, LEVELS, FRAMES, TITLES, MILESTONES, MAX_FREEZE, weekOf, prevWeek, weekEnd, dayVN, levelOf, getProf, updateScore, finalizeWeek, shownName, curTitle } from "@/lib/leaderboard";
+import { LEAGUES, LEVELS, FRAMES, TITLES, MILESTONES, MAX_FREEZE, weekOf, prevWeek, weekEnd, dayVN, levelOf, getProf, updateScore, finalizeWeek, syncAll, shownName, curTitle } from "@/lib/leaderboard";
 
 /* Bảng xếp hạng tuần
    GET  ?level=A1&league=0 → top 10 + vị trí của bạn + phần thưởng
@@ -39,6 +39,7 @@ export async function GET(req: Request) {
       const m = (e as Error).message || ""; if (/lb_|relation/.test(m)) return bad("Chưa tạo bảng xếp hạng: chạy supabase/leaderboard.sql trong Supabase", 500);
     }
   }
+  try { await syncAll(db, week); } catch {} // tính điểm cho mọi người đã học tuần này
   const prof = await getProf(db, uid);
 
   const u = u0;
