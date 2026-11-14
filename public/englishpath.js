@@ -316,8 +316,38 @@ function lev(a, b) { const m = a.length, n = b.length, d = Array.from({length: m
 // Bọc từng từ tiếng Anh để bấm vào tra nghĩa
 const tw = t => esc(t).replace(/(&[a-z#0-9]+;)|([A-Za-z][A-Za-z'’-]*)/g, (m, ent, w) => ent ? ent : `<span class="w" data-w="${w}">${w}</span>`);
 // Đọc văn bản: chọn giọng tiếng Anh tự nhiên nhất mà máy có
-let VOICES = [];
-function loadVoices() { try { VOICES = speechSynthesis.getVoices().filter(v => /^en[-_]/i.test(v.lang)); } catch (e) {} if (typeof view !== "undefined" && view === "settings") render(); }
+let VOICES = [], VI_VOICES = [];
+function loadVoices() { try { const all = speechSynthesis.getVoices(); VOICES = all.filter(v => /^en[-_]/i.test(v.lang)); VI_VOICES = all.filter(v => /^vi([-_]|$)/i.test(v.lang)); } catch (e) {} if (typeof view !== "undefined" && view === "settings") render(); }
+const pickViVoice = () => VI_VOICES.find(v => /natural|online|google/i.test(v.name)) || VI_VOICES[0] || null;
+// Tên riêng Việt Nam hay gặp trong câu tiếng Anh (viết có dấu hoặc không dấu) → [cách viết tiếng Việt, cách đọc gần đúng cho giọng tiếng Anh]
+const VN_WORDS = [
+  [/(?<![\p{L}])(?:Đà Nẵng|Da ?Nang)(?![\p{L}])/giu, "Đà Nẵng", "Dah Nahng"], [/(?<![\p{L}])(?:Hà Nội|Ha ?Noi|Hanoi)(?![\p{L}])/giu, "Hà Nội", "Hah Noy"],
+  [/(?<![\p{L}])(?:Hồ Chí Minh|Ho Chi Minh)(?![\p{L}])/giu, "Hồ Chí Minh", "Hoh Chee Min"], [/(?<![\p{L}])(?:Sài Gòn|Sai ?Gon)(?![\p{L}])/giu, "Sài Gòn", "Sigh Gon"],
+  [/(?<![\p{L}])(?:Huế|Hue)(?![\p{L}])/gu, "Huế", "Hway"], [/(?<![\p{L}])(?:Hội An|Hoi An)(?![\p{L}])/giu, "Hội An", "Hoy Ahn"], [/(?<![\p{L}])(?:Đà Lạt|Da ?Lat)(?![\p{L}])/giu, "Đà Lạt", "Dah Laht"],
+  [/(?<![\p{L}])(?:Nha Trang)(?![\p{L}])/giu, "Nha Trang", "Nyah Chang"], [/(?<![\p{L}])(?:Vũng Tàu|Vung Tau)(?![\p{L}])/giu, "Vũng Tàu", "Voong Tow"], [/(?<![\p{L}])(?:Phú Quốc|Phu Quoc)(?![\p{L}])/giu, "Phú Quốc", "Foo Kwok"],
+  [/(?<![\p{L}])(?:Hạ Long|Ha Long)(?![\p{L}])/giu, "Hạ Long", "Hah Long"], [/(?<![\p{L}])(?:Cần Thơ|Can Tho)(?![\p{L}])/giu, "Cần Thơ", "Kun Tuh"], [/(?<![\p{L}])(?:Hải Phòng|Hai Phong)(?![\p{L}])/giu, "Hải Phòng", "High Fong"],
+  [/(?<![\p{L}])(?:Sa ?Pa)(?![\p{L}])/gu, "Sa Pa", "Sah Pah"], [/(?<![\p{L}])(?:Quy Nhơn|Quy Nhon)(?![\p{L}])/giu, "Quy Nhơn", "Kwee Nyun"], [/(?<![\p{L}])(?:Ninh Bình|Ninh Binh)(?![\p{L}])/giu, "Ninh Bình", "Ning Bing"],
+  [/(?<![\p{L}])(?:Mũi Né|Mui Ne)(?![\p{L}])/giu, "Mũi Né", "Mooey Neh"], [/(?<![\p{L}])(?:phở|pho)(?![\p{L}])/giu, "phở", "fuh"], [/(?<![\p{L}])(?:bánh mì|banh mi)(?![\p{L}])/giu, "bánh mì", "bun mee"],
+  [/(?<![\p{L}])(?:áo dài|ao dai)(?![\p{L}])/giu, "áo dài", "ow zai"], [/(?<![\p{L}])(?:Tết)(?![\p{L}])/gu, "Tết", "Tet"],
+];
+const VN_NAME_RE = new RegExp(VN_WORDS.map(([r]) => r.source).join("|"), "iu");
+// Chia câu thành các đoạn tiếng Anh / tiếng Việt để đọc bằng đúng giọng
+function ttsParts(text) {
+  let t = String(text); const marks = [];
+  // câu chủ yếu là tiếng Việt → đọc cả câu bằng giọng Việt
+  let bare = t; for (const [re] of VN_WORDS) bare = bare.replace(re, " ");
+  const ws = bare.split(/\s+/).filter(w => /\p{L}/u.test(w)), viN = ws.filter(w => VIRE.test(w)).length;
+  if (ws.length && viN / ws.length >= 0.4) return [{vi:true, text:t, en:t}];
+  for (const [re, vi, en] of VN_WORDS) t = t.replace(re, () => { marks.push([vi, en]); return `\u0001${marks.length - 1}\u0001`; });
+  // các cụm từ có dấu tiếng Việt khác (ví dụ câu tiếng Việt cần đọc)
+  t = t.replace(/[^\s\u0001]*[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ][^\s\u0001]*(?:\s+[^\s\u0001]*[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ][^\s\u0001]*)*/gi, m => { marks.push([m, m]); return `\u0001${marks.length - 1}\u0001`; });
+  const out = []; t.split(/\u0001(\d+)\u0001/).forEach((x, k) => {
+    if (k % 2) out.push({vi:true, text:marks[+x][0], en:marks[+x][1]});
+    else if (/\p{L}|\d/u.test(x)) out.push({vi:false, text:x});
+    else if (x.trim() && out.length) { const l = out[out.length - 1]; l.text += x.trim(); if (l.en) l.en += x.trim(); } // dấu câu gắn vào đoạn trước
+  });
+  return out;
+}
 function pickVoice() { const name = pref("ep_voice");
   return VOICES.find(v => v.name === name) || VOICES.find(v => /natural|online/i.test(v.name) && /en-US/i.test(v.lang)) || VOICES.find(v => /Google US English/i.test(v.name)) || VOICES.find(v => /en-US/i.test(v.lang)) || VOICES[0]; }
 // Bọc từng âm tiết tiếng Việt để bấm vào xem từ tiếng Anh tương ứng
@@ -428,10 +458,16 @@ function ttsWarm() { try { const w = new SpeechSynthesisUtterance(" . "); w.volu
 function say(t, rate) { return new Promise(res => { try {
   const my = ++TTS_SEQ, busy = speechSynthesis.speaking || speechSynthesis.pending;
   if (busy) speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(String(t).replace(/_+/g, " blank "));
-  const v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-US";
-  u.rate = rate || ttsRate(); u.onend = res; u.onerror = res;
-  const go = () => { if (my !== TTS_SEQ) return res(); const cold = Date.now() - TTS_AT > 20000; if (cold) ttsWarm(); speechSynthesis.resume(); speechSynthesis.speak(u); TTS_AT = Date.now(); };
+  // Câu có tiếng Việt: đọc phần tiếng Việt bằng giọng tiếng Việt (nếu máy có), không có thì đọc gần đúng bằng giọng tiếng Anh
+  const vv = pickViVoice(), v = pickVoice(), r0 = rate || ttsRate();
+  let parts = ttsParts(String(t).replace(/_+/g, " blank "));
+  if (!vv) parts = [{vi:false, text:parts.map(p => p.vi ? (p.en || p.text) : p.text).join(" ")}];
+  else { const m = []; for (const p of parts) { const last = m[m.length - 1]; if (last && last.vi === p.vi) last.text += " " + p.text; else m.push({...p}); } parts = m; }
+  const us = parts.map(p => { const u = new SpeechSynthesisUtterance(p.text.trim());
+    if (p.vi) { u.voice = vv; u.lang = vv.lang; u.rate = Math.min(1, r0 + 0.1); } else { if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-US"; u.rate = r0; }
+    return u; });
+  const lastU = us[us.length - 1]; if (!lastU) return res(); lastU.onend = res; lastU.onerror = res;
+  const go = () => { if (my !== TTS_SEQ) return res(); const cold = Date.now() - TTS_AT > 20000; if (cold) ttsWarm(); speechSynthesis.resume(); us.forEach(u => speechSynthesis.speak(u)); TTS_AT = Date.now(); };
   busy ? setTimeout(go, 150) : go();
 } catch (e) { res(); } }); }
 // Đánh thức bộ đọc ngay lần chạm đầu tiên (iPhone chỉ cho phát âm thanh sau khi người dùng chạm)
@@ -1058,7 +1094,7 @@ function weakSkill() {
 function vcheckItems() {
   const ws = L().les.words, pool = [...ws, ...cardList().map(c => c.w)];
   const items = shuffle(ws).slice(0, 4).map((w, k) => k % 2 ? wordQ(w, pool) : meaningQ(w, pool));
-  const wk = weakSkill(), ex = shuffle(ws.filter(w => w.ex))[0];
+  const wk = weakSkill(), ex = shuffle(ws.filter(w => w.ex && !VN_NAME_RE.test(w.ex)))[0];
   if (wk === "listening" && ex) items.push({type:"dict", q:_t("Nghe và chép lại câu"), ans:ex.ex, speak:ex.ex, autoplay:true, skill:"listening", bonus:true});
   if (wk === "speaking" && ex && SR) items.push({type:"speak", q:ex.ex, ans:ex.ex, skill:"speaking", word:ex.w, bonus:true});
   return items;
@@ -1310,7 +1346,7 @@ function startUnit() {
     ...shuffle(words).slice(0, 4).map(spellQ),
     ...shuffle(lessons.flatMap(l => (l.translations || []).filter(t => t.dir === "vi-en"))).slice(0, 3).map(transQ),
     ...shuffle(words).slice(0, 3).map(w => ({...meaningQ(w, pool, "listening"), q:_t("Nghe và chọn nghĩa đúng"), speak:w.w, autoplay:true})),
-    ...shuffle(words.filter(w => w.ex)).slice(0, 2).map(w => ({type:"dict", q:_t("Nghe và chép lại câu"), ans:w.ex, speak:w.ex, autoplay:true, skill:"listening"})),
+    ...[...shuffle(words.filter(w => w.ex && !VN_NAME_RE.test(w.ex))), ...shuffle(words.filter(w => w.ex && VN_NAME_RE.test(w.ex)))].slice(0, 2).map(w => ({type:"dict", q:_t("Nghe và chép lại câu"), ans:w.ex, speak:w.ex, autoplay:true, skill:"listening"})),
     ...(SR ? shuffle(words.filter(w => w.ex)).slice(0, 2).map(w => ({type:"speak", q:w.ex, ans:w.ex, skill:"speaking"})) : [])
   ];
   Q = makeQuiz("unit", items, true); Q.unit = courseTests().length + 1; view = "quiz"; render();
