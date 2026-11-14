@@ -1971,19 +1971,30 @@ function wrFromBank(g, seen) {
     ...pick(WR_FIX, 2, x => x[1]).map(x => ({k:"fix", wrong:x[1], right:x[2], alts:x[3], explain:LANG === "en" ? x[5] : x[4]})),
   ];
 }
+// Loại câu dịch AI soạn chưa chuẩn: câu dạng "lời hướng dẫn", hoặc câu hỏi / câu kể không khớp với câu mẫu
+function wrTransOk(vi, ref) {
+  const v = vi.trim(), r = ref.trim();
+  if (/^(hãy|bạn (hãy|cần|nên|muốn|phải) (hỏi|nói|viết|đặt|xin|yêu cầu|giới thiệu|trả lời|kể|mô tả))/i.test(v)) return false;
+  if (/(như thế nào|thế nào|ra sao)\s*\?$/i.test(v) && /^(bạn|hãy)/i.test(v)) return false;
+  if (v.endsWith("?") !== r.endsWith("?")) return false;
+  return true;
+}
 async function wrFromAI(level, seen) {
   if (!AI.on) return null;
   const lang = LANG === "en" ? "English" : "Vietnamese";
   const goal = [S.profile?.goal, ...(S.profile?.fields || [])].filter(Boolean).join(", ");
   const ask = `Create a short WRITING practice at CEFR level ${level === "A0" ? "A1 (very easy)" : level} for a Vietnamese learner (interests: ${goal || "daily life"}). Return JSON only:
-{"trans":[3 items {"vi":"a natural Vietnamese sentence to translate into English","ref":"a natural English translation"}],
+{"trans":[3 items {"vi":"a natural Vietnamese sentence that a person would actually SAY or WRITE (first person, or talking to someone) — NOT an instruction to the learner","ref":"a faithful, natural English translation of exactly that sentence"}],
 "reply":[2 items {"from":"sender name or role","msg":"a short English message the learner receives (1-2 sentences)","task":"what the learner should say in reply, in ${lang}","ref":"a model reply, 1-2 sentences"}],
 "fix":[2 items {"wrong":"an English sentence with ONE typical mistake Vietnamese learners make","right":"the corrected sentence (change as little as possible)","explain":"the rule in one short sentence, in ${lang}"}]}
-Rules: sentences fit the level, everyday or work situations, no Vietnamese names or places in English sentences, each item different.`;
+Rules: sentences fit the level, everyday or work situations, no Vietnamese names or places in English sentences, each item different.
+For "trans": GOOD vi: "Tôi muốn đặt một bàn cho bốn người tối nay." → ref: "I'd like to book a table for four tonight." / "Bạn có thể chỉ tôi đường đến khách sạn không?" → "Could you tell me the way to the hotel?"
+BAD vi (never write these): "Bạn cần đặt một bàn…", "Bạn muốn hỏi đường … như thế nào?", "Hãy nói …" (these are instructions, not sentences to translate).
+The ref must keep the same person (tôi→I, bạn→you), the same meaning, and the same sentence type (question stays a question, statement stays a statement).`;
   try {
     const j = await gemini(_t("Bạn là chuyên gia ra đề tiếng Anh theo CEFR. Chỉ trả JSON."), ask, true, undefined, 25000);
     const s = x => typeof x === "string" && x.trim().length > 1;
-    const t = (j.trans || []).filter(x => s(x.vi) && s(x.ref)).slice(0, 3).map(x => ({k:"trans", vi:x.vi, ref:x.ref, ai:true}));
+    const t = (j.trans || []).filter(x => s(x.vi) && s(x.ref) && wrTransOk(x.vi, x.ref)).slice(0, 3).map(x => ({k:"trans", vi:x.vi, ref:x.ref, ai:true}));
     const r = (j.reply || []).filter(x => s(x.msg) && s(x.task)).slice(0, 2).map(x => ({k:"reply", from:x.from || "", msg:x.msg, task:x.task, ref:x.ref || "", ai:true}));
     const f = (j.fix || []).filter(x => s(x.wrong) && s(x.right) && wrNorm(x.wrong) !== wrNorm(x.right)).slice(0, 2).map(x => ({k:"fix", wrong:x.wrong, right:x.right, alts:[], explain:x.explain || "", ai:true}));
     const out = [...t, ...r, ...f].filter(it => !seen.has(xtKey(it.vi || it.msg || it.wrong)));
