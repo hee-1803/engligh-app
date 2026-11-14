@@ -888,3 +888,25 @@ button:active, .setitem:active, [role=button]:active { transform: scale(.97); tr
 :root { --soft-cream:#fffaf0; --soft-gold:#fff1c7; --soft-gold-line:#f1d9a6; --soft-green:#e3f1d8; --soft-green-line:#d9ecc9; --soft-silver:#eceff4; --soft-bronze:#f8e1cf; --green-ink:#3c7a26; --gold-ink:#8a5a00; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --soft-cream:#2b2640; --soft-gold:#3d3418; --soft-gold-line:#6b5a25; --soft-green:#1d3a2b; --soft-green-line:#2e5a40; --soft-silver:#2c3140; --soft-bronze:#3d2a20; --green-ink:#9fe08a; --gold-ink:#ffd36b; } }
 :root[data-theme="dark"] { --soft-cream:#2b2640; --soft-gold:#3d3418; --soft-gold-line:#6b5a25; --soft-green:#1d3a2b; --soft-green-line:#2e5a40; --soft-silver:#2c3140; --soft-bronze:#3d2a20; --green-ink:#9fe08a; --gold-ink:#ffd36b; }
+
+/* ===== Luyện viết ===== */
+.xtskills { grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)) !important }
+:root { --soft-red: #ffe3e3; --red-ink: #c62828 }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --soft-red: #4a1f24; --red-ink: #ff8a80 } }
+:root[data-theme="dark"] { --soft-red: #4a1f24; --red-ink: #ff8a80 }
+.writem { display: grid; gap: 6px; padding: 12px 0; border-top: 1px dashed var(--line) } .writem:first-of-type { border-top: 0 }
+.writem textarea { width: 100%; font-size: 1.02rem; line-height: 1.5; border-radius: 16px }
+.wrmsg { position: relative; max-width: 92%; background: var(--sunk); border-radius: 18px 18px 18px 4px; padding: 10px 14px }
+.wrmsg b { font-size: .8rem; color: var(--muted) } .wrmsg p { margin: 2px 0 0 }
+.wrwrong { color: var(--red-ink) }
+.wrlist { display: grid; gap: 12px }
+.wrres { display: grid; gap: 6px; padding: 14px; border-radius: 20px; background: var(--sunk); border-left: 5px solid var(--line) }
+.wrres.ok { border-left-color: #57a13e } .wrres.bad { border-left-color: var(--red-ink) }
+.wrres p { margin: 0 }
+.wrscore { font-weight: 900; padding: 2px 10px; border-radius: 99px; font-size: .9rem }
+.wrscore.good { background: var(--soft-green); color: var(--green-ink) } .wrscore.mid { background: var(--soft-gold); color: var(--gold-ink) } .wrscore.bad { background: var(--soft-red); color: var(--red-ink) }
+.wruser { font-size: 1.05rem; line-height: 1.9 }
+.dfx del, .wrerrs del, del.lg { color: var(--red-ink); background: var(--soft-red); text-decoration: line-through; text-decoration-thickness: 2px; border-radius: 6px; padding: 0 4px }
+.dfx ins, .wrerrs ins, ins.lg { color: var(--green-ink); background: var(--soft-green); text-decoration: none; font-weight: 800; border-radius: 6px; padding: 0 4px }
+.dfx-ok { color: var(--green-ink) }
+.wrerrs { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: .92rem }
