@@ -1587,15 +1587,16 @@ const MEDAL = {gold:"🥇", silver:"🥈", bronze:"🥉", star:"🌟", bee:"🐝
 const BADGE_NAME = {gold:["Hạng nhất tuần","1st place"], silver:["Hạng nhì tuần","2nd place"], bronze:["Hạng ba tuần","3rd place"], star:["Top 10 tuần","Weekly top 10"], bee:["Chăm chỉ: 50 điểm/tuần","Busy Bee: 50 pts in a week"], fire:["Bền bỉ: 500 điểm/tuần","Unstoppable: 500 pts in a week"]};
 function lbFrame() { try { return LB.d?.reward?.frame ?? localStorage.getItem("ep_frame") ?? ""; } catch (e) { return LB.d?.reward?.frame || ""; } }
 // Tải bảng: hiện ngay bản đã lưu (nếu có), tải bản mới ở nền. Xem bảng khác (browse) thì máy chủ chỉ đọc bảng, rất nhanh.
-async function lbLoad(force) {
-  const browse = !!(LB.level || LB.league !== null), key = (LB.level || LB.d?.myLevel || "") + "|" + (LB.league ?? LB.d?.myLeague ?? "");
+async function lbLoad(force, live) {
+  const browse = !!(LB.level || LB.league !== null || live), key = (LB.level || LB.d?.myLevel || "") + "|" + (LB.league ?? LB.d?.myLeague ?? "");
   if (!force && LB.d && Date.now() - LB.at < 60e3 && !browse) return;
   const c = LB.cache[key]; if (c) { LB.d = {...c, reward:LB.d?.reward || c.reward}; LB.pend = false; } else if (LB.d) LB.pend = true;
-  if (view === "rank") render();
-  if (c && Date.now() - c._at < 30e3) return;
+  if (view === "rank" && !live) render();
+  if (!force && c && Date.now() - c._at < 30e3) return; // bấm qua lại nhanh thì dùng bản vừa tải; mở trang / làm mới thì luôn tải bản mới
   const my = ++LB.seq; LB.err = ""; LB.inflight = true;
   try {
-    const q = new URLSearchParams(); if (LB.level) q.set("level", LB.level); if (LB.league !== null) q.set("league", LB.league); if (browse && LB.d) q.set("browse", "1");
+    const q = new URLSearchParams(), lv = LB.level || (live ? LB.d?.level : ""), lg = LB.league ?? (live ? LB.d?.league : null);
+    if (lv) q.set("level", lv); if (lg !== null && lg !== undefined) q.set("league", lg); if (browse && LB.d) q.set("browse", "1");
     const r = await fetch("/api/leaderboard?" + q, {cache:"no-store"}); const j = await r.json();
     if (!r.ok) throw new Error(j.error || r.status);
     if (my !== LB.seq) return; // người dùng đã bấm sang bảng khác (yêu cầu mới hơn sẽ tự tắt cờ tải)
@@ -1605,6 +1606,9 @@ async function lbLoad(force) {
   if (my === LB.seq) LB.inflight = false;
   if (["rank", "home", "settings"].includes(view)) render(); else renderHeader();
 }
+// Đang mở trang Xếp hạng: tự làm mới mỗi 8 giây để thấy ngay khi ai đó đổi tên hiển thị, tắt tham gia hay vừa vượt điểm
+setInterval(() => { if (view === "rank" && LB.d && !LB.inflight && document.visibilityState === "visible") lbLoad(true, true); }, 8000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && view === "rank") lbLoad(true); });
 function lbLeft() {
   const ms = (LB.d?.endsAt || 0) - Date.now(); if (ms <= 0) return "";
   const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5);
