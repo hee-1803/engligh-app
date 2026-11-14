@@ -47,6 +47,17 @@ export default function AdminPage() {
   useEffect(() => { loadFb(); }, []);
   async function loadReps() { try { const r = await fetch("/api/admin?reports=1"); if (r.ok) setReps(await r.json()); } catch {} }
   useEffect(() => { loadReps(); }, []);
+  async function delUser(id: string, email: string) {
+    const typed = prompt(`XOÁ VĨNH VIỄN tài khoản ${email}?\n\nSẽ xoá: tiến độ học, flashcard, điểm xếp hạng, thông báo, tin nhắn và tin nhắn thoại, báo cáo, phản hồi, và tài khoản đăng nhập.\nKhông khôi phục được.\n\nGõ lại email để xác nhận:`);
+    if (typed === null) return;
+    setMsg("Đang xoá…");
+    try {
+      const r = await fetch("/api/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mod: "deleteUser", userId: id, confirmEmail: typed }) });
+      const j = await r.json();
+      setMsg(j.ok ? `✓ Đã xoá tài khoản ${j.email}` : "✗ " + (j.error || "Lỗi"));
+      if (j.ok) { load(); loadReps(); loadFb(); }
+    } catch (e) { setMsg("✗ " + (e as Error).message); }
+  }
   async function mod(body: Record<string, unknown>) {
     await fetch("/api/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); loadReps(); setMsg("");
   }
@@ -123,6 +134,7 @@ export default function AdminPage() {
           <div className="row">{([["all", "Tất cả"], ["today", "Học hôm nay"], ["push", "Bật thông báo"], ["idle", "Bỏ học 7 ngày"]] as const).map(([k, t]) =>
             <button key={k} className={`seg mini ${filter === k ? "sel" : ""}`} onClick={() => { setFilter(k); setPg((p) => ({ ...p, users: 0 })); }}>{t}</button>)}</div></div>
         <input placeholder="Tìm theo tên hoặc email" value={q} onChange={(e) => { setQ(e.target.value); setPg((p) => ({ ...p, users: 0 })); }} />
+        {msg && <p className="small"><b>{msg}</b></p>}
         <div className="adm-cards">{page(list, "users").map((u) => { const b = banned.get(u.id); return (
           <div key={u.id} className="adm-card">
             <div className="row between nowrap"><div><b>{u.name || "(chưa đặt tên)"}</b> {u.level && <span className="tag">{u.level}</span>}<br /><span className="muted small">{u.email} · {u.provider}</span></div>
@@ -133,6 +145,7 @@ export default function AdminPage() {
               <button className="mini" disabled={!u.push} onClick={() => pickUser(u)}>🔔 Gửi thông báo</button>
               {b ? <button className="mini" onClick={() => mod({ mod: "unban", userId: u.id })}>✓ Mở khoá chat</button>
                 : <button className="mini danger" onClick={() => { if (confirm(`Khoá chat ${u.email} trong 1 ngày?`)) mod({ mod: "ban", userId: u.id, days: 1 }); }}>⛔ Khoá chat 1 ngày</button>}
+              <button className="mini danger" onClick={() => delUser(u.id, u.email)}>🗑️ Xoá tài khoản</button>
             </div></div>); })}</div>
         <Pager k="users" total={list.length} />
       </section>}

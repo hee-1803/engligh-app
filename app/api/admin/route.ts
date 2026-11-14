@@ -88,6 +88,7 @@ export async function POST(req: Request) {
     if (peek.mod === "ban" && peek.userId) await db.from("chat_bans").upsert({ user_id: peek.userId, until: new Date(Date.now() + (Number(peek.days) || 1) * 864e5).toISOString(), reason: "Quản trị viên khoá" });
     if (peek.mod === "ban" && peek.messageId) await db.from("chat_messages").update({ hidden: true }).eq("id", peek.messageId);
     if (peek.mod === "unban" && peek.userId) await db.from("chat_bans").delete().eq("user_id", peek.userId);
+    if (peek.mod === "deleteUser" && peek.userId) return deleteUser(db, String(peek.userId), String(peek.confirmEmail || ""));
     if (peek.reportId) await db.from("chat_reports").update({ status: "done" }).eq("id", peek.reportId);
     return NextResponse.json({ ok: true });
   }
@@ -109,4 +110,34 @@ export async function POST(req: Request) {
   }
   if (gone.length) await db.from("push_subscriptions").delete().in("endpoint", gone);
   return NextResponse.json({ sent, devices: subs.length, people: new Set(subs.map((s) => s.user_id)).size, removed: gone.length });
+}
+
+// XOÁ HẲN 1 TÀI KHOẢN và mọi dữ liệu liên quan (tiến độ, thông báo, xếp hạng, tin nhắn, tin nhắn thoại, báo cáo, phản hồi)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function deleteUser(db: any, uid: string, confirmEmail: string) {
+  const { data: got, error: e0 } = await db.auth.admin.getUserById(uid);
+  const email = (got?.user?.email || "").toLowerCase();
+  if (e0 || !got?.user) return NextResponse.json({ error: "Không tìm thấy tài khoản" }, { status: 404 });
+  if (!email || email !== confirmEmail.trim().toLowerCase()) return NextResponse.json({ error: "Email xác nhận không khớp, chưa xoá gì cả" }, { status: 400 });
+  const admins = (process.env.ADMIN_EMAILS || "").split(",").map((x) => x.trim().toLowerCase());
+  if (admins.includes(email)) return NextResponse.json({ error: "Không xoá tài khoản quản trị từ đây (gỡ email khỏi ADMIN_EMAILS trước)" }, { status: 400 });
+  const done: string[] = [];
+  const step = async (name: string, f: () => Promise<{ error?: { message: string } | null }>) => { try { const r = await f(); if (!r?.error) done.push(name); } catch {} };
+  // tin nhắn thoại trong kho lưu trữ
+  try {
+    const { data: au } = await db.from("chat_messages").select("audio_path").eq("user_id", uid).not("audio_path", "is", null);
+    const paths = (au || []).map((x: { audio_path: string }) => x.audio_path).filter(Boolean);
+    for (let i = 0; i < paths.length; i += 100) await db.storage.from("chat-voice").remove(paths.slice(i, i + 100));
+    if (paths.length) done.push(`${paths.length} tin nhắn thoại`);
+  } catch {}
+  await step("tin nhắn", () => db.from("chat_messages").delete().eq("user_id", uid));
+  await step("phòng ghép đôi", () => db.from("chat_rooms").update({ closed_at: new Date().toISOString() }).or(`a.eq.${uid},b.eq.${uid}`).is("closed_at", null));
+  for (const t of ["chat_queue", "chat_members", "chat_reads", "chat_bans"]) await step(t, () => db.from(t).delete().eq("user_id", uid));
+  await step("chặn", () => db.from("chat_blocks").delete().or(`user_id.eq.${uid},blocked.eq.${uid}`));
+  await step("báo cáo", () => db.from("chat_reports").delete().or(`reporter.eq.${uid},reported.eq.${uid}`));
+  await step("phản hồi", () => db.from("feedback").delete().eq("user_id", uid));
+  for (const t of ["lb_scores", "lb_profile", "push_subscriptions", "app_state"]) await step(t, () => db.from(t).delete().eq("user_id", uid));
+  const { error } = await db.auth.admin.deleteUser(uid);
+  if (error) return NextResponse.json({ error: "Đã xoá dữ liệu nhưng chưa xoá được tài khoản đăng nhập: " + error.message, done }, { status: 500 });
+  return NextResponse.json({ ok: true, email, done });
 }
