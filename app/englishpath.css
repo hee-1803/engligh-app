@@ -442,20 +442,20 @@ button.primary.big { border-radius: 14px }
 .lg-lang { display: inline-flex; padding: 4px; border-radius: 99px; background: var(--surface); box-shadow: 0 2px 10px rgba(80,60,160,.08) }
 .lg-lang a { padding: 6px 14px; border-radius: 99px; font-size: .85rem; font-weight: 700; color: var(--muted); text-decoration: none }
 .lg-lang a.on { background: #57a13e; color: #fff }
-.lg-hero { padding: 26px 24px; border-radius: 28px; background: linear-gradient(135deg, #e9f6df, #fdf7e3); border: 1px solid #d9ecc9 }
-.lg-hero h1 { margin: 0; font-size: clamp(1.7rem, 5vw, 2.3rem); color: #24461a }
-.lg-hero p { margin: 4px 0 0; color: #5d7a4e; font-size: .9rem; font-weight: 600 }
+.lg-hero { padding: 26px 24px; border-radius: 28px; background: linear-gradient(135deg, var(--soft-green), var(--soft-cream)); border: 1px solid var(--soft-green-line) }
+.lg-hero h1 { margin: 0; font-size: clamp(1.7rem, 5vw, 2.3rem); color: var(--green-ink) }
+.lg-hero p { margin: 4px 0 0; color: var(--muted); font-size: .9rem; font-weight: 600 }
 .lg-body { counter-reset: lgs; background: var(--surface); border-radius: 28px; padding: 8px 24px 24px; box-shadow: 0 6px 24px rgba(80,60,160,.08); display: grid; gap: 10px }
 .lg-body > p:first-child { margin-top: 16px; font-size: 1.02rem }
 .lg-body h2 { counter-increment: lgs; display: flex; align-items: center; gap: 10px; font-size: 1.15rem; margin: 18px 0 2px; padding-top: 18px; border-top: 1px dashed var(--line) }
 .lg-body h2::before { content: counter(lgs); flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #57a13e; color: #fff; font-size: .9rem }
 .lg-body h2 { font-variant-numeric: tabular-nums } .lg-body h2 { text-indent: 0 }
 .lg-body ul, .lg-body ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px }
-.lg-body li { position: relative; padding: 10px 14px 10px 40px; border-radius: 16px; background: var(--sunk, #f6f4fb) }
+.lg-body li { position: relative; padding: 10px 14px 10px 40px; border-radius: 16px; background: var(--sunk) }
 .lg-body ul li::before { content: "🌱"; position: absolute; left: 13px; top: 10px; font-size: .9rem }
 .lg-body ol { counter-reset: lgo } .lg-body ol li { counter-increment: lgo }
-.lg-body ol li::before { content: counter(lgo); position: absolute; left: 12px; top: 11px; width: 20px; height: 20px; border-radius: 50%; background: #e3f1d8; color: #3c7a26; font: 800 .75rem/20px inherit; text-align: center }
-.lg-body p { margin: 0 } .lg-body a { color: #3c7a26; font-weight: 700 }
+.lg-body ol li::before { content: counter(lgo); position: absolute; left: 12px; top: 11px; width: 20px; height: 20px; border-radius: 50%; background: var(--soft-green); color: var(--green-ink); font: 800 .75rem/20px inherit; text-align: center }
+.lg-body p { margin: 0 } .lg-body a { color: var(--green-ink); font-weight: 700 }
 .lg-back { justify-self: center; color: var(--muted); font-weight: 700; text-decoration: none }
 .btn.gt { color: #1a73e8; border-color: color-mix(in srgb, #1a73e8 35%, var(--line)) }
 .wordgrid .ipa { font-size: .78rem }
@@ -707,7 +707,7 @@ details.panel.help { padding: 16px 20px } .setlist + .setlist, .account + .setli
 .boot .gbody { animation: bob .19s ease-in-out infinite alternate } @keyframes bob { from { transform: translateY(0) } to { transform: translateY(-3px) } }
 .boot .ghead { transform-box: fill-box; transform-origin: 20% 80%; animation: nod .38s ease-in-out infinite alternate } @keyframes nod { from { transform: rotate(-4deg) } to { transform: rotate(5deg) } }
 /* Bụi tung sau chân */
-.boot .dust { position: absolute; left: 2px; bottom: 2px; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #fffaf0, #e3d2b2); opacity: 0; animation: dust .76s ease-out infinite }
+.boot .dust { position: absolute; left: 2px; bottom: 2px; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 40% 40%, var(--soft-cream), #e3d2b2); opacity: 0; animation: dust .76s ease-out infinite }
 .boot .d2 { animation-delay: .25s; width: 10px; height: 10px; bottom: 8px } .boot .d3 { animation-delay: .5s; width: 12px; height: 12px; left: 10px }
 @keyframes dust { 0% { opacity: .95; transform: translate(0, 0) scale(.5) } 100% { opacity: 0; transform: translate(-22px, -6px) scale(1.7) } }
 /* Nốt nhạc bay lên trên đầu */
@@ -753,43 +753,43 @@ a.setitem { color: var(--ink); text-decoration: none }
 .warn-t { color: #b45309 } .tag.warn { background:#fff3d6; color:#b45309; margin-left:6px }
 
 /* ===== Bảng xếp hạng & phần thưởng ===== */
-.rankcard { cursor: pointer; background: linear-gradient(135deg, #fff8e1, #eef8e6) } .rankcard:hover { transform: translateY(-1px) }
+.rankcard { cursor: pointer; background: linear-gradient(135deg, var(--soft-cream), var(--soft-green)) } .rankcard:hover { transform: translateY(-1px) }
 .rc-ic { font-size: 2rem; flex: none }
 .lbtabs { gap: 6px; flex-wrap: wrap } .lbtabs .seg { padding: 5px 12px }
 @media (max-width: 560px) { .lg-n { display: none } }
 .lblist { display: grid; gap: 6px; margin-top: 6px }
-.lbrow { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 18px; background: var(--sunk, #f6f4fb) }
+.lbrow { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 18px; background: var(--sunk) }
 .lbrow.me { background: color-mix(in srgb, #57a13e 16%, var(--surface)); outline: 2px solid color-mix(in srgb, #57a13e 50%, transparent) }
-.lbrow.top1 { background: linear-gradient(90deg, #fff3c4, var(--sunk, #f6f4fb)) } .lbrow.top2 { background: linear-gradient(90deg, #eceff4, var(--sunk, #f6f4fb)) } .lbrow.top3 { background: linear-gradient(90deg, #f8e1cf, var(--sunk, #f6f4fb)) }
+.lbrow.top1 { background: linear-gradient(90deg, var(--soft-gold), var(--sunk)) } .lbrow.top2 { background: linear-gradient(90deg, var(--soft-silver), var(--sunk)) } .lbrow.top3 { background: linear-gradient(90deg, var(--soft-bronze), var(--sunk)) }
 .lbrk { width: 30px; text-align: center; font-weight: 900; font-size: 1.05rem; flex: none }
 .lbpts { font-size: 1.05rem; font-variant-numeric: tabular-nums }
 .lbgap { text-align: center; color: var(--muted); letter-spacing: 4px }
-.lbtitle { display: inline-block; font-size: .78rem; font-weight: 800; color: #8a5a00; background: #fff1c7; border-radius: 99px; padding: 1px 8px; vertical-align: middle }
+.lbtitle { display: inline-block; font-size: .78rem; font-weight: 800; color: var(--gold-ink); background: var(--soft-gold); border-radius: 99px; padding: 1px 8px; vertical-align: middle }
 .lbav { flex: none; display: inline-grid; place-items: center; border-radius: 50%; background: hsl(var(--h, 120) 60% 88%); font-size: 1.2em; position: relative }
 .lbme .lbav { font-size: 1.6rem }
-.lbbig { text-align: center; display: grid } .lbbig b { font-size: 1.8rem; line-height: 1; color: #3c7a26 } .lbbig span { font-size: .75rem; color: var(--muted) }
-.lbbar { position: relative; height: 12px; border-radius: 99px; background: var(--sunk, #eee); margin: 14px 6px 6px }
+.lbbig { text-align: center; display: grid } .lbbig b { font-size: 1.8rem; line-height: 1; color: var(--green-ink) } .lbbig span { font-size: .75rem; color: var(--muted) }
+.lbbar { position: relative; height: 12px; border-radius: 99px; background: var(--sunk); margin: 14px 6px 6px }
 .lbbar i { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: linear-gradient(90deg, #8cd16b, #57a13e) }
-.lbbar span { position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #fff; border: 3px solid #cfd8c8 } .lbbar span.on { border-color: #57a13e; background: #e3f1d8 }
+.lbbar span { position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #fff; border: 3px solid var(--line) } .lbbar span.on { border-color: #57a13e; background: var(--soft-green) }
 .lbmiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 8px }
-.lbmiles div { display: grid; gap: 2px; padding: 8px 10px; border-radius: 14px; background: var(--sunk, #f6f4fb); font-size: .85rem } .lbmiles div.on { background: #e3f1d8 }
+.lbmiles div { display: grid; gap: 2px; padding: 8px 10px; border-radius: 14px; background: var(--sunk); font-size: .85rem } .lbmiles div.on { background: var(--soft-green) }
 .lbstats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px }
-.lbstats div { display: grid; gap: 2px; padding: 12px; border-radius: 16px; background: var(--sunk, #f6f4fb) } .lbstats b { font-size: 1.1rem } .lbstats span { font-size: .8rem; color: var(--muted) }
+.lbstats div { display: grid; gap: 2px; padding: 12px; border-radius: 16px; background: var(--sunk) } .lbstats b { font-size: 1.1rem } .lbstats span { font-size: .8rem; color: var(--muted) }
 .lbbadges { display: flex; flex-wrap: wrap; gap: 8px }
-.lbbadge { display: grid; justify-items: center; gap: 0; min-width: 84px; padding: 8px; border-radius: 16px; background: var(--sunk, #f6f4fb); font-size: 1.6rem } .lbbadge b { font-size: .85rem } .lbbadge small { font-size: .68rem; color: var(--muted); text-align: center; line-height: 1.2 }
+.lbbadge { display: grid; justify-items: center; gap: 0; min-width: 84px; padding: 8px; border-radius: 16px; background: var(--sunk); font-size: 1.6rem } .lbbadge b { font-size: .85rem } .lbbadge small { font-size: .68rem; color: var(--muted); text-align: center; line-height: 1.2 }
 .lbframes { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px }
-.lbfr { display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border-radius: 18px; background: var(--sunk, #f6f4fb); border: 2px solid transparent; font: inherit; color: var(--ink); cursor: pointer }
+.lbfr { display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border-radius: 18px; background: var(--sunk); border: 2px solid transparent; font: inherit; color: var(--ink); cursor: pointer }
 .lbfr .lbav { font-size: 1.4rem } .lbfr b { font-size: .85rem } .lbfr span { font-size: .7rem; color: var(--muted); text-align: center; line-height: 1.25 }
-.lbfr.sel { border-color: #57a13e; background: #eef8e6 } .lbfr.locked { opacity: .55; cursor: default }
+.lbfr.sel { border-color: #57a13e; background: var(--soft-green) } .lbfr.locked { opacity: .55; cursor: default }
 .lbres h2 { margin: 2px 0 }
-.tgl { flex: none; width: 42px; height: 24px; border-radius: 99px; background: #d4d4dc; position: relative; transition: background .2s }
+.tgl { flex: none; width: 42px; height: 24px; border-radius: 99px; background: var(--line); position: relative; transition: background .2s }
 .tgl::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2) }
 .tgl.on { background: #57a13e } .tgl.on::after { left: 21px }
-.good-t { color: #3c7a26 } .bad-t { color: var(--bad, #c0392b) }
+.good-t { color: var(--green-ink) } .bad-t { color: var(--bad, #c0392b) }
 /* Khung ảnh đại diện (áp cho ảnh trên bảng, nút tài khoản và ảnh lớn trong Cài đặt) */
 .fr-leaf, .fr-music, .fr-flower, .fr-gold, .fr-forest, .fr-rainbow { box-shadow: 0 0 0 3px var(--fr1), 0 0 0 6px var(--fr2) !important }
-.fr-leaf { --fr1: #8cd16b; --fr2: #d8f0c8 } .fr-music { --fr1: #7b6cf6; --fr2: #ddd8ff } .fr-flower { --fr1: #f48fb1; --fr2: #ffe0ec }
-.fr-gold { --fr1: #f5b301; --fr2: #ffe9a6 } .fr-forest { --fr1: #2e7d32; --fr2: #a5d6a7 }
+.fr-leaf { --fr1: #8cd16b; --fr2: var(--soft-green) } .fr-music { --fr1: #7b6cf6; --fr2: #ddd8ff } .fr-flower { --fr1: #f48fb1; --fr2: #ffe0ec }
+.fr-gold { --fr1: #f5b301; --fr2: var(--soft-gold) } .fr-forest { --fr1: #2e7d32; --fr2: #a5d6a7 }
 .fr-rainbow { box-shadow: 0 0 0 3px #fff, 0 0 0 6px transparent !important; background-clip: padding-box; outline: 3px solid; outline-offset: 2px; outline-color: #f5a; animation: rbw 4s linear infinite }
 @keyframes rbw { 0% { outline-color: #ff6b6b } 25% { outline-color: #ffd93d } 50% { outline-color: #6bcB77 } 75% { outline-color: #4d96ff } 100% { outline-color: #ff6b6b } }
 .lbav.fr-leaf::after { content: "🍃"; position: absolute; right: -6px; bottom: -6px; font-size: .55em } .lbav.fr-music::after { content: "🎵"; position: absolute; right: -6px; bottom: -6px; font-size: .55em }
@@ -797,13 +797,13 @@ a.setitem { color: var(--ink); text-decoration: none }
 .lbav.fr-forest::after { content: "🌲"; position: absolute; right: -6px; bottom: -6px; font-size: .55em } .lbav.fr-rainbow::after { content: "🌈"; position: absolute; right: -6px; bottom: -6px; font-size: .55em }
 .panel.lg-body { padding-top: 16px }
 .lbopts .si-t { white-space: normal; line-height: 1.35 } .lbopts .si-v { display: none } .lbopts .setitem { gap: 10px }
-.lbskel .lbrow { height: 56px; background: linear-gradient(90deg, var(--sunk, #f2f0f8) 25%, color-mix(in srgb, var(--sunk, #f2f0f8) 60%, #fff) 50%, var(--sunk, #f2f0f8) 75%); background-size: 200% 100%; animation: skel 1s linear infinite }
+.lbskel .lbrow { height: 56px; background: linear-gradient(90deg, var(--sunk) 25%, color-mix(in srgb, var(--sunk) 60%, #fff) 50%, var(--sunk) 75%); background-size: 200% 100%; animation: skel 1s linear infinite }
 @keyframes skel { from { background-position: 200% 0 } to { background-position: -200% 0 } }
 /* Phản hồi tức thì khi chạm/bấm */
 button, .setitem, .seg, [data-a] { -webkit-tap-highlight-color: transparent; touch-action: manipulation }
 button:active, .setitem:active, [role=button]:active { transform: scale(.97); transition: transform .06s }
-.tabs-top a[data-v=rank], #bnav a[data-v=rank] { color: #b7791f; font-weight: 800 }
-.tabs-top a[data-v=rank].sel, #bnav a[data-v=rank].sel { background: #fff1c7; color: #8a5a00 }
+.tabs-top a[data-v=rank], #bnav a[data-v=rank] { color: var(--gold-ink); font-weight: 800 }
+.tabs-top a[data-v=rank].sel, #bnav a[data-v=rank].sel { background: var(--soft-gold); color: var(--gold-ink) }
 .badge.gift { background: transparent; padding: 0; animation: bob 1.6s ease-in-out infinite }
 /* Thanh dưới trên điện thoại: biểu tượng + chữ nhỏ */
 #bnav a { position: relative; min-width: 0; display: grid; justify-items: center; gap: 1px; padding: 6px 0 5px; font-size: .66rem; line-height: 1.1 }
@@ -824,7 +824,7 @@ button:active, .setitem:active, [role=button]:active { transform: scale(.97); tr
   #bnav a.sel { background: var(--accent-soft); color: var(--accent) }
   #bnav a.sel .bi { transform: translateY(-3px) scale(1.15) rotate(-6deg) }
   #bnav a:not(.sel) .bi svg { opacity: .82 }
-  #bnav a[data-v=rank].sel { background: #fff1c7 }
+  #bnav a[data-v=rank].sel { background: var(--soft-gold) }
   .wrap { padding-bottom: 110px }
 }
 .rankhead { align-items: center; gap: 10px } .rankhead h2 { margin: 0 } .lbmiles .stk { display: inline-block }
@@ -832,11 +832,11 @@ button:active, .setitem:active, [role=button]:active { transform: scale(.97); tr
 /* ===== Bài test đầu vào 4 kỹ năng ===== */
 .plhead { display: grid; gap: 4px; margin-bottom: 10px }
 .plsteps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px }
-.plsteps span { display: grid; justify-items: center; gap: 2px; padding: 8px 4px; border-radius: 18px; background: var(--sunk, #f3f1fa); opacity: .55; font-size: .72rem; text-align: center; line-height: 1.2 }
+.plsteps span { display: grid; justify-items: center; gap: 2px; padding: 8px 4px; border-radius: 18px; background: var(--sunk); opacity: .55; font-size: .72rem; text-align: center; line-height: 1.2 }
 .plsteps span.cur { opacity: 1; background: color-mix(in srgb, var(--accent) 14%, var(--surface)); outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent) }
-.plsteps span.done { opacity: 1; background: #e3f1d8 }
+.plsteps span.done { opacity: 1; background: var(--soft-green) }
 .plinter { display: grid; justify-items: center; gap: 10px; padding: 10px 0 4px } .plinter h2 { margin: 0; display: flex; align-items: center; gap: 8px } .plinter p { max-width: 460px; margin: 0 }
-.passage { background: #fffaf0; border: 2px dashed #f1d9a6; border-radius: 18px; padding: 14px 16px; line-height: 1.7; font-size: 1.02rem; margin-bottom: 10px }
+.passage { background: var(--soft-cream); border: 2px dashed var(--soft-gold-line); border-radius: 18px; padding: 14px 16px; line-height: 1.7; font-size: 1.02rem; margin-bottom: 10px }
 .plparts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0 }
 .plparts div { display: grid; justify-items: center; gap: 2px; padding: 10px 4px; border-radius: 18px; background: color-mix(in srgb, var(--surface) 70%, transparent); text-align: center; font-size: .85rem } .plparts span { font-size: .75rem; opacity: .8 }
 @media (max-width: 520px) { .plparts, .plsteps { grid-template-columns: repeat(2, 1fr) } }
@@ -845,11 +845,11 @@ button:active, .setitem:active, [role=button]:active { transform: scale(.97); tr
 .skbars { display: grid; gap: 8px; margin: 8px 0 }
 .skrow { display: grid; grid-template-columns: 34px 1fr 2fr 34px; align-items: center; gap: 8px }
 .skn { font-weight: 700; font-size: .9rem } .skv { text-align: right }
-.skbar { height: 12px; border-radius: 99px; background: color-mix(in srgb, var(--sunk, #eee) 80%, transparent); overflow: hidden }
+.skbar { height: 12px; border-radius: 99px; background: color-mix(in srgb, var(--sunk) 80%, transparent); overflow: hidden }
 .skbar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #8cd16b, #57a13e) }
 .sknote { grid-column: 2 / -1; margin-top: -6px }
 .hero .skn, .hero .skv { color: inherit }
-.adjcard { background: linear-gradient(135deg, #eef8e6, #fff8e1) }
+.adjcard { background: linear-gradient(135deg, var(--soft-green), var(--soft-cream)) }
 .quiz.pl .qcount .eyebrow { display: none } .quiz.pl .qtop { margin-top: 2px }
 .svlang { display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 10px }
 .svlang button { border: 0; padding: 7px 14px; border-radius: 99px; background: var(--surface); color: var(--muted); font: inherit; font-weight: 800; font-size: .85rem; box-shadow: 0 2px 10px rgba(80,60,160,.1); cursor: pointer }
@@ -859,10 +859,10 @@ button:active, .setitem:active, [role=button]:active { transform: scale(.97); tr
 .choices .choice > * { min-width: 0; max-width: 100% }
 
 /* ===== Mục Kiểm tra ===== */
-.testcard { cursor: pointer; background: linear-gradient(135deg, #eaf2ff, #f3ecff) }
+.testcard { cursor: pointer; background: linear-gradient(135deg, var(--sunk), var(--sunk)) }
 .xtgrid { display: grid; gap: 14px }
 .xtcard { display: grid; gap: 10px } .xtcard h3 { margin: 0 } .xtcard > .primary { justify-self: start }
-.xtcard.gold { background: linear-gradient(135deg, #fff8e1, #fff) }
+.xtcard.gold { background: linear-gradient(135deg, var(--soft-cream), #fff) }
 .xtskills { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px }
 .xtsk { display: grid; justify-items: center; gap: 4px; padding: 10px 4px; border-radius: 18px; font-size: .8rem; text-align: center; line-height: 1.2 }
 @media (max-width: 520px) { .xtskills { grid-template-columns: repeat(2, 1fr) } }
@@ -873,13 +873,18 @@ button:active, .setitem:active, [role=button]:active { transform: scale(.97); tr
 .xtchart i { width: 100%; border-radius: 10px 10px 4px 4px; background: #9aa7c7 } .xtchart i.hi { background: #57a13e } .xtchart i.mid { background: #f5b301 } .xtchart i.lo { background: #ef7b7b }
 .xtchart span { font-size: .7rem; color: var(--muted); font-weight: 700 }
 .xtlist { display: grid; gap: 8px; margin-bottom: 8px }
-.xtrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: var(--sunk, #f6f4fb) } .xtsc { font-size: 1.1rem }
+.xtrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: var(--sunk) } .xtsc { font-size: 1.1rem }
 .rvlist { display: grid; gap: 10px; padding: 0; margin: 8px 0; list-style: none }
-.rvlist li { padding: 12px 14px; border-radius: 18px; background: var(--sunk, #f6f4fb); border-left: 5px solid #9aa7c7 }
+.rvlist li { padding: 12px 14px; border-radius: 18px; background: var(--sunk); border-left: 5px solid #9aa7c7 }
 .rvlist li.ok { border-left-color: #57a13e } .rvlist li.bad { border-left-color: #ef7b7b }
 .rvhead { display: flex; align-items: center; gap: 8px; margin-bottom: 4px }
-.rvmark { font-weight: 900; font-size: 1.1rem } li.ok .rvmark { color: #3c7a26 } li.bad .rvmark { color: #c0392b }
-.rvq { margin: 4px 0 } .rvex { background: #fffaf0; border-radius: 12px; padding: 6px 10px; margin: 6px 0 0 }
+.rvmark { font-weight: 900; font-size: 1.1rem } li.ok .rvmark { color: var(--green-ink) } li.bad .rvmark { color: #c0392b }
+.rvq { margin: 4px 0 } .rvex { background: var(--soft-cream); border-radius: 12px; padding: 6px 10px; margin: 6px 0 0 }
 .passage.sm { font-size: .9rem; padding: 10px 12px; margin: 4px 0 }
 .hero .xtby span { background: rgba(255,255,255,.22); color: #fff; font-weight: 700 } .hero .xtby span b { color: #fff }
 .subsall { margin: 2px 0 10px; align-items: center }
+
+/* Màu nền nhạt dùng chung, tự đổi theo chế độ sáng / tối */
+:root { --soft-cream:#fffaf0; --soft-gold:#fff1c7; --soft-gold-line:#f1d9a6; --soft-green:#e3f1d8; --soft-green-line:#d9ecc9; --soft-silver:#eceff4; --soft-bronze:#f8e1cf; --green-ink:#3c7a26; --gold-ink:#8a5a00; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --soft-cream:#2b2640; --soft-gold:#3d3418; --soft-gold-line:#6b5a25; --soft-green:#1d3a2b; --soft-green-line:#2e5a40; --soft-silver:#2c3140; --soft-bronze:#3d2a20; --green-ink:#9fe08a; --gold-ink:#ffd36b; } }
+:root[data-theme="dark"] { --soft-cream:#2b2640; --soft-gold:#3d3418; --soft-gold-line:#6b5a25; --soft-green:#1d3a2b; --soft-green-line:#2e5a40; --soft-silver:#2c3140; --soft-bronze:#3d2a20; --green-ink:#9fe08a; --gold-ink:#ffd36b; }
