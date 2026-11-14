@@ -1107,7 +1107,7 @@ function reviewPanel(k) {
     ${(l.warmItems || []).length ? `<ol class="revlist">${l.warmItems.map(it => `<li><b>${esc(it.q)}</b><br><span class="tag good">${esc(it.opts ? it.opts[it.ans] : it.ans)}</span>${it.explain ? ` <span class="muted small">${esc(it.explain)}</span>` : ""}</li>`).join("")}</ol>` : `${_t("<p class=\"muted\">Buổi này không có phần ôn bài cũ.</p>")}`}</section>`;
   return `${_t("<section class=\"panel\"><h2>Xem lại: Từ vựng & ngữ pháp</h2>\n    <div class=\"revlist\">")}${ws.map(w => `<div class="revword"><div class="row nowrap"><b>${esc(w.w)}</b><button class="round sm" data-a="speak" data-v="${esc(w.w)}" aria-label="${LANG === "en" ? "Listen" : "Nghe"}">🔊</button><span class="ipa">${esc(w.ipa || "")}</span>${w.pos ? `<span class="tag">${esc(w.pos)}</span>` : ""}</div>
       <div>${esc(tr1(w.vi))}</div>${w.ex ? `<div class="muted small"><i>${esc(w.ex)}</i>${w.ex_vi && LANG !== "en" ? " · " + esc(w.ex_vi) : ""}</div>` : ""}</div>`).join("")}</div></section>
-    ${g ? `${_t("<section class=\"panel\"><h3>Ngữ pháp: ")}${esc(tp(g.name || ""))}</h3>${g.pattern ? `<p><code>${esc(g.pattern)}</code></p>` : ""}<p>${esc(tr1(g.note || ""))}</p>
+    ${g ? `${_t("<section class=\"panel\"><h3>Ngữ pháp: ")}${esc(tp(g.name || ""))}</h3>${g.pattern ? patternHtml(g.pattern) : ""}<p>${esc(tr1(g.note || ""))}</p>
       ${(g.quiz || []).map(qz => `<p class="small">• ${esc(qz.q)} → <b>${esc((qz.opts || [])[qz.ans] ?? "")}</b>${qz.explain ? ` <span class="muted">(${esc(qz.explain)})</span>` : ""}</p>`).join("")}</section>` : ""}`;
 }
 
@@ -1144,10 +1144,17 @@ function step2() {
   if (l.vi === n) {
     const g = l.les.grammar;
     return `${_t("<section class=\"panel\"><span class=\"eyebrow\">Ngữ pháp trọng tâm</span><h2>")}${esc(tp(g.name))}</h2>
-      ${g.pattern ? `<div class="pattern">${esc(g.pattern)}</div>` : ""}<p>${LANG === "en" ? esc(tr1(g.note || "")) : twv(g.note || "")}</p>
+      ${g.pattern ? patternHtml(g.pattern) : ""}<p>${LANG === "en" ? esc(tr1(g.note || "")) : twv(g.note || "")}</p>
       ${(g.quiz || []).length ? `${_t("<p class=\"muted small\">Điểm ngữ pháp này sẽ được ôn lại ở đầu buổi sau.</p>")}` : ""}${_t("\n      <div class=\"row\"><button data-a=\"vprev\">Xem lại từ</button><button class=\"primary\" data-a=\"vnext\">Kiểm tra nhanh 4 câu</button></div></section>")}`;
   }
   return `${_t("<section class=\"panel\"><h2>Kiểm tra nhanh từ mới</h2><p class=\"muted\">Từ bạn học hôm nay đã được thêm vào flashcard.</p></section><section class=\"panel quiz\">")}${vQuizBody(Q)}</section>`;
+}
+// Công thức ngữ pháp: tách mỗi dạng ra một dòng ("Type 1: … | Type 2: …" hoặc xuống dòng hoặc ";"), in đậm nhãn đầu dòng
+function patternHtml(p) {
+  const parts = String(p).split(/\s*(?:\||\n|;\s*(?=[A-ZĐ]))\s*/).map(x => x.trim()).filter(Boolean);
+  const line = x => { const m = x.match(/^((?:Type|Loại|Dạng|Cách|Form|Case|Câu|Khẳng định|Phủ định|Nghi vấn|Affirmative|Negative|Question|[+\-?])\s*[\w+\-?]*\s*:)\s*(.*)$/i);
+    return m ? `<b class="ptag">${esc(m[1].replace(/:$/, ""))}</b><span>${esc(m[2])}</span>` : `<span>${esc(x)}</span>`; };
+  return parts.length > 1 ? `<div class="pattern multi">${parts.map(x => `<div class="pline">${line(x)}</div>`).join("")}</div>` : `<div class="pattern">${line(parts[0] || p)}</div>`;
 }
 function speakBox(w, i) {
   const l = L(); l.pron = l.pron || {};

@@ -910,3 +910,10 @@ button:active, .setitem:active, [role=button]:active { transform: scale(.97); tr
 .dfx ins, .wrerrs ins, ins.lg { color: var(--green-ink); background: var(--soft-green); text-decoration: none; font-weight: 800; border-radius: 6px; padding: 0 4px }
 .dfx-ok { color: var(--green-ink) }
 .wrerrs { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: .92rem }
+/* Công thức ngữ pháp nhiều dạng: mỗi dạng một dòng */
+.pattern.multi { display: grid; gap: 8px; padding: 12px 14px }
+.pline { display: flex; gap: 10px; align-items: baseline; line-height: 1.5 }
+.pline + .pline { padding-top: 8px; border-top: 1px dashed color-mix(in srgb, var(--accent) 30%, transparent) }
+.ptag { flex: none; font: 800 .78rem var(--f-body, inherit); color: #fff; background: var(--accent); border-radius: 99px; padding: 2px 10px; white-space: nowrap }
+.pattern .ptag + span, .pline > span { min-width: 0; overflow-wrap: anywhere }
+.pattern:not(.multi) .ptag { margin-right: 8px }
