@@ -924,3 +924,18 @@ button:active, .setitem:active, [role=button]:active { transform: scale(.97); tr
 .gexi { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 16px; background: var(--sunk) }
 .gexi .round { flex: none }
 .gexi p { margin: 0 } .gexen { font-weight: 700; line-height: 1.5 }
+/* Báo lỗi bài học */
+.repbg { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 90; display: flex; align-items: flex-end; justify-content: center; padding: 16px; }
+.repdlg { width: 100%; max-width: 480px; margin: 0; max-height: 86vh; overflow-y: auto; }
+@media (min-width: 640px) { .repbg { align-items: center; } }
+.repkinds { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.repkinds .chip { border-radius: 999px; padding: 7px 12px; }
+.repkinds .chip.on { background: var(--soft-gold); border-color: var(--gold-ink); color: var(--gold-ink); font-weight: 700; }
+.repdlg textarea { width: 100%; margin-bottom: 10px; }
+.linkbtn { background: none; border: 0; padding: 4px 0 0; color: inherit; text-decoration: underline; opacity: .75; cursor: pointer; box-shadow: none; }
+.lhead .row.between > button.mini { margin-left: 8px; }
+.reppanel { border: 2px solid var(--red-ink); background: var(--soft-red); border-radius: 14px; padding: 12px; margin: 10px 0 14px; }
+.repcard { background: var(--card, #fff); border-radius: 10px; padding: 10px; margin-top: 10px; }
+.repitem { border-left: 3px solid var(--gold-ink); padding-left: 8px; margin: 6px 0; }
+.repitem p { margin: 3px 0; } .repitem .tag { margin-right: 4px; }
+.bad-t { color: var(--red-ink); }

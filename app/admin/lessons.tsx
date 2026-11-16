@@ -11,7 +11,25 @@ type Lesson = {
   translations: Tr[];
   roleplay: { ai_role: string; user_role: string; setting: string; tasks: string[]; opening: string };
 };
-type Row = { id: number | string; level: string; topic: string; topic_en?: string; status: string; sort: number; source: string; updated_at: string };
+type Row = { id: number | string; level: string; topic: string; topic_en?: string; status: string; sort: number; source: string; updated_at: string; flagged?: boolean; flag_reason?: string | null; reports?: number; uses?: number; score_sum?: number };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Rep = { id: number; lesson_id: string | null; level: string; topic: string; step: number | null; kind: string; note: string | null; item: any; lesson: any; created_at: string; status: string };
+const KIND: Record<string, string> = { answer: "❌ Đáp án sai", question: "❓ Đề / câu hỏi không rõ", meaning: "📖 Nghĩa / bản dịch sai", audio: "🔊 Phát âm / âm thanh", display: "🖥️ Lỗi hiển thị", other: "💬 Khác" };
+const STEPN = ["Ôn bài cũ", "Từ vựng mới", "Tự đặt câu", "Dịch câu", "Role-play", "Tổng kết"];
+// Hiện câu / từ người học đang làm lúc báo lỗi
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ItemView({ it }: { it: any }) {
+  if (!it) return null;
+  return <div className="repitem small">
+    {it.word && <p>Từ: <b>{it.word}</b>{it.ipa ? ` ${it.ipa}` : ""}{it.vi ? ` · ${it.vi}` : ""}</p>}
+    {it.q && <p>Câu: <b>{it.q}</b></p>}
+    {Array.isArray(it.opts) && <p>Lựa chọn: {it.opts.map((o: string, i: number) => <span key={i} className={`tag ${i === it.ans ? "good" : i === it.pick ? "bad" : ""}`}>{String.fromCharCode(65 + i)}. {o}</span>)}</p>}
+    {it.ans !== undefined && !Array.isArray(it.opts) && <p>Đáp án app: <b>{String(it.ans)}</b></p>}
+    {it.user && <p>Người học trả lời: <i>{it.user}</i></p>}
+    {it.src && <p>Câu gốc: <b>{it.src}</b> → mẫu: <i>{it.ref}</i></p>}
+    {Array.isArray(it.chat) && <div>{it.chat.map((m: { who: string; text: string }, i: number) => <p key={i}><b>{m.who === "ai" ? "AI" : "Người học"}:</b> {m.text}</p>)}</div>}
+  </div>;
+}
 const LEVELS = ["A0", "A1", "A2", "B1", "B2", "C1"];
 const ST: Record<string, [string, string]> = { draft: ["Nháp", ""], published: ["Đã phát hành", "good"], hidden: ["Đã ẩn", "bad"] };
 
@@ -42,7 +60,15 @@ export default function LessonsAdmin() {
   const [busy, setBusy] = useState("");
   const [aiTopic, setAiTopic] = useState("");
 
-  async function load() { try { const j = await api(); setRows(j.lessons); setErr(""); } catch (e) { setErr((e as Error).message); } }
+  async function load() { try { const j = await api(); setRows(j.lessons); setErr(""); } catch (e) { setErr((e as Error).message); } loadReps(); }
+  // Báo lỗi từ người học
+  const [reps, setReps] = useState<Rep[] | null>(null), [repErr, setRepErr] = useState(""), [repPg, setRepPg] = useState(0), [repOpen, setRepOpen] = useState(true);
+  async function loadReps() { try { const r = await fetch("/api/admin/lessons?reports=open"); const j = await r.json(); setReps(j.reports || []); setRepErr(j.error || ""); } catch (e) { setRepErr((e as Error).message); } }
+  async function repAct(id: number, op: "done" | "delete") {
+    if (op === "delete" && !confirm("Xoá báo cáo này?")) return;
+    try { const r = await fetch("/api/admin/lessons", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "report", id, op }) }); const j = await r.json(); if (j.error) setMsg("✗ " + j.error); else { setReps((x) => (x || []).filter((r) => r.id !== id)); load(); } } catch (e) { setMsg("✗ " + (e as Error).message); }
+  }
+  async function unflag(id: number | string) { try { await fetch("/api/admin/lessons", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unflag", id }) }); load(); } catch {} }
   useEffect(() => { load(); }, []);
 
   const set = (f: (l: Lesson) => void) => setEd((e) => { if (!e) return e; const l = structuredClone(e.l); f(l); return { ...e, l }; });
@@ -93,7 +119,7 @@ export default function LessonsAdmin() {
   }
 
   // Mới cập nhật lên đầu, mỗi trang 5 bài
-  const list = (rows || []).filter((r) => (lv === "all" || r.level === lv) && (st === "all" || r.status === st)).sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
+  const list = (rows || []).filter((r) => (lv === "all" || r.level === lv) && (st === "all" || (st === "flag" ? r.flagged : r.status === st))).sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
   const pages = Math.max(1, Math.ceil(list.length / 5)), cur = Math.min(pgN, pages - 1), shown = list.slice(cur * 5, cur * 5 + 5);
   const count = (k: string) => (rows || []).filter((r) => r.level === k && r.status === "published").length;
   const F = ({ label, v, on, ph, wide }: { label: string; v: string; on: (x: string) => void; ph?: string; wide?: boolean }) => (
@@ -164,11 +190,30 @@ export default function LessonsAdmin() {
           </div>
         </div>)}
 
+      {(reps?.length || repErr) ? <div className="reppanel">
+        <div className="row between"><b>⚑ Báo lỗi từ người học ({reps?.length || 0})</b><button className="mini ghost" onClick={() => setRepOpen(!repOpen)}>{repOpen ? "Thu gọn" : "Mở"}</button></div>
+        {repErr && <p className="small bad-t">{repErr}</p>}
+        {repOpen && (reps || []).slice(repPg * 5, repPg * 5 + 5).map((r) => { const row = (rows || []).find((x) => String(x.id) === String(r.lesson_id));
+          return <div key={r.id} className="repcard">
+            <div className="row between"><span><b>{KIND[r.kind] || r.kind}</b> · <span className="tag">{r.level}</span> {r.topic}{r.step !== null && r.step !== undefined ? ` · bước ${r.step + 1} (${STEPN[r.step] || ""})` : ""}</span><span className="muted small">{new Date(r.created_at).toLocaleString("vi-VN")}</span></div>
+            {r.note && <p className="small">💬 “{r.note}”</p>}
+            <ItemView it={r.item} />
+            <div className="row">
+              {row ? <><button className="mini" onClick={() => open(row.id)}>✏️ Sửa bài</button><a className="btn mini" href={`/?preview=${encodeURIComponent(String(row.id))}`}>👀 Xem thử</a>
+                {row.status === "published" ? <button className="mini danger" onClick={() => setStatus(row.id, "hidden")}>🙈 Ẩn bài</button> : <span className="tag">{ST[row.status]?.[0]}</span>}</>
+                : <span className="muted small">{r.lesson ? "Bài AI soạn riêng cho người học (không có trong kho)" : "Bài không có trong kho"}</span>}
+              <button className="mini primary" onClick={() => repAct(r.id, "done")}>✓ Đã xử lý</button><button className="mini danger" onClick={() => repAct(r.id, "delete")}>🗑️</button></div>
+          </div>; })}
+        {repOpen && (reps || []).length > 5 && <div className="pager"><button className="mini" disabled={repPg === 0} onClick={() => setRepPg(repPg - 1)}>‹ Trước</button><span className="small">Trang {repPg + 1}/{Math.ceil((reps || []).length / 5)}</span><button className="mini" disabled={(repPg + 1) * 5 >= (reps || []).length} onClick={() => setRepPg(repPg + 1)}>Sau ›</button></div>}
+      </div> : null}
+
       <div className="row"><select value={lv} onChange={(e) => { setLv(e.target.value); setPgN(0); }}><option value="all">Mọi trình độ</option>{LEVELS.map((k) => <option key={k}>{k}</option>)}</select>
-        <select value={st} onChange={(e) => { setSt(e.target.value); setPgN(0); }}><option value="all">Mọi trạng thái</option><option value="draft">Nháp</option><option value="published">Đã phát hành</option><option value="hidden">Đã ẩn</option></select></div>
+        <select value={st} onChange={(e) => { setSt(e.target.value); setPgN(0); }}><option value="all">Mọi trạng thái</option><option value="draft">Nháp</option><option value="published">Đã phát hành</option><option value="hidden">Đã ẩn</option><option value="flag">⚑ Cần xem lại ({(rows || []).filter((r) => r.flagged).length})</option></select></div>
       <div className="adm-table"><table><thead><tr><th>#</th><th>Trình độ</th><th>Bài</th><th>Trạng thái</th><th>Nguồn</th><th /></tr></thead><tbody>
-        {shown.map((r) => <tr key={r.id}><td className="muted">{String(r.id).slice(0, 6)}</td><td><span className="tag">{r.level}</span></td><td><b>{r.topic}</b><br /><span className="muted small">{r.topic_en}</span></td>
-          <td><span className={`tag ${ST[r.status]?.[1]}`}>{ST[r.status]?.[0]}</span></td><td className="small">{({ file: "Kho có sẵn", admin: "Tự soạn", ai: "AI" } as Record<string, string>)[r.source] || r.source}</td>
+        {shown.map((r) => <tr key={r.id}><td className="muted">{String(r.id).slice(0, 6)}</td><td><span className="tag">{r.level}</span></td><td><b>{r.topic}</b>{r.flagged && <span className="tag bad" title={r.flag_reason || ""}> ⚑ {r.reports ? `${r.reports} báo lỗi` : "cần xem"}</span>}<br /><span className="muted small">{r.topic_en}</span>
+            {(r.uses || 0) > 0 && <span className="muted small"> · {r.uses} lượt học · TB {Math.round((r.score_sum || 0) / (r.uses || 1))}đ</span>}
+            {r.flagged && r.flag_reason && <><br /><span className="small bad-t">{r.flag_reason}</span> <button className="mini" onClick={() => unflag(r.id)}>✓ Đã xem, bỏ cờ</button></>}</td>
+          <td><span className={`tag ${ST[r.status]?.[1]}`}>{ST[r.status]?.[0]}</span></td><td className="small">{({ file: "Kho có sẵn", admin: "Tự soạn", ai: "AI soạn" } as Record<string, string>)[r.source] || r.source}</td>
           <td className="row nowrap"><button className="mini" onClick={() => open(r.id)}>Sửa</button><a className="btn mini" href={`/?preview=${encodeURIComponent(String(r.id))}`}>👀</a>
             {r.status !== "published" ? <button className="mini" onClick={() => setStatus(r.id, "published")}>Phát hành</button> : <button className="mini danger" onClick={() => setStatus(r.id, "hidden")}>Ẩn</button>}<button className="mini danger" title="Xoá vĩnh viễn" onClick={() => del(r.id, r.topic)}>🗑️ Xoá</button></td></tr>)}
       </tbody></table></div>

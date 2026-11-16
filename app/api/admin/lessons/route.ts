@@ -20,8 +20,17 @@ type Row = { id: number | string; level: string; topic: string; topic_en?: strin
 export async function GET(req: Request) {
   const g = await guard(); if (g.deny) return g.deny;
   const db = createAdminClient(), id = new URL(req.url).searchParams.get("id");
+  const u = new URL(req.url);
+  if (u.searchParams.get("reports")) {
+    const st = u.searchParams.get("reports") === "done" ? "done" : "open";
+    const { data, error } = await db.from("lesson_reports").select("*").eq("status", st).order("created_at", { ascending: false }).limit(300);
+    if (error) return NextResponse.json({ reports: [], error: /lesson_reports/.test(error.message) ? "Chưa tạo bảng báo lỗi: chạy supabase/lessons2.sql" : error.message });
+    return NextResponse.json({ reports: data });
+  }
   if (id) { const { data } = await db.from("lessons").select("*").eq("id", id).maybeSingle(); return data ? NextResponse.json(data) : NextResponse.json({ error: "Không tìm thấy" }, { status: 404 }); }
-  const { data, error } = await db.from("lessons").select("id, level, topic, topic_en, status, sort, source, updated_at").order("level").order("sort").order("id");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let { data, error }: { data: any; error: any } = await db.from("lessons").select("id, level, topic, topic_en, status, sort, source, updated_at, flagged, flag_reason, reports, uses, score_sum").order("level").order("sort").order("id");
+  if (error && /flagged|reports|uses|score_sum|flag_reason/.test(error.message)) ({ data, error } = await db.from("lessons").select("id, level, topic, topic_en, status, sort, source, updated_at").order("level").order("sort").order("id")); // chưa chạy lessons2.sql
   if (error) return NextResponse.json({ error: error.message.includes("lessons") ? "Chưa tạo bảng lessons (chạy supabase/lessons.sql)" : error.message }, { status: 500 });
   return NextResponse.json({ lessons: data });
 }
@@ -37,6 +46,21 @@ export async function POST(req: Request) {
   const g = await guard(); if (g.deny) return g.deny;
   const db = createAdminClient(), b = await req.json();
   if (b.action === "check") return NextResponse.json(await check(db, b.lesson, b.id));
+  // Báo lỗi từ người học: đánh dấu đã xử lý / mở lại / xoá
+  if (b.action === "report") {
+    if (b.op === "delete") { const { error } = await db.from("lesson_reports").delete().eq("id", b.id); return error ? NextResponse.json({ error: error.message }, { status: 500 }) : NextResponse.json({ ok: true }); }
+    const status = b.op === "reopen" ? "open" : "done";
+    const { data: r, error } = await db.from("lesson_reports").update({ status }).eq("id", b.id).select("lesson_id").maybeSingle();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (r?.lesson_id) { // cập nhật số báo cáo còn mở của bài
+      const { data: rs } = await db.from("lesson_reports").select("user_id").eq("lesson_id", r.lesson_id).eq("status", "open");
+      const n = new Set((rs || []).map((x: { user_id: string }) => x.user_id)).size;
+      await db.from("lessons").update({ reports: n, ...(n === 0 ? { flagged: false, flag_reason: null } : {}) }).eq("id", r.lesson_id);
+    }
+    return NextResponse.json({ ok: true });
+  }
+  // Bỏ cờ "cần xem lại" khi đã kiểm tra bài
+  if (b.action === "unflag") { const { error } = await db.from("lessons").update({ flagged: false, flag_reason: null }).eq("id", b.id); return error ? NextResponse.json({ error: error.message }, { status: 500 }) : NextResponse.json({ ok: true }); }
   if (b.action === "save") {
     const l: Lesson = b.lesson, status = ["draft", "published"].includes(b.status) ? b.status : "draft";
     const r = await check(db, l, b.id);

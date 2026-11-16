@@ -137,6 +137,8 @@ async function deleteUser(db: any, uid: string, confirmEmail: string) {
   await step("chặn", () => db.from("chat_blocks").delete().or(`user_id.eq.${uid},blocked.eq.${uid}`));
   await step("báo cáo", () => db.from("chat_reports").delete().or(`reporter.eq.${uid},reported.eq.${uid}`));
   await step("phản hồi", () => db.from("feedback").delete().eq("user_id", uid));
+  await step("báo lỗi bài học", () => db.from("lesson_reports").delete().eq("user_id", uid));
+  await step("lượt góp bài", () => db.from("lesson_contrib").delete().eq("user_id", uid));
   for (const t of ["lb_scores", "lb_profile", "push_subscriptions", "app_state"]) await step(t, () => db.from(t).delete().eq("user_id", uid));
   const { error } = await db.auth.admin.deleteUser(uid);
   if (error) return NextResponse.json({ error: "Đã xoá dữ liệu nhưng chưa xoá được tài khoản đăng nhập: " + error.message, done }, { status: 500 });
