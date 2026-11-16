@@ -45,6 +45,10 @@ export default function AdminPage() {
   const [rk, setRk] = useState(0), [reloading, setReloading] = useState(false), [done, setDone] = useState(false);
   async function loadFb() { try { const r = await fetch("/api/admin?feedback=1"); if (r.ok) setFbs((await r.json()).feedback); } catch {} }
   useEffect(() => { loadFb(); }, []);
+  // Số báo lỗi bài học chưa xử lý (hiện số trên tab Kho bài)
+  const [lessonReps, setLessonReps] = useState(0);
+  async function loadLessonReps() { try { const r = await fetch("/api/admin/lessons?reports=open"); if (r.ok) setLessonReps(((await r.json()).reports || []).length); } catch {} }
+  useEffect(() => { loadLessonReps(); const t = setInterval(loadLessonReps, 60000); return () => clearInterval(t); }, []);
   async function loadReps() { try { const r = await fetch("/api/admin?reports=1"); if (r.ok) setReps(await r.json()); } catch {} }
   useEffect(() => { loadReps(); }, []);
   async function giftStreak(id: string, email: string) {
@@ -114,7 +118,7 @@ export default function AdminPage() {
   const S = d.stats;
   const banned = new Map((reps?.bans || []).map((b) => [b.user_id, b]));
   const openReps = reps?.reports || [], newFb = (fbs || []).filter((f) => f.status !== "done");
-  const TABS: [string, string, number?][] = [["overview", "📊 Tổng quan"], ["users", "👥 Người dùng", S.users], ["notify", "🔔 Gửi thông báo"], ["lessons", "📚 Kho bài"],
+  const TABS: [string, string, number?][] = [["overview", "📊 Tổng quan"], ["users", "👥 Người dùng", S.users], ["notify", "🔔 Gửi thông báo"], ["lessons", "📚 Kho bài", lessonReps],
     ["feedback", "💬 Phản hồi", newFb.length], ["reports", "🚩 Vi phạm", openReps.length + (reps?.bans.length || 0)], ["about", "🌱 Giới thiệu"], ["ai", "🤖 AI"]];
   const cards: [string, number, string][] = [["Người dùng", S.users, `+${S.newWeek} trong 7 ngày`], ["Học hôm nay", S.today, ""], ["Học trong 7 ngày", S.week, ""],
     ["Tổng buổi học", S.sessions, ""], ["Bật thông báo", S.push, `${S.users ? Math.round((S.push / S.users) * 100) : 0}% người dùng`]];
@@ -125,7 +129,7 @@ export default function AdminPage() {
       <header className="adm-head">
         <div className="row nowrap">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/logo.png?v=6" alt="" width={44} height={44} className="logo-lg" />
           <div><p className="eyebrow">SEED · Quản trị</p><h1>Trang quản trị</h1></div></div>
-        <div className="row"><button className="mini" disabled={reloading} onClick={async () => { setReloading(true); await Promise.all([load(), loadReps(), loadFb()]); setRk((k) => k + 1); setReloading(false); setDone(true); setTimeout(() => setDone(false), 1800); }}>{reloading ? "⏳ Đang tải…" : done ? "✓ Đã tải lại" : "↻ Tải lại"}</button><a className="btn mini" href="/">← Về app</a></div>
+        <div className="row"><button className="mini" disabled={reloading} onClick={async () => { setReloading(true); await Promise.all([load(), loadReps(), loadFb(), loadLessonReps()]); setRk((k) => k + 1); setReloading(false); setDone(true); setTimeout(() => setDone(false), 1800); }}>{reloading ? "⏳ Đang tải…" : done ? "✓ Đã tải lại" : "↻ Tải lại"}</button><a className="btn mini" href="/">← Về app</a></div>
       </header>
       <nav className="adm-tabs">{TABS.map(([k, t, n]) => <button key={k} className={tab === k ? "sel" : ""} onClick={() => setTab(k)}>{t}{n ? <span className="badge">{n}</span> : null}</button>)}</nav>
 
@@ -136,6 +140,7 @@ export default function AdminPage() {
             {d.users.filter((u) => u.lastStudy).slice(0, 5).map((u) => <div key={u.id} className="adm-line"><b>{u.name || u.email}</b><span className="muted small">{u.level} · {u.sessions} buổi · {u.today ? "hôm nay" : fmt(u.lastStudy)}</span></div>)}</section>
           <section className="panel"><div className="row between"><h3>Cần xử lý</h3></div>
             <div className="adm-line"><b>💬 Phản hồi mới</b><button className="mini" onClick={() => setTab("feedback")}>{newFb.length}</button></div>
+            <div className="adm-line"><b>⚑ Báo lỗi bài học</b><button className="mini" onClick={() => setTab("lessons")}>{lessonReps}</button></div>
             <div className="adm-line"><b>🚩 Báo cáo vi phạm</b><button className="mini" onClick={() => setTab("reports")}>{openReps.length}</button></div>
             <div className="adm-line"><b>⛔ Đang bị khoá chat</b><button className="mini" onClick={() => setTab("reports")}>{reps?.bans.length || 0}</button></div></section>
         </div></>}
@@ -176,7 +181,7 @@ export default function AdminPage() {
           {msg && <span className="small">{msg}</span>}</div>
       </section>}
 
-      {tab === "lessons" && <LessonsAdmin key={rk} />}
+      {tab === "lessons" && <LessonsAdmin key={rk} onReps={setLessonReps} />}
 
       {tab === "feedback" && <section className="panel">
         <div className="row between"><h3>Phản hồi ({newFb.length} mới / {fbs?.length ?? "…"})</h3><button className="mini" onClick={loadFb}>↻</button></div>

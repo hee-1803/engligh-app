@@ -48,7 +48,7 @@ async function api(body?: unknown, q = "") {
   return j;
 }
 
-export default function LessonsAdmin() {
+export default function LessonsAdmin({ onReps }: { onReps?: (n: number) => void } = {}) {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [err, setErr] = useState("");
   const [lv, setLv] = useState("all");
@@ -63,10 +63,10 @@ export default function LessonsAdmin() {
   async function load() { try { const j = await api(); setRows(j.lessons); setErr(""); } catch (e) { setErr((e as Error).message); } loadReps(); }
   // Báo lỗi từ người học
   const [reps, setReps] = useState<Rep[] | null>(null), [repErr, setRepErr] = useState(""), [repPg, setRepPg] = useState(0), [repOpen, setRepOpen] = useState(true);
-  async function loadReps() { try { const r = await fetch("/api/admin/lessons?reports=open"); const j = await r.json(); setReps(j.reports || []); setRepErr(j.error || ""); } catch (e) { setRepErr((e as Error).message); } }
+  async function loadReps() { try { const r = await fetch("/api/admin/lessons?reports=open"); const j = await r.json(); setReps(j.reports || []); onReps?.((j.reports || []).length); setRepErr(j.error || ""); } catch (e) { setRepErr((e as Error).message); } }
   async function repAct(id: number, op: "done" | "delete") {
     if (op === "delete" && !confirm("Xoá báo cáo này?")) return;
-    try { const r = await fetch("/api/admin/lessons", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "report", id, op }) }); const j = await r.json(); if (j.error) setMsg("✗ " + j.error); else { setReps((x) => (x || []).filter((r) => r.id !== id)); load(); } } catch (e) { setMsg("✗ " + (e as Error).message); }
+    try { const r = await fetch("/api/admin/lessons", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "report", id, op }) }); const j = await r.json(); if (j.error) setMsg("✗ " + j.error); else { setReps((x) => { const n = (x || []).filter((r) => r.id !== id); onReps?.(n.length); return n; }); load(); } } catch (e) { setMsg("✗ " + (e as Error).message); }
   }
   async function unflag(id: number | string) { try { await fetch("/api/admin/lessons", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unflag", id }) }); load(); } catch {} }
   useEffect(() => { load(); }, []);
