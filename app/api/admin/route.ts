@@ -89,6 +89,7 @@ export async function POST(req: Request) {
     if (peek.mod === "ban" && peek.messageId) await db.from("chat_messages").update({ hidden: true }).eq("id", peek.messageId);
     if (peek.mod === "unban" && peek.userId) await db.from("chat_bans").delete().eq("user_id", peek.userId);
     if (peek.mod === "deleteUser" && peek.userId) return deleteUser(db, String(peek.userId), String(peek.confirmEmail || ""));
+    if (peek.mod === "giftStreak" && peek.userId) return giftStreak(db, String(peek.userId), String(peek.day || ""));
     if (peek.reportId) await db.from("chat_reports").update({ status: "done" }).eq("id", peek.reportId);
     return NextResponse.json({ ok: true });
   }
@@ -140,4 +141,21 @@ async function deleteUser(db: any, uid: string, confirmEmail: string) {
   const { error } = await db.auth.admin.deleteUser(uid);
   if (error) return NextResponse.json({ error: "Đã xoá dữ liệu nhưng chưa xoá được tài khoản đăng nhập: " + error.message, done }, { status: 500 });
   return NextResponse.json({ ok: true, email, done });
+}
+
+// TẶNG 1 NGÀY CHUỖI 🔥 (ví dụ người học quên lưu bài hôm qua): thêm ngày vào giftDays, không tạo buổi học giả
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function giftStreak(db: any, uid: string, day: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return NextResponse.json({ error: "Ngày không hợp lệ (dạng 2026-11-14)" }, { status: 400 });
+  const today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+  if (day >= today) return NextResponse.json({ error: "Chỉ tặng được cho ngày đã qua" }, { status: 400 });
+  const { data: row, error: e1 } = await db.from("app_state").select("data").eq("user_id", uid).maybeSingle();
+  if (e1 || !row?.data) return NextResponse.json({ error: "Người này chưa có dữ liệu học" }, { status: 404 });
+  const d = row.data;
+  if ((d.sessions || []).some((x: { date: string }) => x.date === day) || (d.giftDays || []).includes(day)) return NextResponse.json({ ok: true, already: true });
+  d.giftDays = [...(d.giftDays || []), day].sort().slice(-60);
+  d.frozen = (d.frozen || []).filter((x: string) => x !== day);
+  d.rev = Number(d.rev || 0) + 1; // để điện thoại của người học nhận bản mới, không ghi đè
+  const { error } = await db.from("app_state").update({ data: d, updated_at: new Date().toISOString() }).eq("user_id", uid);
+  return error ? NextResponse.json({ error: error.message }, { status: 500 }) : NextResponse.json({ ok: true });
 }

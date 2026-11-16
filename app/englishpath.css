@@ -917,3 +917,10 @@ button:active, .setitem:active, [role=button]:active { transform: scale(.97); tr
 .ptag { flex: none; font: 800 .78rem var(--f-body, inherit); color: #fff; background: var(--accent); border-radius: 99px; padding: 2px 10px; white-space: nowrap }
 .pattern .ptag + span, .pline > span { min-width: 0; overflow-wrap: anywhere }
 .pattern:not(.multi) .ptag { margin-right: 8px }
+.ttsrc .si-t { white-space: normal; line-height: 1.35 } .ttsrc .si-v { color: var(--green-ink); font-weight: 900; font-size: 1.1rem } .ttsrc .setitem.sel { background: var(--soft-green) }
+/* Câu ví dụ ngữ pháp */
+.gex { display: grid; gap: 8px; margin: 4px 0 6px }
+.gex .eyebrow { margin: 0 }
+.gexi { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 16px; background: var(--sunk) }
+.gexi .round { flex: none }
+.gexi p { margin: 0 } .gexen { font-weight: 700; line-height: 1.5 }

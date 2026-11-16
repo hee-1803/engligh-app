@@ -84,3 +84,10 @@ Thêm biến trên Vercel: `ADMIN_EMAILS=email-cua-ban@gmail.com` (nhiều email
 1. Supabase → SQL Editor → chạy file `supabase/leaderboard.sql` (1 lần).
 2. Không cần thêm biến môi trường (dùng SUPABASE_SERVICE_ROLE_KEY và VAPID đã có).
 3. Điểm tự tính mỗi lần người học lưu tiến độ. Tuần chốt tự động khi có người mở bảng xếp hạng lần đầu trong tuần mới.
+
+## Giọng đọc AI (Google Cloud Text-to-Speech) — v98
+1. Supabase → SQL Editor → chạy `supabase/tts.sql` (tạo kho file `tts` và bảng đếm `tts_usage`).
+2. Google Cloud: tạo dự án → gắn thẻ (Billing) → bật "Cloud Text-to-Speech API" → tạo API key (giới hạn chỉ cho Text-to-Speech API) → đặt Budget alert $1.
+3. Vercel → Settings → Environment Variables: `GOOGLE_TTS_API_KEY` = khoá vừa tạo → Redeploy.
+4. Tuỳ chọn: `TTS_DAILY_CHAR_LIMIT` (mặc định 120000 ký tự/ngày), `GOOGLE_TTS_VOICE_EN_F` / `_EN_M` / `_VI_F` / `_VI_M` để đổi giọng.
+Chưa có khoá → app tự dùng giọng của máy như cũ.
