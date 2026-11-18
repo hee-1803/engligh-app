@@ -199,7 +199,7 @@ export default function LessonsAdmin({ onReps }: { onReps?: (n: number) => void 
             {r.note && <p className="small">💬 “{r.note}”</p>}
             <ItemView it={r.item} />
             <div className="row">
-              {row ? <><button className="mini" onClick={() => open(row.id)}>✏️ Sửa bài</button><a className="btn mini" href={`/?preview=${encodeURIComponent(String(row.id))}`}>👀 Xem thử</a>
+              {row ? <><button className="mini" onClick={() => open(row.id)}>✏️ Sửa bài</button><a className="btn mini" href={`/?preview=${encodeURIComponent(String(row.id))}${r.step !== null && r.step !== undefined ? `&step=${r.step}` : ""}`}>👀 Xem đúng chỗ lỗi (bước {(r.step ?? 0) + 1})</a>
                 {row.status === "published" ? <button className="mini danger" onClick={() => setStatus(row.id, "hidden")}>🙈 Ẩn bài</button> : <span className="tag">{ST[row.status]?.[0]}</span>}</>
                 : <span className="muted small">{r.lesson ? "Bài AI soạn riêng cho người học (không có trong kho)" : "Bài không có trong kho"}</span>}
               <button className="mini primary" onClick={() => repAct(r.id, "done")}>✓ Đã xử lý</button><button className="mini danger" onClick={() => repAct(r.id, "delete")}>🗑️</button></div>

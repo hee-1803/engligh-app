@@ -602,7 +602,7 @@ let BASE = 0, SAVING = false, DIRTY = false;
 // Chế độ XEM THỬ bài (quản trị viên mở /?preview=ID): học thử như người học nhưng không lưu gì
 let PREVIEW = false;
 function alertBox(m) { const d = document.createElement("div"); d.style.cssText = "position:fixed;left:16px;right:16px;top:16px;z-index:9999;background:#fff3f3;color:#a12;border:2px solid #f3b;border-radius:16px;padding:14px;font-weight:700"; d.textContent = m; document.body.appendChild(d); setTimeout(() => d.remove(), 12000); }
-async function startPreview(id) {
+async function startPreview(id, step0) {
   try { const r = await timeoutFetch("/api/admin/lessons?id=" + encodeURIComponent(id), {}, 10000); const row = await r.json(); if (!r.ok) throw new Error(row.error);
     let d = row.data; if (typeof d === "string") { try { d = JSON.parse(d); } catch (e) { d = {}; } } d = d || {};
     if (!Array.isArray(d.words) || !d.words.length) throw new Error(LANG === "en" ? "this lesson has no vocabulary yet" : "bài chưa có từ vựng");
@@ -611,6 +611,7 @@ async function startPreview(id) {
     if (les.topic_en) EN[les.topic] = les.topic_en; const ge = les.grammar?.name_en; if (ge) EN[les.grammar.name] = ge;
     const items = [...les.words.slice(0, 2).map(w => meaningQ(w, les.words)), ...(les.grammar?.quiz || []).slice(0, 2).map(g => gramQ(g))];
     S.current = {idx:-1, course:"preview", les, step:0, warmItems:items, prevTopic:"", vi:0, sent:{}, trans:{}, chat:[], tasksDone:[], rpEval:null, scores:{}, started:Date.now()};
+    const st = Math.max(0, Math.min(5, Number(step0) || 0)); S.current.step = st; S.current.max = st;
     view = "lesson"; restoreLessonQuiz(); render(); toast(LANG === "en" ? "Preview mode: nothing is saved" : "Chế độ xem thử: không lưu tiến độ");
   } catch (e) { console.error(e); PREVIEW = false; const m = (LANG === "en" ? "Can't open preview: " : "Không mở được bản xem thử: ") + e.message; toast(m); setTimeout(() => { try { alertBox(m); } catch (x) {} }, 400); }
 }
@@ -1156,7 +1157,7 @@ function vcheckItems() {
   if (wk === "speaking" && ex && SR) items.push({type:"speak", q:ex.ex, ans:ex.ex, skill:"speaking", word:ex.w, bonus:true});
   return items;
 }
-function setStep(n) { const l = L(); l.max = Math.max(l.max || 0, l.step, n); l.step = n; Q = null; if (!(n < l.max && n < 2)) restoreLessonQuiz(); save(); render(); scrollTo(0, 0); }
+function setStep(n) { const l = L(); l.max = Math.max(l.max || 0, l.step, n); l.step = n; Q = null; if (PREVIEW || !(n < l.max && n < 2)) restoreLessonQuiz(); save(); render(); scrollTo(0, 0); }
 // Xem lại bước đã học: bấm thanh tiến trình. Bước 1–2 (đã làm quiz) hiện bản tóm tắt thay vì làm lại.
 function reviewPanel(k) {
   const l = L(), ws = l.les.words, g = l.les.grammar;
@@ -1173,10 +1174,10 @@ function vLesson() {
   const mx = l.max = Math.max(l.max || 0, l.step);
   const head = `${_t("<header class=\"lhead\"><div class=\"row between\"><button class=\"ghost\" data-a=\"exitLesson\">← Lưu & thoát</button>\n     <span class=\"muted small\">")}<span id="lesT">${fmtTime(l.active || 0)}</span></span><button class="ghost mini" data-a="repOpen">${_t("⚑ Báo lỗi")}</button></div>
      <div class="lesson-title hue-${topicStk(l.les.topic)[1]}">${stk(topicStk(l.les.topic)[0], 64, "", -8)}<div class="grow"><p class="eyebrow">${l.les.remedial ? _t("Buổi ôn tập") : _t("Buổi ") + (doneN() + 1)}${l.les.level ? " · " + l.les.level : ""}${_t(" · Bước ")}${l.step + 1}/6: ${STEPS[l.step]}</p><h2>${esc(tp(l.les.topic))}</h2></div>${stk(STEP_STK[l.step], 46, "step-stk", 10)}</div>
-     <ol class="stepper">${STEPS.map((s, k) => { const reach = k <= mx && k !== l.step; return `<li class="${k < mx || k < l.step ? "done" : ""} ${k === l.step ? "cur" : ""} ${reach ? "go" : ""}" ${reach ? `data-a="step" data-v="${k}${_t("\" role=\"button\" tabindex=\"0\" title=\"Xem lại bước ")}${k + 1}"` : ""}><span>${k + 1}</span><em>${s}</em></li>`; }).join("")}</ol>
+     <ol class="stepper">${STEPS.map((s, k) => { const reach = (PREVIEW || k <= mx) && k !== l.step; return `<li class="${k < mx || k < l.step ? "done" : ""} ${k === l.step ? "cur" : ""} ${reach ? "go" : ""}" ${reach ? `data-a="step" data-v="${k}${_t("\" role=\"button\" tabindex=\"0\" title=\"Xem lại bước ")}${k + 1}"` : ""}><span>${k + 1}</span><em>${s}</em></li>`; }).join("")}</ol>
      ${mx > 0 ? `${_t("<p class=\"muted small center\">Bấm vào thanh tiến trình để quay lại xem bước đã học.</p>")}` : ""}</header>`;
-  const back = l.step < mx ? `${_t("<div class=\"backbar\"><span>👀 Đang xem lại bước ")}${l.step + 1}: <b>${STEPS[l.step]}</b></span><button class="primary mini" data-a="step" data-v="${mx}${_t("\">Về bước đang học (")}${mx + 1}) →</button></div>` : "";
-  const body = l.step < mx && l.step < 2 ? reviewPanel(l.step) : [step1, step2, step3, step4, step5, step6][l.step]();
+  const back = !PREVIEW && l.step < mx ? `${_t("<div class=\"backbar\"><span>👀 Đang xem lại bước ")}${l.step + 1}: <b>${STEPS[l.step]}</b></span><button class="primary mini" data-a="step" data-v="${mx}${_t("\">Về bước đang học (")}${mx + 1}) →</button></div>` : "";
+  const body = !PREVIEW && l.step < mx && l.step < 2 ? reviewPanel(l.step) : [step1, step2, step3, step4, step5, step6][l.step]();
   return `<div class="wrap narrow">${head}${back}${body}</div>`;
 }
 // Bước 1: Ôn bài cũ
@@ -2930,7 +2931,7 @@ function render() {
   const meP = fetch("/api/me").then(r => r.ok ? r.json() : null).catch(() => null);
   S = await loadState(); BASE = Number(S.rev || 0); try { if ((S.profile?.lang === "vi" || S.profile?.lang === "en") && !localStorage.getItem("ep_lang") && S.profile.lang !== LANG) { localStorage.setItem("ep_lang", S.profile.lang); return location.reload(); } } catch (e) {}
   if (S.profile && S.profile.uiLang !== LANG) { S.profile.uiLang = LANG; save(); } ME = await meP;
-  loadAbout(); const pvId = new URLSearchParams(location.search).get("preview"); if (pvId) { if (ME?.admin) setTimeout(() => startPreview(pvId), 300); else setTimeout(() => alertBox(LANG === "en" ? "Preview is for admins only — log in with the admin account." : "Xem thử chỉ dành cho quản trị viên — hãy đăng nhập đúng tài khoản admin."), 500); }
+  loadAbout(); const pvId = new URLSearchParams(location.search).get("preview"); if (pvId) { if (ME?.admin) setTimeout(() => startPreview(pvId, new URLSearchParams(location.search).get("step")), 300); else setTimeout(() => alertBox(LANG === "en" ? "Preview is for admins only — log in with the admin account." : "Xem thử chỉ dành cho quản trị viên — hãy đăng nhập đúng tài khoản admin."), 500); }
   if (new URLSearchParams(location.search).get("view") === "rank" && S.path) { view = "rank"; history.replaceState(null, "", "/"); }
   if (S.profile) setTimeout(() => { autoFreeze(); lbLoad(); }, 1200);
   cloudCheck();
