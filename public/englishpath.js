@@ -485,14 +485,17 @@ async function cloudUrl(text, lang) {
 }
 function playUrl(url, rate, my) { return new Promise((ok, no) => {
   if (my !== TTS_SEQ) return ok();
-  AUD.onended = () => ok(); AUD.onerror = () => no(new Error("audio")); AUD.src = url; AUD.playbackRate = rate || 1; try { AUD.preservesPitch = true; } catch (e) {}
+  const rt = rate || 1, setR = () => { try { AUD.defaultPlaybackRate = rt; AUD.playbackRate = rt; } catch (e) {} };
+  AUD.onended = () => ok(); AUD.onerror = () => no(new Error("audio")); try { AUD.preservesPitch = true; AUD.webkitPreservesPitch = true; } catch (e) {}
+  // iPhone/Safari đặt lại tốc độ về 1 mỗi khi đổi file: đặt trước và sau khi tải
+  setR(); AUD.src = url; setR(); AUD.onloadedmetadata = setR; AUD.onplaying = setR;
   const p = AUD.play(); if (p && p.catch) p.catch(no);
 }); }
 function stopAudio() { try { if (AUD) { AUD.pause(); AUD.onended = null; } } catch (e) {} }
 async function say(t, rate) {
   const my = ++TTS_SEQ; stopAudio(); try { if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel(); } catch (e) {}
   if (!useCloud()) { TTS_SEQ--; return sayDevice(t, rate); }
-  const r0 = rate || ttsRate();
+  const base = Math.min(1.25, Math.max(0.7, ttsRate() / 0.8)), r0 = rate && rate < ttsRate() ? Math.max(0.5, base * 0.65) : base;
   let parts = ttsParts(String(t).replace(/_+/g, " blank ")); const m = [];
   for (const p of parts) { const last = m[m.length - 1]; if (last && last.vi === p.vi) last.text += " " + p.text; else m.push({...p}); }
   try {
