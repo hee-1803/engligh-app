@@ -25,11 +25,12 @@ export async function GET(req: Request) {
   if (!key()) return bad("Chưa cài GOOGLE_TTS_API_KEY", 503);
 
   const text = (u.searchParams.get("t") || "").replace(/\s+/g, " ").trim().slice(0, 400);
-  const lang = u.searchParams.get("l") === "vi" ? "vi" : "en", g = u.searchParams.get("g") === "m" ? "m" : "f";
+  const lang = u.searchParams.get("l") === "vi" ? "vi" : "en", g = u.searchParams.get("g") === "m" ? "m" : "f", slow = u.searchParams.get("s") === "1";
+  const speakingRate = slow ? 0.7 : 1;
   if (!text || !/[\p{L}\d]/u.test(text)) return bad("Câu trống");
   const voice = VOICES[lang][g];
-  const hash = createHash("sha256").update(voice + "|" + text).digest("hex").slice(0, 40);
-  const path = `${lang}/${voice}/${hash}.mp3`;
+  const hash = createHash("sha256").update(voice + "|" + (slow ? "slow|" : "") + text).digest("hex").slice(0, 40);
+  const path = `${lang}/${voice}${slow ? "-slow" : ""}/${hash}.mp3`;
   const db = createAdminClient();
   const pub = db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 
@@ -46,7 +47,7 @@ export async function GET(req: Request) {
   try {
     const r = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${encodeURIComponent(key())}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input: { text }, voice: { languageCode: lang === "vi" ? "vi-VN" : "en-US", name: voice }, audioConfig: { audioEncoding: "MP3", speakingRate: 1 } }),
+      body: JSON.stringify({ input: { text }, voice: { languageCode: lang === "vi" ? "vi-VN" : "en-US", name: voice }, audioConfig: { audioEncoding: "MP3", speakingRate } }),
     });
     const j = await r.json();
     if (!r.ok) return bad("Google: " + (j?.error?.message || r.status), r.status === 429 ? 429 : 502);

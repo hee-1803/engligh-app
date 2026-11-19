@@ -476,10 +476,10 @@ const AUD = typeof Audio !== "undefined" ? new Audio() : null;
 if (AUD) AUD.preload = "auto";
 async function cloudCheck() { try { const r = await fetch("/api/tts?check=1"); CLOUD.ok = !!(await r.json()).ok; } catch (e) { CLOUD.ok = false; } CLOUD.checked = true; if (view === "settings") render(); }
 const useCloud = () => CLOUD.ok && CLOUD.fail < 3 && pref("ep_tts") !== "device" && !!AUD;
-async function cloudUrl(text, lang) {
-  const g = pref("ep_tts_g") === "m" ? "m" : "f", k = lang + "|" + g + "|" + text;
+async function cloudUrl(text, lang, slow) {
+  const g = pref("ep_tts_g") === "m" ? "m" : "f", k = lang + "|" + g + "|" + (slow ? "s|" : "") + text;
   if (CLOUD.urls.has(k)) return CLOUD.urls.get(k);
-  const r = await fetch(`/api/tts?t=${encodeURIComponent(text)}&l=${lang}&g=${g}`); const j = await r.json();
+  const r = await fetch(`/api/tts?t=${encodeURIComponent(text)}&l=${lang}&g=${g}${slow ? "&s=1" : ""}`); const j = await r.json();
   if (!r.ok || !j.url) throw new Error(j.error || r.status);
   CLOUD.urls.set(k, j.url); return j.url;
 }
@@ -495,12 +495,12 @@ function stopAudio() { try { if (AUD) { AUD.pause(); AUD.onended = null; } } cat
 async function say(t, rate) {
   const my = ++TTS_SEQ; stopAudio(); try { if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel(); } catch (e) {}
   if (!useCloud()) { TTS_SEQ--; return sayDevice(t, rate); }
-  const base = Math.min(1.25, Math.max(0.7, ttsRate() / 0.8)), r0 = rate && rate < ttsRate() ? Math.max(0.5, base * 0.65) : base;
+  const slow = !!(rate && rate < ttsRate()), r0 = slow ? 1 : Math.min(1.25, Math.max(0.7, ttsRate() / 0.8));
   let parts = ttsParts(String(t).replace(/_+/g, " blank ")); const m = [];
   for (const p of parts) { const last = m[m.length - 1]; if (last && last.vi === p.vi) last.text += " " + p.text; else m.push({...p}); }
   try {
-    const urls = await Promise.all(m.map(p => cloudUrl(p.text.trim(), p.vi ? "vi" : "en")));
-    for (let i = 0; i < urls.length; i++) { if (my !== TTS_SEQ) return; await playUrl(urls[i], m[i].vi ? Math.min(1, r0 + 0.1) : r0, my); }
+    const urls = await Promise.all(m.map(p => cloudUrl(p.text.trim(), p.vi ? "vi" : "en", slow && !p.vi)));
+    for (let i = 0; i < urls.length; i++) { if (my !== TTS_SEQ) return; await playUrl(urls[i], m[i].vi ? Math.min(1, r0) : r0, my); }
     CLOUD.fail = 0;
   } catch (e) {
     if (my !== TTS_SEQ) return;
@@ -2540,7 +2540,7 @@ const ACT = {
   festFx: v => { S.profile.festFx = v === "true"; save(); applyFestive(); render(); toast(v === "true" ? _t("Đã bật hiệu ứng rơi") : _t("Đã tắt hiệu ứng rơi")); },
   go: v => { if (v === "settings") UI.sp = ""; view = v; Q = null; FC = null; closePop(); UI.menu = false; render(); scrollTo(0, 0); if (v === "chat") chPoll(true); if (v === "rank") { LB.level = ""; LB.league = null; lbLoad(true); } },
   speak: v => say(v),
-  slow: v => say(v, Math.max(0.45, ttsRate() - 0.25)),
+  slow: v => say(v, Math.max(0.4, ttsRate() * 0.6)),
   pron: v => { const l = L(), [kind, i] = v.split(":"), w = l.les.words[Number(i)], target = kind === "w" ? w.w : w.ex;
     startRec(v, r => { l.pron[v] = pronScore(target, r.text, r.alts); l.scores.speaking = Math.round(avg(Object.values(l.pron).map(x => x.score))); save(); }); },
   qMic: () => startRec("q", r => answer(r)),
