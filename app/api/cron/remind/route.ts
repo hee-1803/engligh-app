@@ -32,7 +32,7 @@ export async function GET(req: Request) {
     const data = byUser.get(s.user_id);
     // "Đã học hôm nay": xong một buổi, làm bài kiểm tra, hoặc có học/ôn trong app hôm nay (kể cả học dở, ôn flashcard)
     const studied = (data?.sessions || []).some((x: { date: string }) => x.date === today)
-      || (data?.tests || []).some((x: { date: string }) => x.date === today) || data?.lastActive === today;
+      || (data?.tests || []).some((x: { date: string }) => x.date === today) || data?.lastActive === today || (data?.actDays || []).includes(today);
     if (!data?.path || studied || (!test && !dueNow(data.profile, now, WINDOW))) { skipped++; continue; }
     const r = await sendPush({ endpoint: s.endpoint, keys: s.keys } as Sub, reminderFor(data));
     if (r === "ok") sent++;

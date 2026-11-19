@@ -715,6 +715,7 @@ function review(word, q) { // q: 1 Quên · 3 Khó · 4 Nhớ · 5 Dễ
     if (q === 3) c.int = Math.max(1, Math.round(c.int * .6));
     c.ef = Math.max(1.3, c.ef + 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)); c.due = Date.now() + c.int * 864e5; }
   c.last = Date.now(); S.revDays = S.revDays || {}; S.revDays[today()] = (S.revDays[today()] || 0) + 1;
+  if (S.revDays[today()] >= 20) markDay(); else setTimeout(() => { try { if (!dueCards().length) markDay(); } catch (e) {} }, 0);
   for (const k of Object.keys(S.revDays)) if (k < new Date(Date.now() - 40 * 864e5).toISOString().slice(0, 10)) delete S.revDays[k];
   save();
 }
@@ -746,8 +747,12 @@ const doneN = () => regSessions().length;
 const testDue = () => { const n = doneN(); return n > 0 && n % 5 === 0 && courseTests().length < n / 5; };
 const courseDone = () => S.path && doneN() >= S.path.total && !testDue();
 const doneToday = () => S.sessions.some(s => s.date === today());
+/* NGÀY HỌC (tính chuỗi 🔥): học xong 1 buổi, làm xong bài kiểm tra unit / bài trong mục Kiểm tra,
+   nộp bài luyện viết, hoặc ôn từ đủ 20 thẻ / ôn hết thẻ đến hạn. Học dở một buổi không tính. */
+function markDay() { const t = today(); S.actDays = S.actDays || []; if (!S.actDays.includes(t)) { S.actDays = [...S.actDays, t].slice(-400); save(); } }
+const studiedOn = k => S.sessions.some(s => s.date === k) || (S.actDays || []).includes(k) || (S.giftDays || []).includes(k);
 function streak() {
-  const ds = new Set(S.sessions.map(s => s.date).concat(S.frozen || [], S.giftDays || [])); let k = 0; const d = new Date(); // giftDays: ngày quản trị viên tặng chuỗi (hiện 🔥)
+  const ds = new Set(S.sessions.map(s => s.date).concat(S.frozen || [], S.giftDays || [], S.actDays || [])); let k = 0; const d = new Date(); // giftDays: ngày quản trị viên tặng chuỗi (hiện 🔥)
   if (!ds.has(today())) d.setDate(d.getDate() - 1);
   for (;;) { const t = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); if (ds.has(t)) { k++; d.setDate(d.getDate() - 1); } else break; }
   return k;
@@ -1446,6 +1451,7 @@ function startUnit() {
   Q = makeQuiz("unit", items, true); Q.unit = courseTests().length + 1; view = "quiz"; render();
 }
 function finishUnit(q) {
+  markDay();
   const skills = {};
   q.res.forEach(r => { (skills[r.skill] = skills[r.skill] || [0, 0])[1]++; if (r.ok) skills[r.skill][0]++; });
   const p = pct(q.res.filter(r => r.ok).length, q.res.length);
@@ -1551,7 +1557,7 @@ function vHome() {
   const [ts, hue] = td ? ["target", "coral"] : topicStk(topic + " " + (nextSituation() || "") + " " + fieldName());
   const days = LANG === "en" ? ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"] : ["T2","T3","T4","T5","T6","T7","CN"], d0 = new Date(); d0.setDate(d0.getDate() - ((d0.getDay() + 6) % 7));
   const week = days.map((k, i) => { const d = new Date(d0); d.setDate(d0.getDate() + i); const ds = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-    const on = S.sessions.some(s => s.date === ds) || (S.giftDays || []).includes(ds), fz = !on && (S.frozen || []).includes(ds); return `<div class="day ${on || fz ? "on" : ""} ${ds === today() ? "today" : ""}" ${fz ? `title="${_t("Đóng băng chuỗi")}"` : ""}><span>${k}</span><i>${on ? stk("flame", 22, "", 0) : fz ? "🧊" : ""}</i></div>`; }).join("");
+    const on = studiedOn(ds), fz = !on && (S.frozen || []).includes(ds); return `<div class="day ${on || fz ? "on" : ""} ${ds === today() ? "today" : ""}" ${fz ? `title="${_t("Đóng băng chuỗi")}"` : ""}><span>${k}</span><i>${on ? stk("flame", 22, "", 0) : fz ? "🧊" : ""}</i></div>`; }).join("");
   const due = dueCards().length, avgScore = Math.round(avg(courseSessions().slice(-5).map(s => s.total))), st = streak();
   const units = Math.ceil(p.total / 5), prog = pct(n, p.total);
   const celebrate = UI.celebrate?.length ? `<section class="panel celebrate">${confetti()}<div class="row nowrap">${mascot("cheer", 100, "bob")}${_t("<div class=\"grow\"><p class=\"eyebrow\">Nhãn dán mới</p><h2>Bạn vừa mở khóa ")}${UI.celebrate.length}${_t(" nhãn dán!</h2></div></div>\n     <div class=\"badge-row\">")}${UI.celebrate.map(id => BADGE[id] ? badgeCard(BADGE[id]) : "").join("")}${_t("</div><div class=\"row\"><button class=\"primary\" data-a=\"closeCelebrate\">Tuyệt quá!</button><a href=\"#\" class=\"link\" data-a=\"go\" data-v=\"history\">Xem bộ sưu tập →</a></div></section>")}` : "";
@@ -1781,7 +1787,7 @@ async function autoFreeze() {
   try {
     if (!S.profile || !S.sessions.length) return;
     const ds = d => { const x = new Date(); x.setDate(x.getDate() - d); return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); };
-    const y = ds(1), y2 = ds(2), had = k => S.sessions.some(s => s.date === k) || (S.frozen || []).includes(k) || (S.giftDays || []).includes(k);
+    const y = ds(1), y2 = ds(2), had = k => studiedOn(k) || (S.frozen || []).includes(k);
     if (had(y) || !had(y2)) return;
     if (localStorage.getItem("ep_frz") === y) return; localStorage.setItem("ep_frz", y);
     const r = await fetch("/api/leaderboard", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"freeze", day:y})});
@@ -1915,6 +1921,7 @@ async function startXTest(kind, skill) {
   view = "quiz"; render(); scrollTo(0, 0);
 }
 function xFinish(q) {
+  markDay();
   const R = plRes(q), rows = q.items.map((it, k) => [it, R(k), k]).filter(([it]) => it.type !== "inter");
   const real = rows.filter(([, r]) => !r?.skip), ok = real.filter(([, r]) => r?.ok).length, score = pct(ok, real.length);
   const by = {}; for (const [it, r] of real) { const b = by[it.part] = by[it.part] || {ok:0, n:0}; b.n++; if (r?.ok) b.ok++; }
@@ -2115,6 +2122,7 @@ async function wrGrade() {
   if (!WR || WR.busy) return;
   document.querySelectorAll("[data-wr]").forEach(el => { WR.ans[+el.dataset.wr] = el.value; });
   WR.busy = true; render();
+  if (WR.items.filter((it, i) => (WR.ans[i] || "").trim()).length >= Math.ceil(WR.items.length / 2)) markDay(); // nộp ít nhất nửa số câu
   const res = WR.items.map((it, i) => {
     const a = (WR.ans[i] || "").trim();
     if (it.k !== "fix") return null;
@@ -2385,7 +2393,7 @@ const toMin = t => { const [h, m] = String(t || "").split(":").map(Number); retu
 const fromMin = m => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
 const remindCfg = () => ({start:remindTime(), end:S.profile?.remindEnd || "23:00", every:Number(S.profile?.remindEvery || 60), on:S.profile?.remindOn !== false});
 function remindSlots() { const c = remindCfg(), a = [], st = toMin(c.start), en = Math.max(toMin(c.end), st); for (let t = st; t <= en && a.length < 48; t += c.every) a.push(fromMin(t)); return a; }
-function remindDue() { if (!S.profile || !S.path || !remindCfg().on) return false; const n = new Date(), now = n.getHours() * 60 + n.getMinutes(); return !doneToday() && now >= toMin(remindCfg().start) && now <= toMin(remindCfg().end) + 30; }
+function remindDue() { if (!S.profile || !S.path || !remindCfg().on) return false; const n = new Date(), now = n.getHours() * 60 + n.getMinutes(); return !studiedOn(today()) && now >= toMin(remindCfg().start) && now <= toMin(remindCfg().end) + 30; }
 function remindLoop() {
   if (PUSH.on || !remindDue() || pref("ep_notified") === today()) return;
   if ("Notification" in window && Notification.permission === "granted") {
