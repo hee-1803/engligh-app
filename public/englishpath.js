@@ -463,6 +463,12 @@ function sayDevice(t, rate) { return new Promise(res => { try {
   let parts = ttsParts(String(t).replace(/_+/g, " blank "));
   if (!vv) parts = [{vi:false, text:parts.map(p => p.vi ? (p.en || p.text) : p.text).join(" ")}];
   else { const m = []; for (const p of parts) { const last = m[m.length - 1]; if (last && last.vi === p.vi) last.text += " " + p.text; else m.push({...p}); } parts = m; }
+  // Nghe chậm: iPhone thường bỏ qua tốc độ đọc (nhất là giọng Siri/nâng cao), nên tách câu tiếng Anh thành từng cụm 2–3 từ,
+  // đọc lần lượt có nghỉ giữa các cụm → chậm rõ ràng trên mọi máy
+  if (rate && rate < ttsRate()) parts = parts.flatMap(p => { if (p.vi) return [p];
+    const w = p.text.trim().split(/\s+/), out = []; let cur = [];
+    w.forEach((x, i) => { cur.push(x); if (cur.length >= 3 || /[,.;:!?]$/.test(x) || (cur.length >= 2 && w[i + 1] && w[i + 1].length > 7)) { out.push({vi:false, text:cur.join(" ")}); cur = []; } });
+    if (cur.length) out.push({vi:false, text:cur.join(" ")}); return out; });
   const us = parts.map(p => { const u = new SpeechSynthesisUtterance(p.text.trim());
     if (p.vi) { u.voice = vv; u.lang = vv.lang; u.rate = Math.min(1, r0 + 0.1); } else { if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-US"; u.rate = r0; }
     return u; });
